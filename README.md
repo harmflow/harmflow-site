@@ -34,6 +34,9 @@ when:
 - **Links.** A link, image, or other reference into the site leads to no file, or its `#anchor` to no `id` of its
   page. A reference to `harmflow.com` is one into the site; one to another host is not checked.
 - **Media budget.** A media file is over 10 MB, or all of them together are over 300 MB (1 MB is 1,000,000 bytes).
+- **Metadata.** A page other than `404.html` lacks its canonical address, its description, or an Open Graph tag;
+  its `og:url` is not its canonical address, or its `og:image` is no image of the site; `sitemap.xml` misses a page or
+  lists one the site does not hold; or `robots.txt` does not point to the sitemap.
 - **Secrets.** [gitleaks](https://github.com/gitleaks/gitleaks) finds a secret or a credential in the tree.
 
 Each check has its tests, which build a tree that breaks it and expect it to fail. Run them with the standard

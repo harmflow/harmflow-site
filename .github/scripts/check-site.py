@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Checks the site's files as committed, with no build step: that no page sits under a language the site does not
 publish, the parity of the languages it does, the header and footer every page of one language shares, the internal
-links and #anchors, and the media budget. It names each problem it finds on stderr, one per line, and exits 1 when it
+links and #anchors, the media budget, and the metadata search engines and link previews read: each page's canonical
+address, description, and Open Graph tags, the sitemap that lists the pages, and the robots.txt that points to it. It
+names each problem it finds on stderr, one per line, and exits 1 when it
 finds any. The Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves
 each check on a tree of its own that breaks it.
 
@@ -16,6 +18,7 @@ The standard library only, and Python 3.9, so it runs on a Mac's own python3 as 
 
 import os
 import posixpath
+import re
 import sys
 from collections import OrderedDict
 from html.parser import HTMLParser
@@ -62,6 +65,12 @@ MEDIA_EXTENSIONS = (
 )
 MEDIA_FILE_LIMIT = 10 * 1000 * 1000
 MEDIA_TOTAL_LIMIT = 300 * 1000 * 1000
+
+# The address the site is published at: every canonical address, og:url, and sitemap entry starts with it.
+ORIGIN = "https://harmflow.com"
+
+# The Open Graph tags every page but the 404 page declares, so a link to it previews with a title, a text, and an image.
+OPEN_GRAPH = ("og:type", "og:site_name", "og:title", "og:description", "og:url", "og:image")
 
 
 def language_of(rel):
@@ -131,6 +140,9 @@ class Page(HTMLParser):
         self.ids = set()
         self.links = []  # (line, reference)
         self.raw_blocks = {}  # "header" or "footer": [token], each token a tag or a text
+        self.canonical = None
+        self.description = None
+        self.open_graph = {}  # "og:title": its content
         self._sectioning = 0
         self._capture = None
         self._depth = 0
@@ -138,6 +150,13 @@ class Page(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         line = self.getpos()[0]
+        named = dict(attrs)
+        if tag == "link" and (named.get("rel") or "").lower() == "canonical" and self.canonical is None:
+            self.canonical = named.get("href") or ""
+        if tag == "meta" and (named.get("name") or "").lower() == "description" and self.description is None:
+            self.description = (named.get("content") or "").strip()
+        if tag == "meta" and (named.get("property") or "").startswith("og:"):
+            self.open_graph.setdefault(named["property"], (named.get("content") or "").strip())
         for name, value in attrs:
             if value is None:
                 continue
@@ -345,6 +364,59 @@ def check_media(root):
     return problems, count, total
 
 
+def address_of(rel):
+    """The address a page is published at: privacy/index.html at https://harmflow.com/privacy/."""
+    return ORIGIN + url_of(rel)
+
+
+def check_metadata(root, pages):
+    """Every page but the 404 page declares its canonical address, a description, and the Open Graph tags, with
+    og:url its canonical address and og:image an image of the site; sitemap.xml lists exactly those pages, and
+    robots.txt points to it. A tree with no such page needs neither file."""
+    problems = []
+    expected = OrderedDict((address_of(rel), rel) for rel in pages if rel != ROOT_404)
+    for address, rel in expected.items():
+        page = pages[rel]
+        if not page.canonical:
+            problems.append("metadata: %s declares no canonical address; it is %s" % (rel, address))
+        elif page.canonical != address:
+            problems.append("metadata: %s: its canonical address is %s, not %s" % (rel, page.canonical, address))
+        if not page.description:
+            problems.append("metadata: %s has no description" % rel)
+        missing = [name for name in OPEN_GRAPH if not page.open_graph.get(name)]
+        if missing:
+            problems.append("metadata: %s has no %s" % (rel, ", ".join(missing)))
+        url = page.open_graph.get("og:url")
+        if url and url != address:
+            problems.append("metadata: %s: its og:url is %s, not its canonical address %s" % (rel, url, address))
+        image = page.open_graph.get("og:image")
+        if image and not (image.startswith(ORIGIN + "/") and file_of(root, image[len(ORIGIN):])):
+            problems.append("metadata: %s: its og:image %s is no image of %s" % (rel, image, ORIGIN))
+    if not expected:
+        return problems
+    sitemap = os.path.join(root, "sitemap.xml")
+    if not os.path.isfile(sitemap):
+        problems.append("metadata: sitemap.xml is missing")
+    else:
+        with open(sitemap, encoding="utf-8", errors="replace") as f:
+            listed = [loc.strip() for loc in re.findall(r"<loc>(.*?)</loc>", f.read(), flags=re.S)]
+        for address, rel in expected.items():
+            if address not in listed:
+                problems.append("metadata: sitemap.xml does not list %s (%s)" % (address, rel))
+        for address in listed:
+            if address not in expected:
+                problems.append("metadata: sitemap.xml lists %s, which is no page of the site" % address)
+    robots = os.path.join(root, "robots.txt")
+    pointer = "Sitemap: %s/sitemap.xml" % ORIGIN
+    if not os.path.isfile(robots):
+        problems.append("metadata: robots.txt is missing")
+    else:
+        with open(robots, encoding="utf-8", errors="replace") as f:
+            if pointer not in [line.strip() for line in f]:
+                problems.append("metadata: robots.txt has no line %s" % pointer)
+    return problems
+
+
 def main(argv):
     args = argv[1:]
     published = PUBLISHED
@@ -366,9 +438,11 @@ def main(argv):
     problems = check_unpublished(pages, published)
     problems += check_parity(pages, published)
     problems += check_shared_blocks(root, pages, published)
+    site = OrderedDict((rel, pages[rel]) for rel in site_pages)
     problems += check_links(root, pages)
     media_problems, media_count, media_total = check_media(root)
     problems += media_problems
+    problems += check_metadata(root, site)
     for problem in problems:
         print("check-site: " + problem, file=sys.stderr)
     if problems:
