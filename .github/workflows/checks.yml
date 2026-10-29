@@ -1,0 +1,74 @@
+# The site's checks, on every pull request and on every push to main. The site has no build step: the checks read the
+# files as committed. Each job first proves its checks on trees of its own that break them, which its test builds, so a
+# check that passes on everything fails its job; then it runs them on the checkout. README.md gives the same commands to
+# run them locally.
+#
+# Every action is pinned to a full commit SHA, with the release it corresponds to in a comment, so a moved tag cannot
+# change what CI runs; a new action follows the same rule.
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push to a pull request cancels that pull request's run still going. A run on main, or a dispatch, is the
+# record for its own commit, so it is keyed on the commit and never cancelled.
+concurrency:
+  group: checks-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  site:
+    name: Parity, shared blocks, links, and media
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The checks fail on trees that break them
+        run: python3 .github/scripts/check-site-test.py -v
+      # After a failing test too, so a run names everything it found.
+      - name: Check the site
+        if: ${{ !cancelled() }}
+        # site/, the folder GitHub Pages serves, read as the site's root.
+        run: python3 .github/scripts/check-site.py site
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      # No credential persisted, so .git, which the scan of the tree reads too, holds none.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The gitleaks CLI, as harmflow/harmflow-app's secret scans install it: a release binary, checked against its
+      # SHA-256 before it runs. The CLI is MIT and needs no key; gitleaks/gitleaks-action needs a license key for a
+      # repository an organization owns. Dependabot cannot see this pin: refresh the version and the checksum by hand,
+      # from the release's gitleaks_<version>_checksums.txt.
+      - name: Install gitleaks
+        env:
+          VERSION: 8.30.1
+          SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          set -euo pipefail
+          archive=gitleaks_${VERSION}_linux_x64.tar.gz
+          dir=$RUNNER_TEMP/gitleaks
+          mkdir -p "$dir"
+          curl --fail --silent --show-error --location --retry 3 --retry-all-errors --retry-delay 2 \
+            --output "$dir/$archive" "https://github.com/gitleaks/gitleaks/releases/download/v$VERSION/$archive"
+          echo "$SHA256  $dir/$archive" | sha256sum --check
+          tar -xzf "$dir/$archive" -C "$dir"
+          echo "$dir" >> "$GITHUB_PATH"
+          "$dir/gitleaks" version
+      - name: The scan fails on a tree with a private key
+        run: python3 .github/scripts/scan-secrets-test.py -v
+      # gitleaks's default rules over the files as they are; --redact keeps a finding's value out of the log.
+      # scan-secrets-test.py runs this same command.
+      - name: Scan the tree
+        if: ${{ !cancelled() }}
+        run: gitleaks dir . --redact --no-banner
