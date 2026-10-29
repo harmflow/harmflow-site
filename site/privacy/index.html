@@ -34,8 +34,75 @@
     <a class="header-cta" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
   </header>
   <main id="content">
-    <h1>Privacy policy</h1>
-    <p>This page is being written.</p>
+    <article class="prose">
+      <h1>Privacy policy</h1>
+      <p class="updated">Last updated: October 29, 2026</p>
+      <p>This policy covers the HarmFlow app and this website, harmflow.com: what each one collects, who receives it, and
+        the choices you have.</p>
+
+      <h2 id="app">The HarmFlow app</h2>
+      <p>HarmFlow runs on your Mac. It has no online service of its own, and it sends nothing to HarmFlow: no account, no
+        telemetry, no usage analytics, and no crash reports.</p>
+      <ul>
+        <li><strong>Its parts talk only to each other.</strong> The HarmFlow window and the daemon, the background process
+          that runs your tasks, talk over your Mac's loopback address, 127.0.0.1, which no other computer can reach.</li>
+        <li><strong>What it keeps stays on your Mac.</strong> Your tasks, their schedules, the history of their executions,
+          and their logs are files in HarmFlow's data folder, <code>~/Library/Application Support/HarmFlow</code>. The key
+          the window uses to reach the daemon is kept in your Mac's Keychain.</li>
+        <li><strong>The tools you choose send what your tasks give them.</strong> HarmFlow starts the tools you installed
+          and signed in to yourself: Claude Code or Codex and, for a task that works on GitHub, Git and the GitHub CLI.
+          They run under your own accounts and send what a task gives them — its prompt, and the files and repositories it
+          works on — to their providers, Anthropic, OpenAI, and GitHub, under those providers' own terms and privacy
+          policies. HarmFlow never signs you in to them.</li>
+        <li><strong>Links open in your browser.</strong> A link you open from HarmFlow opens in your web browser, which
+          visits that page as it would any other.</li>
+      </ul>
+
+      <h2 id="website">This website</h2>
+      <ul>
+        <li><strong>No account and no forms.</strong> The website asks for no account and has no form, so it collects
+          nothing you type.</li>
+        <li><strong>Served from harmflow.com.</strong> Every page, style, typeface, and image comes from harmflow.com. The
+          website sets no cookie of its own and, until you accept analytics, makes no request to any other host.</li>
+        <li><strong>Hosted on GitHub Pages.</strong> GitHub, which serves the website, logs and stores the IP address of
+          every visitor for security purposes, under the
+          <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub
+          General Privacy Statement</a>.</li>
+      </ul>
+
+      <h2 id="analytics">Analytics</h2>
+      <p>The website measures its visits with Google Analytics 4, and only if you accept. A banner asks for your choice,
+        with Accept and Reject given equal weight. Until you accept, a page loads nothing from Google, sends nothing to
+        Google, and sets no analytics cookie. Until the website shows that banner, it runs no analytics at all.</p>
+      <p>Once you accept, the website measures only:</p>
+      <ul>
+        <li>the pages you view;</li>
+        <li>your clicks on the page's main call to action;</li>
+        <li>your visits to the page that says a page was not found.</li>
+      </ul>
+      <p>The website gives you no identifier of its own, and its analytics keep their data for the shortest period Google
+        Analytics offers.</p>
+
+      <h3 id="google">How Google processes the data</h3>
+      <p>Once you accept, your browser loads Google's tag, which sets Google Analytics cookies and sends each measured event
+        to Google, with what a browser sends along with any request — such as its type, your device, your language, and
+        your IP address, from which Google derives an approximate location. Google processes this data to provide the
+        measurement to HarmFlow, and may process it outside your country, including in the United States.
+        <a href="https://policies.google.com/technologies/partner-sites">How Google uses information from sites or apps
+        that use its services</a> and <a href="https://policies.google.com/privacy">Google's Privacy Policy</a> describe
+        what Google does with it.</p>
+
+      <h3 id="withdraw">Withdrawing your consent</h3>
+      <p>Your choice is kept in your browser. To withdraw your consent, or to give it later, use the analytics link in the
+        footer of every page, which reopens the choice. Withdrawing stops the measurement and removes the analytics
+        cookies.</p>
+
+      <h2 id="changes">Changes and questions</h2>
+      <p>When what the app or the website collects changes, this policy changes with it, and the date at its top says when
+        it last did. A question about it can be asked in
+        <a href="https://github.com/harmflow/harmflow-app/issues">harmflow-app's GitHub issues</a>, which anyone can read:
+        put no personal data in it.</p>
+    </article>
   </main>
   <footer class="site-footer">
     <div class="footer-about">

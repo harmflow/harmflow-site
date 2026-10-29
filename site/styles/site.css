@@ -201,3 +201,18 @@ h1 {
   .site-sections { display: none; }
   .site-footer { grid-template-columns: 1fr; }
 }
+
+/* A page of running text — the privacy policy and the support page: one column narrow enough to read */
+.prose { max-width: 44rem; }
+
+.prose h2 { margin: 2.5rem 0 0.75rem; font-size: 1.375rem; line-height: 1.3; letter-spacing: -0.01em; }
+
+.prose h3 { margin: 1.75rem 0 0.5rem; font-size: 1.0625rem; line-height: 1.4; }
+
+.prose p, .prose ul { margin: 0 0 1rem; }
+
+.prose ul { padding-left: 1.25rem; }
+
+.prose li + li { margin-top: 0.5rem; }
+
+.prose .updated { color: var(--muted); font-size: 0.875rem; }
