@@ -6,8 +6,8 @@
 
 ## What the site will be
 
-- **Static pages, no build step.** Plain HTML and CSS served by GitHub Pages. Every page's content and navigation work
-  with JavaScript disabled.
+- **Static pages, no build step.** Plain HTML and CSS served by GitHub Pages from the `site/` folder, as committed:
+  `site/index.html` is `harmflow.com/`. Every page's content and navigation work with JavaScript disabled.
 - **Three languages.** en-US at the root, pt-BR under `/pt-br/`, and es-ES under `/es-es/`, with the same English slugs
   in each. A selector in every page's header leads to the same page in the other two.
 - **Nothing from another host.** No third-party script, stylesheet, font, or image: the fonts are served from the site

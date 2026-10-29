@@ -5,13 +5,16 @@ schedules, runs, and monitors automations through the agent harnesses already on
 The site will be published at `harmflow.com`.
 
 > [!NOTE]
-> **No pages yet.** The first pages are open [issues](https://github.com/harmflow/harmflow-site/issues) in this
-> repository; [`docs/site.md`](docs/site.md) says what the site will be.
+> **Under construction.** `harmflow.com` serves a placeholder page for now. The first pages are open
+> [issues](https://github.com/harmflow/harmflow-site/issues) in this repository; [`docs/site.md`](docs/site.md) says
+> what the site will be.
 
 ## What it holds
 
 | Path | What it is |
 |---|---|
+| [`site/`](site/) | The site itself, as GitHub Pages serves it: only this folder is published |
+| [`.github/workflows/pages.yml`](.github/workflows/pages.yml) | Packages `site/` on every pull request and deploys it to GitHub Pages on every push to `main` |
 | [`docs/site.md`](docs/site.md) | What the site will be: static pages with no build step, three languages, nothing from another host |
 | [`CLAUDE.md`](CLAUDE.md) | Guidance for coding agents that work in this repository |
 
