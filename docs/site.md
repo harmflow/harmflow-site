@@ -12,7 +12,8 @@
   `/pt-br/` and `/es-es/` with the same slugs, and until then no page sits under either prefix.
 - **Nothing from another host.** No third-party script, stylesheet, font, or image: the fonts are served from the site
   itself.
-- **First pages.** The landing page, the privacy policy, and the support page, each an open
+- **Pages.** The landing page at `/`, the privacy policy at `/privacy/`, and the support page at `/support/`. The
+  guide, the reference, and the showroom are being written, each an
   [issue](https://github.com/harmflow/harmflow-site/issues) in this repository.
 
 ## The page skeleton
@@ -37,7 +38,8 @@ A new page copies another page and changes only its `<title>`, its metadata, and
 - **Language.** `<html lang>` is `en-US`.
 - **Styles.** `site/styles/site.css`, shared by every page. The logo is `site/app-icon-small.svg` below 64 px and
   `site/app-icon.svg` above, in its fixed colors; every other color is a placeholder until the palette is approved.
-  The pages are dark only until then, with no light theme to follow the system's setting.
+  The pages are dark only until then, with no light theme to follow the system's setting. A page of running text, such
+  as the privacy policy, holds its `<main>` in one `<article class="prose">`, a column narrow enough to read.
 - **Typefaces.** Inter for text and JetBrains Mono for code, the desktop app's own files, in `site/fonts/` with each
   font's license beside it. A page uses the stacks `--font-text` and `--font-mono` from the stylesheet, never a font
   from another host.
