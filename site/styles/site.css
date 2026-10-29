@@ -126,18 +126,12 @@ a:hover, a:focus-visible { color: var(--accent); }
 
 .brand img { display: block; }
 
-/* The sections sit in the middle, between the brand and the language selector */
+/* The sections sit in the middle, between the brand and the call to action */
 .site-sections { flex: 1; display: flex; justify-content: center; }
 
 .site-sections a { color: var(--muted); text-decoration: none; }
 
 .site-sections a:hover, .site-sections a:focus-visible { color: var(--text); }
-
-.language-selector { font-size: 0.8125rem; }
-
-.language-selector ul { gap: 0.25rem 0.75rem; }
-
-.language-selector a { color: var(--muted); text-decoration: none; }
 
 /* The header's one call to action: a solid pill, the only filled control in the header */
 .header-cta {
@@ -188,17 +182,15 @@ h1 {
 
 .site-footer a { text-decoration: none; }
 
-/* On a narrow screen the sections drop out of the header, which the footer still lists, and the selector takes a
-   row of its own */
+/* On a narrow screen the sections drop out of the header, which the footer still lists */
 @media (max-width: 52rem) {
   .site-header { gap: 0.75rem 1rem; }
   .brand { flex: 1; }
   .site-sections { display: none; }
-  .language-selector { order: 3; width: 100%; }
   .site-footer { grid-template-columns: 1fr; }
 }
 
-/* The under-construction notice of the three home pages, until the landing page replaces it */
+/* The under-construction notice of the home page, until the landing page replaces it */
 .under-construction {
   max-width: 32rem;
   margin: 0 auto;
