@@ -189,22 +189,3 @@ h1 {
   .site-sections { display: none; }
   .site-footer { grid-template-columns: 1fr; }
 }
-
-/* The under-construction notice of the home page, until the landing page replaces it */
-.under-construction {
-  max-width: 32rem;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.under-construction .logo { display: block; width: 8rem; height: 8rem; margin: 0 auto 1.5rem; }
-
-.under-construction h1 { margin-bottom: 2rem; }
-
-.notice { margin: 0; padding: 1rem 0; border-top: 1px solid var(--rule); }
-
-.notice:last-of-type { border-bottom: 1px solid var(--rule); }
-
-.notice strong { display: block; font-weight: 600; }
-
-.notice span { color: var(--muted); }
