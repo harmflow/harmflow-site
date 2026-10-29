@@ -19,6 +19,10 @@ SCRIPT = os.path.join(HERE, "check-site.py")
 SITE = os.path.join(os.path.dirname(os.path.dirname(HERE)), "site")
 
 PREFIXES = (("en-US", ""), ("pt-BR", "pt-br/"), ("es-ES", "es-es/"))
+
+# The fixture is published in the three languages, so the parity and the shared blocks of each stay proven while the
+# site itself publishes en-US only, check-site.py's default.
+ALL_LANGUAGES = ["--languages", "en-US,pt-BR,es-ES"]
 SLUGS = ("index.html", "privacy/index.html", "support/index.html")
 MB = 1000 * 1000
 
@@ -124,23 +128,23 @@ class CheckSiteTest(unittest.TestCase):
         with open(path, "wb") as f:
             f.truncate(size)
 
-    def check(self, root=None):
+    def check(self, root=None, languages=ALL_LANGUAGES):
         result = subprocess.run(
-            [sys.executable, SCRIPT, root or self.root],
+            [sys.executable, SCRIPT] + languages + [root or self.root],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
         )
         return result.returncode, result.stdout, result.stderr
 
-    def assertPasses(self, root=None):
-        rc, out, err = self.check(root)
+    def assertPasses(self, root=None, languages=ALL_LANGUAGES):
+        rc, out, err = self.check(root, languages)
         self.assertEqual(rc, 0, err)
         self.assertIn("check-site: ok", out)
 
-    def assertFails(self, *texts):
+    def assertFails(self, *texts, languages=ALL_LANGUAGES):
         """The check exits 1, and its output holds each of TEXTS. It returns the output's problem lines."""
-        rc, _, err = self.check()
+        rc, _, err = self.check(languages=languages)
         self.assertEqual(rc, 1, err)
         for text in texts:
             self.assertIn(text, err)
@@ -154,11 +158,37 @@ class CheckSiteTest(unittest.TestCase):
     def test_a_tree_with_no_page_passes(self):
         empty = os.path.join(self.root, "..", "empty")
         os.makedirs(empty)
-        self.assertPasses(empty)
+        self.assertPasses(empty, languages=[])
 
-    # The repository's own site/, the folder GitHub Pages serves, not the repository's root.
+    # The repository's own site/, the folder GitHub Pages serves, not the repository's root, with the default languages.
     def test_the_published_site_passes(self):
-        self.assertPasses(SITE)
+        self.assertPasses(SITE, languages=[])
+
+    # Published languages.
+
+    # The site as it is published for now: en-US pages with no selector, and a 404 page in en-US.
+    def test_the_site_in_en_us_only_passes_by_default(self):
+        for _, prefix in PREFIXES[1:]:
+            shutil.rmtree(os.path.join(self.root, prefix))
+        for slug in SLUGS:
+            self.write(slug, page("en-US", slug, header_html='<header>\n  <a href="/">HarmFlow</a>\n</header>'))
+        translations = NOT_FOUND[NOT_FOUND.index('  <p lang="pt-BR">') : NOT_FOUND.index("</main>")]
+        self.write("404.html", NOT_FOUND.replace(translations, ""))
+        self.assertPasses(languages=[])
+
+    def test_a_page_in_a_language_not_published_fails_naming_it(self):
+        lines = self.assertFails(
+            "unpublished: pt-br/privacy/index.html is a pt-BR page, and the site publishes only en-US",
+            "unpublished: es-es/index.html is a es-ES page",
+            languages=[],
+        )
+        self.assertEqual(len([line for line in lines if "unpublished:" in line]), 2 * len(SLUGS), lines)
+        self.assertEqual([line for line in lines if "parity:" in line], [], lines)
+
+    def test_an_unknown_language_is_a_usage_error(self):
+        rc, _, err = self.check(languages=["--languages", "en-US,fr-FR"])
+        self.assertEqual(rc, 2, err)
+        self.assertIn("usage:", err)
 
     # Parity.
 
