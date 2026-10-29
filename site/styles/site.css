@@ -1,6 +1,9 @@
 /* The styles every page shares. The logo's colors — #22d3ee, #8b5cf6, and #e040fb — are fixed; every other color is
-   a neutral placeholder until the palette is approved. The system's fonts stand in until the site serves its own. */
+   a neutral placeholder until the palette is approved. The system's fonts stand in until the site serves its own.
+   The pages are dark only: the wordmark's gradient has no version for a light background, and a light theme waits
+   for the palette. */
 :root {
+  color-scheme: dark;
   --bg: #0b0f1a;
   --text: #e6e8ee;
   --muted: #9aa1b2;

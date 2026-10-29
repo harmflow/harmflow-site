@@ -34,4 +34,5 @@ language selector, in the three languages together:
 - **Language.** `<html lang>` is `en-US`, `pt-BR`, or `es-ES`.
 - **Styles.** `site/styles/site.css`, shared by every page. The logo is `site/app-icon-small.svg` below 64 px and
   `site/app-icon.svg` above, in its fixed colors; every other color is a placeholder until the palette is approved.
+  The pages are dark only until then, with no light theme to follow the system's setting.
 - **Footer.** Its last item is where the link to the analytics consent choice goes.
