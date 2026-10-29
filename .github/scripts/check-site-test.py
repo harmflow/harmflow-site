@@ -61,7 +61,15 @@ def page(language, slug, header_html=None, footer_html=None, body=""):
 <html lang="%(language)s">
 <head>
   <meta charset="utf-8">
+  <title>A page</title>
+  <meta name="description" content="A page of the fixture.">
   <link rel="canonical" href="https://harmflow.com%(served)s">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="A page">
+  <meta property="og:description" content="A page of the fixture.">
+  <meta property="og:url" content="https://harmflow.com%(served)s">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
   <link rel="stylesheet" href="/styles/site.css">
 </head>
 <body>
@@ -102,6 +110,16 @@ NOT_FOUND = """<!doctype html>
 """
 
 
+def sitemap(rels):
+    """A sitemap that lists the pages RELS by their published address."""
+    urls = "".join("  <url><loc>https://harmflow.com%s</loc></url>\n" % served("", rel) for rel in rels)
+    head = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    return head + urls + "</urlset>\n"
+
+
+ROBOTS = "User-agent: *\nAllow: /\n\nSitemap: https://harmflow.com/sitemap.xml\n"
+
+
 class CheckSiteTest(unittest.TestCase):
     def setUp(self):
         scratch = tempfile.mkdtemp(prefix="check-site-test.")
@@ -111,6 +129,9 @@ class CheckSiteTest(unittest.TestCase):
             for slug in SLUGS:
                 self.write(prefix + slug, page(language, slug))
         self.write("404.html", NOT_FOUND)
+        self.write("sitemap.xml", sitemap(prefix + slug for _, prefix in PREFIXES for slug in SLUGS))
+        self.write("robots.txt", ROBOTS)
+        self.write("og-image.png", "not really a png\n")
         self.write("styles/site.css", "body { margin: 0; }\n")
         self.write("showroom/poster.png", "not really a png\n")
         self.write("README.md", "Not a page.\n")
@@ -174,6 +195,7 @@ class CheckSiteTest(unittest.TestCase):
             self.write(slug, page("en-US", slug, header_html='<header>\n  <a href="/">HarmFlow</a>\n</header>'))
         translations = NOT_FOUND[NOT_FOUND.index('  <p lang="pt-BR">') : NOT_FOUND.index("</main>")]
         self.write("404.html", NOT_FOUND.replace(translations, ""))
+        self.write("sitemap.xml", sitemap(SLUGS))
         self.assertPasses(languages=[])
 
     def test_a_page_in_a_language_not_published_fails_naming_it(self):
@@ -285,6 +307,74 @@ class CheckSiteTest(unittest.TestCase):
     def test_a_broken_anchor_on_another_page_fails(self):
         self.write("index.html", page("en-US", "index.html", body='<a href="/privacy/#cookies">x</a>'))
         self.assertFails("/privacy/#cookies names no id of privacy/index.html")
+
+    # Metadata.
+
+    def test_a_page_with_no_canonical_address_fails_naming_it(self):
+        text = page("en-US", "support/index.html").replace(
+            '  <link rel="canonical" href="https://harmflow.com/support/">\n', ""
+        )
+        self.write("support/index.html", text)
+        self.assertFails(
+            "metadata: support/index.html declares no canonical address; it is https://harmflow.com/support/"
+        )
+
+    def test_a_canonical_address_of_another_page_fails(self):
+        text = page("pt-BR", "privacy/index.html").replace(
+            'rel="canonical" href="https://harmflow.com/pt-br/privacy/"',
+            'rel="canonical" href="https://harmflow.com/"',
+        )
+        self.write("pt-br/privacy/index.html", text)
+        self.assertFails("metadata: pt-br/privacy/index.html: its canonical address is https://harmflow.com/, not")
+
+    def test_a_page_with_no_description_fails(self):
+        text = page("en-US", "index.html").replace('  <meta name="description" content="A page of the fixture.">\n', "")
+        self.write("index.html", text)
+        self.assertFails("metadata: index.html has no description")
+
+    def test_a_page_with_no_open_graph_tags_fails_naming_them(self):
+        text = page("es-ES", "support/index.html")
+        for name in ("og:title", "og:image"):
+            text = "\n".join(line for line in text.split("\n") if 'property="%s"' % name not in line)
+        self.write("es-es/support/index.html", text)
+        self.assertFails("metadata: es-es/support/index.html has no og:title, og:image")
+
+    def test_an_og_url_other_than_the_canonical_address_fails(self):
+        text = page("en-US", "privacy/index.html").replace(
+            'property="og:url" content="https://harmflow.com/privacy/"',
+            'property="og:url" content="https://harmflow.com/"',
+        )
+        self.write("privacy/index.html", text)
+        self.assertFails("metadata: privacy/index.html: its og:url is https://harmflow.com/, not")
+
+    def test_an_og_image_on_another_host_or_missing_fails(self):
+        text = page("en-US", "index.html").replace(
+            "https://harmflow.com/og-image.png", "https://example.com/og-image.png"
+        )
+        self.write("index.html", text)
+        os.remove(os.path.join(self.root, "og-image.png"))
+        lines = self.assertFails("metadata: index.html: its og:image https://example.com/og-image.png is no image")
+        # index.html names another host; every other page names an image the tree no longer holds.
+        self.assertEqual(len([line for line in lines if "og:image" in line]), len(PREFIXES) * len(SLUGS), lines)
+
+    def test_a_page_the_sitemap_does_not_list_fails(self):
+        self.write("about/index.html", page("en-US", "about/index.html"))
+        self.write("pt-br/about/index.html", page("pt-BR", "about/index.html"))
+        self.write("es-es/about/index.html", page("es-ES", "about/index.html"))
+        self.assertFails("metadata: sitemap.xml does not list https://harmflow.com/about/ (about/index.html)")
+
+    def test_a_sitemap_entry_with_no_page_fails(self):
+        pages = [prefix + slug for _, prefix in PREFIXES for slug in SLUGS]
+        self.write("sitemap.xml", sitemap(pages + ["gone/index.html"]))
+        self.assertFails("metadata: sitemap.xml lists https://harmflow.com/gone/, which is no page of the site")
+
+    def test_a_missing_sitemap_fails(self):
+        os.remove(os.path.join(self.root, "sitemap.xml"))
+        self.assertFails("metadata: sitemap.xml is missing")
+
+    def test_a_robots_txt_that_does_not_point_to_the_sitemap_fails(self):
+        self.write("robots.txt", "User-agent: *\nAllow: /\n")
+        self.assertFails("metadata: robots.txt has no line Sitemap: https://harmflow.com/sitemap.xml")
 
     # Media budget.
 

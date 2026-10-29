@@ -21,8 +21,14 @@ Every page is one `index.html` at its English slug: `site/privacy/index.html` is
 under-construction notice until the landing page replaces it. The sections are `/docs/guide/`, `/docs/reference/`,
 `/showroom/`, `/privacy/`, and `/support/`, each a stub until its page is written.
 
-A new page copies another page and changes only its `<title>` and its `<main>`:
+A new page copies another page and changes only its `<title>`, its metadata, and its `<main>`, and gets a line in
+`site/sitemap.xml`:
 
+- **Metadata.** Its description, its canonical address (`https://harmflow.com/support/`, with the trailing slash),
+  and the Open Graph tags: `og:title` repeats the `<title>`, `og:description` the description, and `og:url` the
+  canonical address. Every page shares `og:image`, `site/og-image.png`, 1,200 × 630 pixels.
+- **404.** `site/404.html` answers every path the site does not hold, at any depth, so its links and assets are
+  absolute paths. It has no canonical address, asks search engines not to index it, and is not in the sitemap.
 - **Header and footer.** The same markup on every page. The logo leads to the home. Every link is an absolute path
   (`/support/`), so it reads the same from every page.
 - **Header.** Stays at the top as the page scrolls: the logo and the name, the Guide, Reference, and Showroom links in
