@@ -36,4 +36,5 @@ A new page copies another page and changes only its `<title>` and its `<main>`:
   font's license beside it. A page uses the stacks `--font-text` and `--font-mono` from the stylesheet, never a font
   from another host.
 - **Footer.** One sentence on what HarmFlow is, then two columns of links: the sections, and the privacy, support,
-  and GitHub links. The last item of that column is where the link to the analytics consent choice goes.
+  and GitHub links. The last item of that column is where the link to the analytics consent choice goes. Under both
+  columns, the copyright with the app's license, and the trademark notes for the harnesses and Apple's names.
