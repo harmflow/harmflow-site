@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>HarmFlow</title>
+  <meta name="description" content="The HarmFlow website is under construction.">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <!-- A placeholder until the landing page replaces it. Its colors other than the logo's are neutral placeholders,
+       and it loads nothing from another host. -->
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --text: #e6e8ee;
+      --muted: #9aa1b2;
+      --rule: #262c3d;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 2rem 1.5rem;
+      background: var(--bg);
+      color: var(--text);
+      font: 1rem/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      text-align: center;
+    }
+
+    main { max-width: 32rem; }
+
+    .logo { display: block; width: 8rem; height: 8rem; margin: 0 auto 1.5rem; }
+
+    h1 { margin: 0 0 2rem; font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em; }
+
+    .notice { margin: 0; padding: 1rem 0; border-top: 1px solid var(--rule); }
+
+    .notice:last-of-type { border-bottom: 1px solid var(--rule); }
+
+    .notice strong { display: block; font-weight: 600; }
+
+    .notice span { color: var(--muted); }
+
+    a { color: inherit; text-underline-offset: 0.2em; }
+
+    a:hover, a:focus-visible { color: #22d3ee; }
+  </style>
+</head>
+<body>
+  <main>
+    <img class="logo" src="/app-icon.svg" alt="" width="128" height="128">
+    <h1>HarmFlow</h1>
+
+    <p class="notice">
+      <strong>This site is under construction.</strong>
+      <span>Follow the project on <a href="https://github.com/harmflow">GitHub</a>.</span>
+    </p>
+    <p class="notice" lang="pt-BR">
+      <strong>Este site está em construção.</strong>
+      <span>Acompanhe o projeto no <a href="https://github.com/harmflow">GitHub</a>.</span>
+    </p>
+    <p class="notice" lang="es-ES">
+      <strong>Este sitio está en construcción.</strong>
+      <span>Sigue el proyecto en <a href="https://github.com/harmflow">GitHub</a>.</span>
+    </p>
+  </main>
+</body>
+</html>
