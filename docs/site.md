@@ -38,5 +38,8 @@ language selector, in the three languages together:
 - **Styles.** `site/styles/site.css`, shared by every page. The logo is `site/app-icon-small.svg` below 64 px and
   `site/app-icon.svg` above, in its fixed colors; every other color is a placeholder until the palette is approved.
   The pages are dark only until then, with no light theme to follow the system's setting.
+- **Typefaces.** Inter for text and JetBrains Mono for code, the desktop app's own files, in `site/fonts/` with each
+  font's license beside it. A page uses the stacks `--font-text` and `--font-mono` from the stylesheet, never a font
+  from another host.
 - **Footer.** One sentence on what HarmFlow is, then two columns of links: the sections, and the privacy, support,
   and GitHub links. The last item of that column is where the link to the analytics consent choice goes.
