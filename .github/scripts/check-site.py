@@ -6,6 +6,8 @@ it on the checkout, and check-site-test.py proves each check on a tree of its ow
 
 Usage: check-site.py [ROOT]
 
+ROOT is the folder GitHub Pages serves, site/ by default, so site/privacy/index.html is /privacy/.
+
 The standard library only, and Python 3.9, so it runs on a Mac's own python3 as it does in CI.
 """
 
@@ -327,7 +329,7 @@ def main(argv):
     if len(argv) > 2:
         print("usage: check-site.py [ROOT]", file=sys.stderr)
         return 2
-    root = argv[1] if len(argv) == 2 else "."
+    root = argv[1] if len(argv) == 2 else "site"
     if not os.path.isdir(root):
         print("check-site: %s is not a directory" % root, file=sys.stderr)
         return 2

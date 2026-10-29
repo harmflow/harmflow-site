@@ -16,7 +16,7 @@ import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCRIPT = os.path.join(HERE, "check-site.py")
-REPOSITORY = os.path.dirname(os.path.dirname(HERE))
+SITE = os.path.join(os.path.dirname(os.path.dirname(HERE)), "site")
 
 PREFIXES = (("en-US", ""), ("pt-BR", "pt-br/"), ("es-ES", "es-es/"))
 SLUGS = ("index.html", "privacy/index.html", "support/index.html")
@@ -156,8 +156,9 @@ class CheckSiteTest(unittest.TestCase):
         os.makedirs(empty)
         self.assertPasses(empty)
 
-    def test_the_repository_passes(self):
-        self.assertPasses(REPOSITORY)
+    # The repository's own site/, the folder GitHub Pages serves, not the repository's root.
+    def test_the_published_site_passes(self):
+        self.assertPasses(SITE)
 
     # Parity.
 

@@ -38,7 +38,7 @@ Each check has its tests, which build a tree that breaks it and expect it to fai
 library's Python 3.9 or later, which a Mac has:
 
 ```bash
-python3 .github/scripts/check-site.py            # the checks, on this tree
+python3 .github/scripts/check-site.py site       # the checks, on site/, the folder GitHub Pages serves
 python3 .github/scripts/check-site-test.py       # their tests
 gitleaks dir . --redact --no-banner              # the secret scan, with gitleaks installed
 python3 .github/scripts/scan-secrets-test.py     # its test, skipped without gitleaks
