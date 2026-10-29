@@ -29,10 +29,14 @@ language selector, in the three languages together:
 - **Header and footer.** The same markup on every page of one language; only the language selector's links differ.
   The logo leads to the language's home.
   Every link is an absolute path (`/pt-br/support/`), so it reads the same from every page.
+- **Header.** Stays at the top as the page scrolls: the logo and the name, the Guide, Reference, and Showroom links in
+  the middle, the language selector, and one call to action, a pill that follows `harmflow-app` on GitHub. On a narrow
+  screen the section links drop out, since the footer lists them too.
 - **Language selector.** Names the page's own language without a link, and links to the same page in the other two.
   It is plain links, so it works with JavaScript disabled.
 - **Language.** `<html lang>` is `en-US`, `pt-BR`, or `es-ES`.
 - **Styles.** `site/styles/site.css`, shared by every page. The logo is `site/app-icon-small.svg` below 64 px and
   `site/app-icon.svg` above, in its fixed colors; every other color is a placeholder until the palette is approved.
   The pages are dark only until then, with no light theme to follow the system's setting.
-- **Footer.** Its last item is where the link to the analytics consent choice goes.
+- **Footer.** One sentence on what HarmFlow is, then two columns of links: the sections, and the privacy, support,
+  and GitHub links. The last item of that column is where the link to the analytics consent choice goes.
