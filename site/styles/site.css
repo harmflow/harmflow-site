@@ -1,0 +1,110 @@
+/* The styles every page shares. The logo's colors — #22d3ee, #8b5cf6, and #e040fb — are fixed; every other color is
+   a neutral placeholder until the palette is approved. The system's fonts stand in until the site serves its own. */
+:root {
+  --bg: #0b0f1a;
+  --text: #e6e8ee;
+  --muted: #9aa1b2;
+  --rule: #262c3d;
+  --accent: #22d3ee;
+  /* The content's width, and the gutter beside it on a narrow screen */
+  --gutter: max(1.5rem, calc((100% - 64rem) / 2));
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font: 1rem/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+a { color: inherit; text-underline-offset: 0.2em; }
+
+a:hover, a:focus-visible { color: var(--accent); }
+
+/* Off screen until it takes the focus */
+.skip-link {
+  position: absolute;
+  top: -4rem;
+  left: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+}
+
+.skip-link:focus { top: 1rem; }
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 2rem;
+  padding: 1rem var(--gutter);
+  border-bottom: 1px solid var(--rule);
+}
+
+.site-header ul, .site-footer ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.brand img { display: block; }
+
+.site-sections { flex: 1; }
+
+.language-selector [aria-current] { color: var(--muted); }
+
+main {
+  flex: 1;
+  padding: 2rem var(--gutter);
+}
+
+h1 {
+  margin: 0 0 1rem;
+  font-size: 2.25rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.site-footer {
+  padding: 1.5rem var(--gutter);
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* The under-construction notice of the three home pages, until the landing page replaces it */
+.under-construction {
+  max-width: 32rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.under-construction .logo { display: block; width: 8rem; height: 8rem; margin: 0 auto 1.5rem; }
+
+.under-construction h1 { margin-bottom: 2rem; }
+
+.notice { margin: 0; padding: 1rem 0; border-top: 1px solid var(--rule); }
+
+.notice:last-of-type { border-bottom: 1px solid var(--rule); }
+
+.notice strong { display: block; font-weight: 600; }
+
+.notice span { color: var(--muted); }
