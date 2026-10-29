@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Checks the site's files as committed, with no build step: the parity of the three languages, the header and footer
-every page of one language shares, the internal links and #anchors, and the media budget. It names each problem it
-finds on stderr, one per line, and exits 1 when it finds any. The Checks workflow (.github/workflows/checks.yml) runs
-it on the checkout, and check-site-test.py proves each check on a tree of its own that breaks it.
+"""Checks the site's files as committed, with no build step: that no page sits under a language the site does not
+publish, the parity of the languages it does, the header and footer every page of one language shares, the internal
+links and #anchors, and the media budget. It names each problem it finds on stderr, one per line, and exits 1 when it
+finds any. The Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves
+each check on a tree of its own that breaks it.
 
-Usage: check-site.py [ROOT]
+Usage: check-site.py [--languages en-US,pt-BR,es-ES] [ROOT]
 
-ROOT is the folder GitHub Pages serves, site/ by default, so site/privacy/index.html is /privacy/.
+ROOT is the folder GitHub Pages serves, site/ by default, so site/privacy/index.html is /privacy/. --languages names
+the languages the site publishes, en-US only by default: the site is in English for now, and its translations come
+back later under the prefixes LANGUAGES keeps for them.
 
 The standard library only, and Python 3.9, so it runs on a Mac's own python3 as it does in CI.
 """
@@ -21,7 +24,10 @@ from urllib.parse import unquote, urljoin, urlsplit
 # en-US at the root, pt-BR under /pt-br/, es-ES under /es-es/, with the same English slugs in each.
 LANGUAGES = (("en-US", ""), ("pt-BR", "pt-br/"), ("es-ES", "es-es/"))
 
-# The root 404 page is the one page written in all three languages: GitHub Pages serves a custom 404 page only from
+# The languages the site publishes unless --languages names others. A page under another language's prefix fails.
+PUBLISHED = ("en-US",)
+
+# The root 404 page is the one page that speaks for every language: GitHub Pages serves a custom 404 page only from
 # the root. It has no versions to keep in parity, and belongs to no one language's shared header and footer.
 ROOT_404 = "404.html"
 
@@ -187,23 +193,37 @@ def site_files(root, skip_hidden):
     return sorted(found)
 
 
-def check_parity(pages):
-    """A page of one language with no version at the same slug in another names the missing file."""
+def check_unpublished(pages, published):
+    """A page under the prefix of a language the site does not publish names the page and the language."""
+    problems = []
+    for rel in pages:
+        language, _ = language_of(rel)
+        if language not in published:
+            problems.append(
+                "unpublished: %s is a %s page, and the site publishes only %s" % (rel, language, ", ".join(published))
+            )
+    return problems
+
+
+def check_parity(pages, published):
+    """A page of one published language with no version at the same slug in another names the missing file."""
     problems = []
     missing = OrderedDict()
     for rel in pages:
         if rel == ROOT_404:
             continue
         language, slug = language_of(rel)
+        if language not in published:
+            continue
         for other, prefix in LANGUAGES:
-            if other != language and prefix + slug not in pages:
+            if other in published and other != language and prefix + slug not in pages:
                 missing.setdefault(prefix + slug, (other, rel))
     for absent, (language, source) in missing.items():
         problems.append("parity: %s is missing: %s has no %s version" % (absent, source, language))
     return problems
 
 
-def block_tokens(root, page, block):
+def block_tokens(root, page, block, published):
     """A page's header or footer, as tokens that compare equal when the markup is the same: whitespace collapsed,
     attributes sorted, references resolved to site paths, and a link to this page in another language — the
     language selector's, which differs on every page by design — replaced by the name of that language."""
@@ -211,7 +231,7 @@ def block_tokens(root, page, block):
     if raw is None:
         return ("(no %s)" % block,)
     language, slug = language_of(page.rel)
-    versions = {prefix + slug: other for other, prefix in LANGUAGES if other != language}
+    versions = {prefix + slug: other for other, prefix in LANGUAGES if other in published and other != language}
     tokens = []
     for kind, tag, attrs in raw:
         if kind == "text":
@@ -247,16 +267,16 @@ def clip(text, width=100):
     return text if len(text) <= width else text[: width - 1] + "…"
 
 
-def check_shared_blocks(root, pages):
+def check_shared_blocks(root, pages, published):
     """Within one language, every page's header and footer is the same; the pages that differ from the version most of
     them share are named, and every page is when no version is shared by most."""
     problems = []
-    for language, _ in LANGUAGES:
+    for language in published:
         members = [rel for rel in pages if rel != ROOT_404 and language_of(rel)[0] == language]
         for block in ("header", "footer"):
             versions = OrderedDict()
             for rel in members:
-                versions.setdefault(block_tokens(root, pages[rel], block), []).append(rel)
+                versions.setdefault(block_tokens(root, pages[rel], block, published), []).append(rel)
             if len(versions) < 2:
                 continue
             ranked = sorted(versions.items(), key=lambda v: -len(v[1]))
@@ -326,10 +346,16 @@ def check_media(root):
 
 
 def main(argv):
-    if len(argv) > 2:
-        print("usage: check-site.py [ROOT]", file=sys.stderr)
+    args = argv[1:]
+    published = PUBLISHED
+    if args[:1] == ["--languages"] and len(args) >= 2:
+        published = tuple(args[1].split(","))
+        args = args[2:]
+    known = [language for language, _ in LANGUAGES]
+    if len(args) > 1 or "en-US" not in published or any(language not in known for language in published):
+        print("usage: check-site.py [--languages en-US,pt-BR,es-ES] [ROOT]", file=sys.stderr)
         return 2
-    root = argv[1] if len(argv) == 2 else "site"
+    root = args[0] if args else "site"
     if not os.path.isdir(root):
         print("check-site: %s is not a directory" % root, file=sys.stderr)
         return 2
@@ -337,8 +363,9 @@ def main(argv):
         (rel, read_page(root, rel)) for rel in site_files(root, skip_hidden=True) if rel.endswith(".html")
     )
     site_pages = list(pages)
-    problems = check_parity(pages)
-    problems += check_shared_blocks(root, pages)
+    problems = check_unpublished(pages, published)
+    problems += check_parity(pages, published)
+    problems += check_shared_blocks(root, pages, published)
     problems += check_links(root, pages)
     media_problems, media_count, media_total = check_media(root)
     problems += media_problems

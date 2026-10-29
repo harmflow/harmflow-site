@@ -15,7 +15,7 @@ The site is published at [`harmflow.com`](https://harmflow.com).
 |---|---|
 | [`site/`](site/) | The site itself, as GitHub Pages serves it: only this folder is published |
 | [`.github/workflows/pages.yml`](.github/workflows/pages.yml) | Packages `site/` on every pull request and deploys it to GitHub Pages on every push to `main` |
-| [`docs/site.md`](docs/site.md) | What the site will be: static pages with no build step, three languages, nothing from another host |
+| [`docs/site.md`](docs/site.md) | What the site will be: static pages with no build step, in English for now, nothing from another host |
 | [`CLAUDE.md`](CLAUDE.md) | Guidance for coding agents that work in this repository |
 | [`.github/scripts/`](.github/scripts/) | The site's checks and their tests |
 | [`scripts/dns-cutover-wizard.sh`](scripts/dns-cutover-wizard.sh) | Walks the domain's owner through pointing `harmflow.com` at GitHub Pages at GoDaddy and enforcing HTTPS, checking each record; safe to re-run |
@@ -25,11 +25,12 @@ The site is published at [`harmflow.com`](https://harmflow.com).
 Every pull request and every push to `main` runs the site's checks, which read the files as committed. A check fails
 when:
 
-- **Parity.** A page has no version at the same English slug in one of the other two languages. The root `404.html`,
-  a single page written in all three, is the one exception.
+- **Languages.** A page sits under `/pt-br/` or `/es-es/`: the site is in English for now, and those prefixes are kept
+  for its translations. `--languages en-US,pt-BR,es-ES` publishes them again, and then a page with no version at the
+  same English slug in another published language fails too; the root `404.html` is the one exception.
 - **Shared blocks.** A page's header or footer differs from the other pages of its language. Whitespace does not
-  count, and neither do the language selector's links to the same page in the other two languages, which differ on
-  every page by design; every other part of the markup must be the same.
+  count, and once the site is translated, neither do a language selector's links to the same page in the other
+  languages, which differ on every page by design; every other part of the markup must be the same.
 - **Links.** A link, image, or other reference into the site leads to no file, or its `#anchor` to no `id` of its
   page. A reference to `harmflow.com` is one into the site; one to another host is not checked.
 - **Media budget.** A media file is over 10 MB, or all of them together are over 300 MB (1 MB is 1,000,000 bytes).
