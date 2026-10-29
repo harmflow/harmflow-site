@@ -4,12 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>HarmFlow</title>
-  <meta name="description" content="The HarmFlow website is under construction.">
+  <title>HarmFlow — automations on the agents you already use</title>
+  <meta name="description" content="HarmFlow runs Claude Code and Codex on a schedule on your Mac, and follows every execution as it happens. Coming to the Mac App Store.">
   <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles/site.css">
-  <!-- A placeholder until the landing page replaces it. It says so in the three languages, since a visitor arrives
-       here first, whatever their language. -->
+  <link rel="stylesheet" href="/styles/landing.css">
 </head>
 <body>
   <a class="skip-link" href="#content">Skip to content</a>
@@ -31,24 +30,105 @@
     </nav>
     <a class="header-cta" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
   </header>
-  <main id="content">
-    <div class="under-construction">
-      <img class="logo" src="/app-icon.svg" alt="" width="128" height="128">
-      <h1>HarmFlow</h1>
+  <main id="content" class="landing">
+    <section class="hero" aria-labelledby="hero-title">
+      <img class="hero-logo" src="/app-icon.svg" alt="" width="120" height="120">
+      <p class="badge">Coming to the Mac App Store</p>
+      <h1 id="hero-title">Automations that run on the agents you already use.</h1>
+      <p class="lead">
+        For developers on the Mac: HarmFlow runs Claude Code and Codex on a schedule, and follows every execution as it
+        happens.
+      </p>
+      <a class="cta" href="https://github.com/harmflow/harmflow-app">Follow HarmFlow on GitHub</a>
+      <p class="community">
+        Prefer to build it yourself? The community edition
+        <a href="https://github.com/harmflow/harmflow-app#quick-start">builds from the source</a>.
+      </p>
 
-      <p class="notice">
-        <strong>This site is under construction.</strong>
-        <span>Follow the project on <a href="https://github.com/harmflow">GitHub</a>.</span>
-      </p>
-      <p class="notice" lang="pt-BR">
-        <strong>Este site está em construção.</strong>
-        <span>Acompanhe o projeto no <a href="https://github.com/harmflow">GitHub</a>.</span>
-      </p>
-      <p class="notice" lang="es-ES">
-        <strong>Este sitio está en construcción.</strong>
-        <span>Sigue el proyecto en <a href="https://github.com/harmflow">GitHub</a>.</span>
-      </p>
-    </div>
+      <figure class="app">
+        <div class="window" role="img" aria-label="A drawing of HarmFlow's Executions screen: two tasks running, one on
+          Claude Code and one on Codex, and a third that moved to Codex when Claude Code's quota ran out">
+          <div class="window-bar"><i></i><i></i><i></i></div>
+          <div class="window-body">
+            <ul class="window-nav">
+              <li>Overview</li>
+              <li class="current">Executions</li>
+              <li>Tasks</li>
+              <li>History</li>
+              <li>Settings</li>
+            </ul>
+            <div class="window-main">
+              <p class="window-title">Executions</p>
+              <div class="run">
+                <p>Implement ready issues<small>acme/api · started 02:00</small></p>
+                <span class="tag">claude-code</span><span class="tag running">running</span>
+              </div>
+              <div class="run">
+                <p>Weekly dependency report<small>script · started 02:05</small></p>
+                <span class="tag">codex</span><span class="tag running">running</span>
+              </div>
+              <div class="run">
+                <p>Triage new issues<small>quota exhausted on claude-code → codex</small></p>
+                <span class="tag">codex</span><span class="tag">succeeded</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>A drawing of the desktop app, until the showroom has its screenshots.</figcaption>
+      </figure>
+    </section>
+
+    <section class="feature" aria-labelledby="feature-schedule">
+      <div class="feature-text">
+        <h2 id="feature-schedule">One file, one schedule.</h2>
+        <p>
+          Every task is one YAML file: its prompt, its harness, and when it runs, on a cron or an interval. A run the
+          Mac slept through runs when it wakes.
+        </p>
+      </div>
+      <pre class="feature-art" aria-label="Part of a task's YAML file"><code>schedule:
+  cron: "0 2 * * 1-5"   <span class="comment"># weeknights at 02:00</span>
+  missedRun:
+    policy: run_on_resume  <span class="comment"># asleep? run on wake</span></code></pre>
+    </section>
+
+    <section class="feature" aria-labelledby="feature-live">
+      <div class="feature-text">
+        <h2 id="feature-live">Every execution, live.</h2>
+        <p>
+          The harness reports its progress as it works. The desktop app shows each event as it arrives, and the report
+          the session leaves when it ends.
+        </p>
+      </div>
+      <ol class="feature-art events" aria-label="A drawing of an execution's events">
+        <li><time>02:00:01</time> Started on claude-code</li>
+        <li><time>02:00:03</time> Workspace ready</li>
+        <li><time>02:04:18</time> Progress: tests pass</li>
+        <li><time>02:07:40</time> Report written</li>
+      </ol>
+    </section>
+
+    <section class="feature" aria-labelledby="feature-failover">
+      <div class="feature-text">
+        <h2 id="feature-failover">Quota out? It keeps going.</h2>
+        <p>
+          When a harness's quota runs out, or the harness is unavailable, the task moves to the next harness you named,
+          and HarmFlow tells you.
+        </p>
+      </div>
+      <div class="feature-art failover" role="img" aria-label="A drawing of a failover: Claude Code's quota is
+        exhausted, and the task moves to Codex">
+        <span class="harness spent">claude-code<small>quota exhausted</small></span>
+        <span class="arrow">→</span>
+        <span class="harness">codex<small>running</small></span>
+      </div>
+    </section>
+
+    <section class="closing" aria-labelledby="closing-title">
+      <h2 id="closing-title">Your harness does the work.</h2>
+      <p>HarmFlow runs it on time, watches it, and tells you how it went. Follow it on its way to the Mac App Store.</p>
+      <a class="cta" href="https://github.com/harmflow/harmflow-app">Follow HarmFlow on GitHub</a>
+    </section>
   </main>
   <footer class="site-footer">
     <div class="footer-about">
