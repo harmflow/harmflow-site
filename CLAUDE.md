@@ -11,6 +11,9 @@ This repository is **public**, history and issues included. Never write personal
 task-manager project or task IDs, account IDs, personal e-mail addresses — nor secrets or unannounced work.
 Personal workflow guidance lives in an untracked `CLAUDE.md` outside the clone.
 
+The site never names a person as HarmFlow's owner, author, or copyright holder — not on a page, in its metadata, or in
+a file it serves. HarmFlow is both the app and the company: the copyright and the trademark are HarmFlow's.
+
 Never cite a record of the private documentation repository — a specification, ADR, or decision — by ID, link, or
 path, and never reference its issues, in files, commits, issues, or pull requests. Describe the behavior in plain
 words; a neutral term such as "the specification" or "a decision" is fine. The private documentation links the public
