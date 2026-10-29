@@ -2,7 +2,7 @@
 
 The source of the product website of [HarmFlow](https://github.com/harmflow), the local-first desktop app that
 schedules, runs, and monitors automations through the agent harnesses already on your machine — Claude Code and Codex.
-The site will be published at `harmflow.com`.
+The site is published at [`harmflow.com`](https://harmflow.com).
 
 > [!NOTE]
 > **Under construction.** `harmflow.com` serves a placeholder page for now. The first pages are open
@@ -18,6 +18,7 @@ The site will be published at `harmflow.com`.
 | [`docs/site.md`](docs/site.md) | What the site will be: static pages with no build step, three languages, nothing from another host |
 | [`CLAUDE.md`](CLAUDE.md) | Guidance for coding agents that work in this repository |
 | [`.github/scripts/`](.github/scripts/) | The site's checks and their tests |
+| [`scripts/dns-cutover-wizard.sh`](scripts/dns-cutover-wizard.sh) | Walks the domain's owner through pointing `harmflow.com` at GitHub Pages at GoDaddy and enforcing HTTPS, checking each record; safe to re-run |
 
 ## Checks
 
