@@ -8,6 +8,7 @@
   <meta name="robots" content="noindex">
   <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
   <!-- GitHub Pages answers every path the site does not hold with this one page, at any depth, so every link and
        asset here is an absolute path. Its own styles stay here, since no other page uses them. -->
   <style>
@@ -17,7 +18,7 @@
     .not-found .home { color: var(--text); font-weight: 600; }
   </style>
 </head>
-<body>
+<body data-page="not-found">
   <a class="skip-link" href="#content">Skip to content</a>
   <header class="site-header">
     <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
@@ -58,7 +59,7 @@
           <li><a href="/privacy/">Privacy</a></li>
           <li><a href="/support/">Support</a></li>
           <li><a href="https://github.com/harmflow">GitHub</a></li>
-          <!-- The link that reopens the analytics consent choice goes here. -->
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
         </ul>
       </div>
     </nav>
