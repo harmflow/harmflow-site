@@ -19,6 +19,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#content">Skip to content</a>
@@ -36,7 +37,7 @@
   <main id="content">
     <article class="prose">
       <h1>Privacy policy</h1>
-      <p class="updated">Last updated: October 29, 2026</p>
+      <p class="updated">Last updated: October 30, 2026</p>
       <p>This policy covers the HarmFlow app and this website, harmflow.com: what each one collects, who receives it, and
         the choices you have.</p>
 
@@ -73,7 +74,7 @@
       <h2 id="analytics">Analytics</h2>
       <p>The website measures its visits with Google Analytics 4, and only if you accept. A banner asks for your choice,
         with Accept and Reject given equal weight. Until you accept, a page loads nothing from Google, sends nothing to
-        Google, and sets no analytics cookie. Until the website shows that banner, it runs no analytics at all.</p>
+        Google, and sets no analytics cookie.</p>
       <p>Once you accept, the website measures only:</p>
       <ul>
         <li>the pages you view;</li>
@@ -93,9 +94,9 @@
         what Google does with it.</p>
 
       <h3 id="withdraw">Withdrawing your consent</h3>
-      <p>Your choice is kept in your browser. To withdraw your consent, or to give it later, use the analytics link in the
-        footer of every page, which reopens the choice. Withdrawing stops the measurement and removes the analytics
-        cookies.</p>
+      <p>Your choice is kept in your browser's local storage, not in a cookie. To withdraw your consent, or to give it
+        later, use the Analytics choice link in the footer of every page, which reopens the choice. Withdrawing stops the
+        measurement and removes the analytics cookies.</p>
 
       <h2 id="changes">Changes and questions</h2>
       <p>When what the app or the website collects changes, this policy changes with it, and the date at its top says when
@@ -124,7 +125,7 @@
           <li><a href="/privacy/">Privacy</a></li>
           <li><a href="/support/">Support</a></li>
           <li><a href="https://github.com/harmflow">GitHub</a></li>
-          <!-- The link that reopens the analytics consent choice goes here. -->
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
         </ul>
       </div>
     </nav>
