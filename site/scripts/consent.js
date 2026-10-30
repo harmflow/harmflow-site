@@ -4,9 +4,10 @@
    On a visitor's first page a banner asks for consent to Google Analytics 4, with Accept and Reject of equal weight.
    The choice is kept in the browser's localStorage, never in a cookie, and the banner does not show again. Until the
    kept choice is Accept, the page loads nothing from Google and sets no analytics cookie: Google's tag is added to the
-   page only after Accept. Once it is, it measures three kinds of event and nothing else — the page views, the clicks
-   on the landing page's primary call to action, and the visits to the 404 page — with no user identifier of the
-   site's own, and with Google signals and ad personalization off.
+   page only after Accept. Once it is, the site asks the tag for three kinds of event and nothing else — the page
+   views, the clicks on the landing page's primary call to action, and the visits to the 404 page — with no user
+   identifier of the site's own, and with Google signals and ad personalization off. Google's tag adds, as on every
+   site, the first visit, the start of each visit, and the time a page is in focus, which no setting turns off.
 
    The footer's analytics link reopens the choice; without JavaScript it leads to the privacy policy's part on
    withdrawing. Rejecting after an Accept stops the measurement, removes the analytics cookies, and reloads the page,
