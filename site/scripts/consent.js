@@ -13,7 +13,8 @@
    withdrawing. Rejecting after an Accept stops the measurement, removes the analytics cookies, and reloads the page,
    so the tag already loaded sends nothing more.
 
-   .github/scripts/check-consent.py proves each of these in a browser. */
+   .github/scripts/check-consent.py proves each of these in a browser, against a stand-in for Google's tag: it sees
+   what the site asks the tag to send, not the events the tag adds on its own. */
 (function () {
   "use strict";
 
