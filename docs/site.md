@@ -17,8 +17,10 @@
 - **Analytics only after Accept.** On a visitor's first page, a banner asks for consent to Google Analytics 4, with
   Accept and Reject of equal weight, and keeps the choice in the browser's `localStorage`. After Accept, the site
   measures the page views, the clicks on the landing page's primary call to action (`main a.cta`), and the visits to
-  the 404 page, and nothing else; the footer's analytics link reopens the choice, and Reject then removes the
-  analytics cookies. The property's measurement ID sits only in `site/scripts/consent.js`.
+  the 404 page. Google's tag adds what Google Analytics records on every site and no setting turns off — the first
+  visit, the start of each visit, and the time a page is in focus — and the property's own settings keep anything
+  else out. The footer's analytics link reopens the choice, and Reject then removes the analytics cookies. The
+  property's measurement ID sits only in `site/scripts/consent.js`.
 - **Pages.** The landing page at `/`, the privacy policy at `/privacy/`, and the support page at `/support/`. The
   guide, the reference, and the showroom are being written, each an
   [issue](https://github.com/harmflow/harmflow-site/issues) in this repository.
