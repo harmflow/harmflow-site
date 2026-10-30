@@ -18,7 +18,7 @@
 
   // The site's Google Analytics 4 property, which belongs to a HarmFlow account. The one account-linked identifier
   // the repository holds, and only here.
-  var MEASUREMENT_ID = "G-XXXXXXXXXX";
+  var MEASUREMENT_ID = "G-X0TY5Z9VFR";
 
   var STORAGE_KEY = "harmflow.analytics-consent";
   var GRANTED = "granted";
