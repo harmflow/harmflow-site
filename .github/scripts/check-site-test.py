@@ -121,6 +121,17 @@ NOT_FOUND = """<!doctype html>
 </html>
 """
 
+# The header of a page of the site in en-US only: no selector, since there is no other language to lead to.
+EN_US_HEADER = '<header>\n  <a href="/">HarmFlow</a>\n</header>'
+
+# The 404 page as the site publishes it in en-US only: its pt-BR and es-ES paragraphs taken out.
+NOT_FOUND_EN_US = NOT_FOUND[: NOT_FOUND.index('  <p lang="pt-BR">')] + NOT_FOUND[NOT_FOUND.index("</main>") :]
+
+
+def line_of(text, fragment):
+    """The line of TEXT that holds FRAGMENT, counted from 1."""
+    return text[: text.index(fragment)].count("\n") + 1
+
 
 def sitemap(rels):
     """A sitemap that lists the pages RELS by their published address."""
@@ -153,6 +164,15 @@ class CheckSiteTest(unittest.TestCase):
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
+
+    def en_us_only(self):
+        """The site as it is published for now: en-US pages with no selector, and a 404 page in en-US."""
+        for _, prefix in PREFIXES[1:]:
+            shutil.rmtree(os.path.join(self.root, prefix))
+        for slug in SLUGS:
+            self.write(slug, page("en-US", slug, header_html=EN_US_HEADER))
+        self.write("404.html", NOT_FOUND_EN_US)
+        self.write("sitemap.xml", sitemap(SLUGS))
 
     def sparse(self, rel, size):
         """A file of SIZE bytes that takes no room on disk."""
@@ -199,18 +219,12 @@ class CheckSiteTest(unittest.TestCase):
 
     # Published languages.
 
-    # The site as it is published for now: en-US pages with no selector, and a 404 page in en-US.
     def test_the_site_in_en_us_only_passes_by_default(self):
-        for _, prefix in PREFIXES[1:]:
-            shutil.rmtree(os.path.join(self.root, prefix))
-        for slug in SLUGS:
-            self.write(slug, page("en-US", slug, header_html='<header>\n  <a href="/">HarmFlow</a>\n</header>'))
-        translations = NOT_FOUND[NOT_FOUND.index('  <p lang="pt-BR">') : NOT_FOUND.index("</main>")]
-        self.write("404.html", NOT_FOUND.replace(translations, ""))
-        self.write("sitemap.xml", sitemap(SLUGS))
+        self.en_us_only()
         self.assertPasses(languages=[])
 
     def test_a_page_in_a_language_not_published_fails_naming_it(self):
+        self.write("404.html", NOT_FOUND_EN_US)
         lines = self.assertFails(
             "unpublished: pt-br/privacy/index.html is a pt-BR page, and the site publishes only en-US",
             "unpublished: es-es/index.html is a es-ES page",
@@ -218,6 +232,78 @@ class CheckSiteTest(unittest.TestCase):
         )
         self.assertEqual(len([line for line in lines if "unpublished:" in line]), 2 * len(SLUGS), lines)
         self.assertEqual([line for line in lines if "parity:" in line], [], lines)
+        # Each of those pages declares its own prefix's language, so only its prefix fails it.
+        self.assertEqual([line for line in lines if "languages:" in line], [], lines)
+
+    # Declared languages.
+
+    def test_a_page_that_declares_no_language_fails_naming_it(self):
+        self.write("privacy/index.html", page("en-US", "privacy/index.html").replace('<html lang="en-US">', "<html>"))
+        self.write("es-es/index.html", page("es-ES", "index.html").replace('<html lang="es-ES">', '<html lang="">'))
+        lines = self.assertFails(
+            "languages: privacy/index.html declares no language on its root element; it is en-US",
+            "languages: es-es/index.html declares no language on its root element; it is es-ES",
+        )
+        self.assertEqual(len([line for line in lines if "languages:" in line]), 2, lines)
+
+    def test_a_page_that_declares_another_language_than_its_prefix_fails_naming_it(self):
+        self.write("index.html", page("en-US", "index.html").replace('<html lang="en-US">', '<html lang="pt-BR">'))
+        text = page("pt-BR", "support/index.html").replace('<html lang="pt-BR">', '<html lang="en-US">')
+        self.write("pt-br/support/index.html", text)
+        lines = self.assertFails(
+            "languages: index.html declares pt-BR on its root element, not en-US",
+            "languages: pt-br/support/index.html declares en-US on its root element, not pt-BR",
+        )
+        self.assertEqual(len([line for line in lines if "languages:" in line]), 2, lines)
+
+    def test_a_root_page_that_declares_another_language_fails_by_default(self):
+        self.en_us_only()
+        text = page("en-US", "support/index.html", header_html=EN_US_HEADER)
+        self.write("support/index.html", text.replace('<html lang="en-US">', '<html lang="es-ES">'))
+        lines = self.assertFails(
+            "languages: support/index.html declares es-ES on its root element, not en-US", languages=[]
+        )
+        self.assertEqual(lines, [lines[0]], lines)
+
+    def test_a_declared_language_in_another_case_passes(self):
+        self.en_us_only()
+        self.write("404.html", NOT_FOUND_EN_US.replace('<html lang="en-US">', '<html lang="en-us">'))
+        text = page("en-US", "index.html", header_html=EN_US_HEADER)
+        self.write("index.html", text.replace('<html lang="en-US">', '<html lang="EN-us">'))
+        self.assertPasses(languages=[])
+
+    def test_the_root_404_page_must_declare_en_us(self):
+        self.write("404.html", NOT_FOUND.replace('<html lang="en-US">', '<html lang="pt-BR">'))
+        lines = self.assertFails("languages: 404.html declares pt-BR on its root element, not en-US")
+        self.assertEqual(len([line for line in lines if "languages:" in line]), 1, lines)
+
+    def test_an_element_marked_with_a_language_not_published_fails_naming_its_line(self):
+        self.en_us_only()
+        body = '<p lang="pt-br">Suporte</p>'
+        text = page("en-US", "support/index.html", header_html=EN_US_HEADER, body=body)
+        self.write("support/index.html", text)
+        lines = self.assertFails(
+            "languages: support/index.html:%d: an element is marked pt-br, a language the site does not publish"
+            % line_of(text, body),
+            languages=[],
+        )
+        self.assertEqual(lines, [lines[0]], lines)
+
+    def test_the_404_page_with_its_translations_fails_by_default(self):
+        self.en_us_only()
+        self.write("404.html", NOT_FOUND)
+        lines = self.assertFails(
+            "languages: 404.html:%d: an element is marked pt-BR" % line_of(NOT_FOUND, '<p lang="pt-BR">'),
+            "languages: 404.html:%d: an element is marked es-ES" % line_of(NOT_FOUND, '<p lang="es-ES">'),
+            languages=[],
+        )
+        self.assertEqual(len([line for line in lines if "languages:" in line]), 2, lines)
+
+    def test_an_element_marked_with_a_published_or_unknown_language_passes(self):
+        self.en_us_only()
+        body = '<p lang="en">Support</p> <span lang="fr-FR">Assistance</span> <span lang="">?</span>'
+        self.write("support/index.html", page("en-US", "support/index.html", header_html=EN_US_HEADER, body=body))
+        self.assertPasses(languages=[])
 
     def test_an_unknown_language_is_a_usage_error(self):
         rc, _, err = self.check(languages=["--languages", "en-US,fr-FR"])

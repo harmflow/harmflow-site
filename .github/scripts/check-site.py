@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Checks the site's files as committed, with no build step: that no page sits under a language the site does not
-publish, the parity of the languages it does, the header and footer every page of one language shares, the internal
-links and #anchors, the media budget, the metadata search engines and link previews read: each page's canonical
-address, description, and Open Graph tags, the sitemap that lists the pages, and the robots.txt that points to it, and
-the landing page: its primary call to action leads to harmflow-app on GitHub and comes before the community edition's
-link to the build instructions, and the page says that HarmFlow is coming to the Mac App Store and links to no store
-page yet. It names each problem it finds on stderr, one per line, and exits 1 when it finds any. The Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves
+publish, that each page declares the language of the prefix it sits under on its root element and marks no element
+with a language the site does not publish, the parity of the languages it does, the header and footer every page of
+one language shares, the internal links and #anchors, the media budget, the metadata search engines and link previews
+read: each page's canonical address, description, and Open Graph tags, the sitemap that lists the pages, and the
+robots.txt that points to it, and the landing page: its primary call to action leads to harmflow-app on GitHub and
+comes before the community edition's link to the build instructions, and the page says that HarmFlow is coming to the
+Mac App Store and links to no store page yet. It names each problem it finds on stderr, one per line, and exits 1 when
+it finds any. The Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves
 each check on a tree of its own that breaks it.
 
 Usage: check-site.py [--languages en-US,pt-BR,es-ES] [ROOT]
@@ -157,6 +159,8 @@ class Page(HTMLParser):
         self.hrefs = []  # (line, href), every href of the page, the head's included
         self.body_text = []  # the text of the body, what the visitor reads
         self._in_body = False
+        self.declared = None  # the lang of the root element, "" when it has none
+        self.marked = []  # (line, lang) of every other element with a lang
         self._sectioning = 0
         self._capture = None
         self._depth = 0
@@ -177,6 +181,10 @@ class Page(HTMLParser):
             self.hrefs.append((line, named["href"]))
             if tag == "a":
                 self.anchors.append((line, named["href"].strip(), "cta" in (named.get("class") or "").split()))
+        if tag == "html" and self.declared is None:
+            self.declared = (named.get("lang") or "").strip()
+        elif named.get("lang") is not None:
+            self.marked.append((line, named["lang"].strip()))
         for name, value in attrs:
             if value is None:
                 continue
@@ -243,6 +251,28 @@ def check_unpublished(pages, published):
             problems.append(
                 "unpublished: %s is a %s page, and the site publishes only %s" % (rel, language, ", ".join(published))
             )
+    return problems
+
+
+def check_declared_languages(pages, published):
+    """Every page's root element declares the language of the prefix it sits under, en-US at the root and so the root
+    404 page too, and no element inside a page is marked with a language the script knows and the site does not
+    publish. Languages are BCP 47 tags, compared without regard to case; an empty lang declares none, and a lang the
+    script does not know is left alone."""
+    problems = []
+    unpublished = set(language.lower() for language, _ in LANGUAGES if language not in published)
+    for rel, page in pages.items():
+        expected, _ = language_of(rel)
+        if not page.declared:
+            problems.append("languages: %s declares no language on its root element; it is %s" % (rel, expected))
+        elif page.declared.lower() != expected.lower():
+            problems.append("languages: %s declares %s on its root element, not %s" % (rel, page.declared, expected))
+        for line, lang in page.marked:
+            if lang.lower() in unpublished:
+                problems.append(
+                    "languages: %s:%d: an element is marked %s, a language the site does not publish"
+                    % (rel, line, lang)
+                )
     return problems
 
 
@@ -503,6 +533,7 @@ def main(argv):
     )
     site_pages = list(pages)
     problems = check_unpublished(pages, published)
+    problems += check_declared_languages(pages, published)
     problems += check_parity(pages, published)
     problems += check_shared_blocks(root, pages, published)
     site = OrderedDict((rel, pages[rel]) for rel in site_pages)
