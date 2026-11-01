@@ -4,11 +4,13 @@ publish, that each page declares the language of the prefix it sits under on its
 with a language the site does not publish, the parity of the languages it does, the header and footer every page of
 one language shares, the internal links and #anchors, the media budget, the metadata search engines and link previews
 read: each page's canonical address, description, and Open Graph tags, the sitemap that lists the pages, and the
-robots.txt that points to it, and the landing page: its primary call to action leads to harmflow-app on GitHub and
-comes before the community edition's link to the build instructions, and the page says that HarmFlow is coming to the
-Mac App Store and links to no store page yet. It names each problem it finds on stderr, one per line, and exits 1 when
-it finds any. The Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves
-each check on a tree of its own that breaks it.
+robots.txt that points to it, the landing page: its primary call to action leads to harmflow-app on GitHub and comes
+before the community edition's link to the build instructions, and the page says that HarmFlow is coming to the Mac
+App Store and links to no store page yet, and what two pages of each published language must say: the privacy
+policy's five parts, each with a heading and text, and its naming of Google Analytics; the support page's link to
+harmflow-app's issues, and no e-mail address on it. It names each problem it finds on stderr, one per line, and exits
+1 when it finds any. The Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py
+proves each check on a tree of its own that breaks it.
 
 Usage: check-site.py [--languages en-US,pt-BR,es-ES] [ROOT]
 
@@ -84,6 +86,31 @@ COMMUNITY_EDITION = "https://github.com/harmflow/harmflow-app#quick-start"
 COMING_TO_THE_STORE = "coming to the mac app store"
 STORE_HOST = "apps.apple.com"
 
+# The privacy policy's parts, by the id of each one's heading, and the support page, in every published language.
+PRIVACY = "privacy/index.html"
+PRIVACY_PARTS = (
+    ("app", "the HarmFlow app"),
+    ("website", "this website"),
+    ("analytics", "analytics"),
+    ("google", "how Google processes the data"),
+    ("withdraw", "withdrawing consent"),
+)
+SUPPORT = "support/index.html"
+
+# Where the support page leads for defects and requests: this address, or one under it.
+ISSUES = "https://github.com/harmflow/harmflow-app/issues"
+
+# A plain e-mail address, name@domain.tld, in a page's visible text.
+EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")
+
+HEADINGS = ("h1", "h2", "h3", "h4", "h5", "h6")
+
+# Elements with no end tag, which never hold another, and the ones whose text no visitor reads.
+VOID = (
+    "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr",
+)
+HIDDEN = ("head", "script", "style", "template")
+
 
 def language_of(rel):
     """The language of a page and its slug, the path it has in every language."""
@@ -143,7 +170,8 @@ def references(name, value):
 
 
 class Page(HTMLParser):
-    """One HTML file: the ids its #anchors may name, the references it makes, and its header's and footer's tokens."""
+    """One HTML file: the ids its #anchors may name, the references it makes, its header's and footer's tokens, its
+    visible text, and the outline its headings give that text."""
 
     def __init__(self, rel):
         super().__init__(convert_charrefs=True)
@@ -161,6 +189,11 @@ class Page(HTMLParser):
         self._in_body = False
         self.declared = None  # the lang of the root element, "" when it has none
         self.marked = []  # (line, lang) of every other element with a lang
+        self.text = []  # the visible text, a run of words per piece
+        # In document order: ("heading", level, id, depth) where depth is the open elements' count around it,
+        # ("text",) for visible text outside any heading, and ("end", depth) when an element closes, depth after.
+        self.outline = []
+        self._open = []  # the open elements, outermost first
         self._sectioning = 0
         self._capture = None
         self._depth = 0
@@ -169,6 +202,10 @@ class Page(HTMLParser):
     def handle_starttag(self, tag, attrs):
         line = self.getpos()[0]
         named = dict(attrs)
+        if tag in HEADINGS:
+            self.outline.append(("heading", int(tag[1]), named.get("id"), len(self._open)))
+        if tag not in VOID:
+            self._open.append(tag)
         if tag == "link" and (named.get("rel") or "").lower() == "canonical" and self.canonical is None:
             self.canonical = named.get("href") or ""
         if tag == "meta" and (named.get("name") or "").lower() == "description" and self.description is None:
@@ -203,6 +240,12 @@ class Page(HTMLParser):
             self._sectioning += 1
 
     def handle_endtag(self, tag):
+        # An end tag closes its element and any left open inside it, as a browser does; one with no open element is
+        # ignored.
+        if tag in self._open:
+            while self._open.pop() != tag:
+                pass
+            self.outline.append(("end", len(self._open)))
         if tag in SECTIONING and self._sectioning:
             self._sectioning -= 1
         if self._capture:
@@ -219,6 +262,10 @@ class Page(HTMLParser):
             self._tokens.append(("text", text, None))
         if self._in_body and text:
             self.body_text.append(text)
+        if text and not any(tag in HIDDEN for tag in self._open):
+            self.text.append(text)
+            if not any(tag in HEADINGS for tag in self._open):
+                self.outline.append(("text",))
 
 
 def read_page(root, rel):
@@ -514,6 +561,69 @@ def check_landing(pages):
     return problems
 
 
+def part_has_text(page, part_id):
+    """Whether a part has visible text, outside any heading, between its heading and the next heading of any level, or
+    the end of the element that holds its heading: a lower heading's text is its own part's, not this one's. None when
+    no heading has the part's id."""
+    for i, event in enumerate(page.outline):
+        if event[0] == "heading" and event[2] == part_id:
+            depth = event[3]
+            for later in page.outline[i + 1 :]:
+                if later[0] == "text":
+                    return True
+                if later[0] == "heading":
+                    return False
+                if later[0] == "end" and later[1] < depth:
+                    return False
+            return False
+    return None
+
+
+def published_pages(pages, published, slug):
+    """The page at SLUG in each published language the tree holds."""
+    return [rel for rel in pages if language_of(rel)[1] == slug and language_of(rel)[0] in published]
+
+
+def check_privacy(pages, published):
+    """Each published language's privacy policy has a heading for each of its five parts, by the part's id, with text
+    after it, and names Google Analytics. A tree with no privacy policy has nothing to check."""
+    problems = []
+    for rel in published_pages(pages, published, PRIVACY):
+        page = pages[rel]
+        for part_id, part in PRIVACY_PARTS:
+            has_text = part_has_text(page, part_id)
+            if has_text is None:
+                problems.append("privacy: %s has no heading with the id %s, for its part on %s" % (rel, part_id, part))
+            elif not has_text:
+                problems.append(
+                    "privacy: %s: its part on %s (#%s) has no text after its heading" % (rel, part, part_id)
+                )
+        if "Google Analytics" not in " ".join(page.text):
+            problems.append("privacy: %s does not name Google Analytics" % rel)
+    return problems
+
+
+def check_support(pages, published):
+    """Each published language's support page links to harmflow-app's issues, or to an address under them, and gives no
+    e-mail address, by a mailto: link or in its text. Only the support page is read for an address; a tree with no
+    support page has nothing to check."""
+    problems = []
+    for rel in published_pages(pages, published, SUPPORT):
+        page = pages[rel]
+        hrefs = [href for _, href, _ in page.anchors]
+        if not any(href == ISSUES or href.startswith((ISSUES + "/", ISSUES + "?", ISSUES + "#")) for href in hrefs):
+            problems.append("support: %s has no link to %s" % (rel, ISSUES))
+        addresses = OrderedDict()
+        for href in hrefs:
+            if href.lower().startswith("mailto:"):
+                addresses.setdefault(unquote(href[len("mailto:") :].split("?")[0]) or href, None)
+        for address in EMAIL.findall(" ".join(page.text)):
+            addresses.setdefault(address, None)
+        for address in addresses:
+            problems.append("support: %s gives the e-mail address %s; the support page gives none" % (rel, address))
+    return problems
+
+
 def main(argv):
     args = argv[1:]
     published = PUBLISHED
@@ -542,6 +652,8 @@ def main(argv):
     problems += media_problems
     problems += check_metadata(root, site)
     problems += check_landing(site)
+    problems += check_privacy(site, published)
+    problems += check_support(site, published)
     for problem in problems:
         print("check-site: " + problem, file=sys.stderr)
     if problems:
