@@ -42,8 +42,12 @@ when:
   in style, or the banner shows again after a choice; after Accept, the page asks Google's tag to send anything but the
   page view, the click on the landing page's call to action, and the 404 page's visit, or leaves Google signals or ad
   personalization on; after withdrawing through the footer's link, an event is still sent or an analytics cookie
-  remains; or, with JavaScript disabled, a page's content or a link into the site breaks. Google's tag is answered
-  with a stand-in, so no request leaves the machine and no Analytics property is needed.
+  remains; with JavaScript disabled, a page's content or a link into the site breaks; a page loads or holds a script
+  other than the consent's — another file, an inline script, an inline event handler, or a `javascript:` URL — or,
+  after Accept, any but Google's tag; a page's main content reads otherwise without JavaScript than with it after
+  Reject; or, with JavaScript disabled, a page cannot be reached from every page, the 404 page included, by following
+  the site's links. Google's tag is answered with a stand-in, so no request leaves the machine and no Analytics
+  property is needed.
 - **Secrets.** [gitleaks](https://github.com/gitleaks/gitleaks) finds a secret or a credential in the tree.
 
 Each check has its tests, which build a tree that breaks it and expect it to fail. Run them with the standard
