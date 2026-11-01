@@ -55,8 +55,18 @@ def footer(language):
     )
 
 
-def page(language, slug, header_html=None, footer_html=None, body=""):
+# What the landing page, the en-US index.html, must hold: the badge that says HarmFlow is coming to the Mac App Store,
+# a primary call to action to the app on GitHub, and after it the community edition's link to the build instructions.
+BADGE = '<p class="badge">Coming to the Mac App Store</p>'
+CTA = '<a class="cta" href="https://github.com/harmflow/harmflow-app">Follow HarmFlow on GitHub</a>'
+COMMUNITY = '<p>The community edition <a href="https://github.com/harmflow/harmflow-app#quick-start">builds</a>.</p>'
+LANDING = "\n  ".join((BADGE, CTA, COMMUNITY))
+
+
+def page(language, slug, header_html=None, footer_html=None, body="", landing=None):
     home = "./" if slug == "index.html" else "../"
+    if landing is None:
+        landing = LANDING if (language, slug) == ("en-US", "index.html") else ""
     return """<!doctype html>
 <html lang="%(language)s">
 <head>
@@ -80,6 +90,7 @@ def page(language, slug, header_html=None, footer_html=None, body=""):
   <p><a href="https://github.com/harmflow/harmflow-app">The app</a> <a href="mailto:support@example.com">Mail</a></p>
   <img src="/showroom/poster.png" srcset="/showroom/poster.png 1x, https://harmflow.com/showroom/poster.png 2x" alt="">
   <h2 id="contact">Contact</h2>
+  %(landing)s
   %(body)s
 </main>
 %(footer)s
@@ -90,6 +101,7 @@ def page(language, slug, header_html=None, footer_html=None, body=""):
         "served": served(prefix_of(language), slug),
         "header": header_html if header_html is not None else header(language, slug),
         "home": home,
+        "landing": landing,
         "body": body,
         "footer": footer_html if footer_html is not None else footer(language),
     }
@@ -375,6 +387,68 @@ class CheckSiteTest(unittest.TestCase):
     def test_a_robots_txt_that_does_not_point_to_the_sitemap_fails(self):
         self.write("robots.txt", "User-agent: *\nAllow: /\n")
         self.assertFails("metadata: robots.txt has no line Sitemap: https://harmflow.com/sitemap.xml")
+
+    # Landing page.
+
+    def assertLandingFails(self, text, **parts):
+        """The en-US index.html, built from PARTS, fails the landing check with one problem, which holds TEXT."""
+        self.write("index.html", page("en-US", "index.html", **parts))
+        lines = self.assertFails(text)
+        self.assertEqual(len([line for line in lines if "landing:" in line]), 1, lines)
+
+    def test_a_landing_page_with_no_community_edition_link_fails(self):
+        self.assertLandingFails(
+            "landing: index.html has no link to the community edition's build instructions, "
+            "https://github.com/harmflow/harmflow-app#quick-start",
+            landing="\n".join((BADGE, CTA)),
+        )
+
+    def test_a_community_edition_link_before_the_call_to_action_fails(self):
+        self.assertLandingFails(
+            "the community edition's link comes before the first primary call to action",
+            landing="\n".join((BADGE, COMMUNITY, CTA)),
+        )
+
+    def test_a_community_edition_link_that_is_a_call_to_action_fails(self):
+        community = COMMUNITY.replace("<a href", '<a class="cta" href')
+        self.write("index.html", page("en-US", "index.html", landing="\n".join((BADGE, CTA, community))))
+        self.assertFails("landing: index.html:", "the community edition's link is itself a primary call to action")
+
+    # header-cta, the header's link, holds cta only as part of a token, so it is no primary call to action.
+    def test_a_landing_page_with_no_call_to_action_fails(self):
+        self.assertLandingFails(
+            "landing: index.html has no primary call to action (an a.cta)",
+            landing="\n".join((BADGE, CTA.replace('class="cta"', 'class="header-cta"'), COMMUNITY)),
+        )
+
+    def test_a_call_to_action_that_leads_elsewhere_fails(self):
+        elsewhere = '<a class="hero cta" href="https://example.com/harmflow">Download</a>'
+        self.assertLandingFails(
+            "its primary call to action leads to https://example.com/harmflow, "
+            "not https://github.com/harmflow/harmflow-app",
+            landing="\n".join((BADGE, CTA, COMMUNITY, elsewhere)),
+        )
+
+    # The description and Open Graph tags say it, but the visitor reads only the body.
+    def test_a_landing_page_that_does_not_say_it_is_coming_to_the_store_fails(self):
+        text = page("en-US", "index.html", landing="\n".join((CTA, COMMUNITY)))
+        self.write("index.html", text.replace("A page of the fixture.", "Coming to the Mac App Store."))
+        lines = self.assertFails("landing: index.html does not say that HarmFlow is coming to the Mac App Store")
+        self.assertEqual(len([line for line in lines if "landing:" in line]), 1, lines)
+
+    def test_the_store_in_any_case_and_across_elements_passes(self):
+        badge = '<p class="badge">COMING to the <em>Mac</em>\n  App Store</p>'
+        self.write("index.html", page("en-US", "index.html", landing="\n".join((badge, CTA, COMMUNITY))))
+        self.assertPasses()
+
+    # The footer is read too, which also makes it differ from the other pages'.
+    def test_a_link_to_the_mac_app_store_fails_wherever_it_is(self):
+        link = '<a href="https://apps.apple.com/app/harmflow/id1">Get it</a>\n</footer>'
+        self.write("index.html", page("en-US", "index.html", footer_html=footer("en-US").replace("</footer>", link)))
+        lines = self.assertFails(
+            "landing: index.html:", "https://apps.apple.com/app/harmflow/id1 leads to the Mac App Store"
+        )
+        self.assertEqual(len([line for line in lines if "landing:" in line]), 1, lines)
 
     # Media budget.
 
