@@ -37,6 +37,10 @@ when:
 - **Metadata.** A page other than `404.html` lacks its canonical address, its description, or an Open Graph tag;
   its `og:url` is not its canonical address, or its `og:image` is no image of the site; `sitemap.xml` misses a page or
   lists one the site does not hold; or `robots.txt` does not point to the sitemap.
+- **Landing page.** `index.html` has no primary call to action (an `a.cta`), or one leads anywhere but
+  harmflow-app on GitHub; its link to the community edition's build instructions is missing, comes before the first
+  call to action, or is one; its body does not say that HarmFlow is coming to the Mac App Store; or it links to the
+  Mac App Store, where HarmFlow has no page yet.
 - **Consent and analytics.** In a headless browser, over every page and the 404 page: with no choice made, or after
   Reject, a page requests anything from another host or sets an analytics cookie; the banner's Accept and Reject differ
   in style, or the banner shows again after a choice; after Accept, the page asks Google's tag to send anything but the

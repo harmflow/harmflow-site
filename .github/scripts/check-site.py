@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Checks the site's files as committed, with no build step: that no page sits under a language the site does not
 publish, the parity of the languages it does, the header and footer every page of one language shares, the internal
-links and #anchors, the media budget, and the metadata search engines and link previews read: each page's canonical
-address, description, and Open Graph tags, the sitemap that lists the pages, and the robots.txt that points to it. It
-names each problem it finds on stderr, one per line, and exits 1 when it
-finds any. The Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves
+links and #anchors, the media budget, the metadata search engines and link previews read: each page's canonical
+address, description, and Open Graph tags, the sitemap that lists the pages, and the robots.txt that points to it, and
+the landing page: its primary call to action leads to harmflow-app on GitHub and comes before the community edition's
+link to the build instructions, and the page says that HarmFlow is coming to the Mac App Store and links to no store
+page yet. It names each problem it finds on stderr, one per line, and exits 1 when it finds any. The Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves
 each check on a tree of its own that breaks it.
 
 Usage: check-site.py [--languages en-US,pt-BR,es-ES] [ROOT]
@@ -71,6 +72,15 @@ ORIGIN = "https://harmflow.com"
 
 # The Open Graph tags every page but the 404 page declares, so a link to it previews with a title, a text, and an image.
 OPEN_GRAPH = ("og:type", "og:site_name", "og:title", "og:description", "og:url", "og:image")
+
+# The landing page, at /. It leads with the full edition: its primary calls to action, the a elements of class cta,
+# invite the visitor to follow the app on GitHub until its page on the Mac App Store exists, and its body says it is
+# coming there. The community edition comes after them, through a link to the build instructions.
+LANDING = "index.html"
+LANDING_CTA = "https://github.com/harmflow/harmflow-app"
+COMMUNITY_EDITION = "https://github.com/harmflow/harmflow-app#quick-start"
+COMING_TO_THE_STORE = "coming to the mac app store"
+STORE_HOST = "apps.apple.com"
 
 
 def language_of(rel):
@@ -143,6 +153,10 @@ class Page(HTMLParser):
         self.canonical = None
         self.description = None
         self.open_graph = {}  # "og:title": its content
+        self.anchors = []  # (line, href, is a primary call to action), each a element with an href, in the page's order
+        self.hrefs = []  # (line, href), every href of the page, the head's included
+        self.body_text = []  # the text of the body, what the visitor reads
+        self._in_body = False
         self._sectioning = 0
         self._capture = None
         self._depth = 0
@@ -157,6 +171,12 @@ class Page(HTMLParser):
             self.description = (named.get("content") or "").strip()
         if tag == "meta" and (named.get("property") or "").startswith("og:"):
             self.open_graph.setdefault(named["property"], (named.get("content") or "").strip())
+        if tag == "body":
+            self._in_body = True
+        if named.get("href") is not None:
+            self.hrefs.append((line, named["href"]))
+            if tag == "a":
+                self.anchors.append((line, named["href"].strip(), "cta" in (named.get("class") or "").split()))
         for name, value in attrs:
             if value is None:
                 continue
@@ -189,6 +209,8 @@ class Page(HTMLParser):
         text = " ".join(data.split())
         if self._capture and text:
             self._tokens.append(("text", text, None))
+        if self._in_body and text:
+            self.body_text.append(text)
 
 
 def read_page(root, rel):
@@ -417,6 +439,51 @@ def check_metadata(root, pages):
     return problems
 
 
+def check_landing(pages):
+    """The landing page leads with the full edition: it has a primary call to action, and each one leads to the app on
+    GitHub; the community edition's link to the build instructions is there, after the first of them and none of them;
+    the page's body says HarmFlow is coming to the Mac App Store; and no href, the header's and footer's included, leads
+    to the Mac App Store, where HarmFlow has no page yet. A tree with no landing page has none of this to check."""
+    page = pages.get(LANDING)
+    if page is None:
+        return []
+    problems = []
+    ctas = [(line, href) for line, href, cta in page.anchors if cta]
+    if not ctas:
+        problems.append("landing: %s has no primary call to action (an a.cta)" % LANDING)
+    for line, href in ctas:
+        if href != LANDING_CTA:
+            problems.append(
+                "landing: %s:%d: its primary call to action leads to %s, not %s" % (LANDING, line, href, LANDING_CTA)
+            )
+    # Positions in the page's order, not lines, which two links may share.
+    first_cta = next((i for i, (_, _, cta) in enumerate(page.anchors) if cta), None)
+    community = [(i, line, cta) for i, (line, href, cta) in enumerate(page.anchors) if href == COMMUNITY_EDITION]
+    if not community:
+        problems.append(
+            "landing: %s has no link to the community edition's build instructions, %s" % (LANDING, COMMUNITY_EDITION)
+        )
+    for _, line, cta in community:
+        if cta:
+            problems.append(
+                "landing: %s:%d: the community edition's link is itself a primary call to action, so it leads"
+                % (LANDING, line)
+            )
+    if community and first_cta is not None and community[0][0] < first_cta:
+        problems.append(
+            "landing: %s:%d: the community edition's link comes before the first primary call to action (line %d), "
+            "so it leads" % (LANDING, community[0][1], page.anchors[first_cta][0])
+        )
+    if COMING_TO_THE_STORE not in " ".join(page.body_text).lower():
+        problems.append("landing: %s does not say that HarmFlow is coming to the Mac App Store" % LANDING)
+    for line, href in page.hrefs:
+        if (urlsplit(href.strip()).hostname or "") == STORE_HOST:
+            problems.append(
+                "landing: %s:%d: %s leads to the Mac App Store, where HarmFlow has no page yet" % (LANDING, line, href)
+            )
+    return problems
+
+
 def main(argv):
     args = argv[1:]
     published = PUBLISHED
@@ -443,6 +510,7 @@ def main(argv):
     media_problems, media_count, media_total = check_media(root)
     problems += media_problems
     problems += check_metadata(root, site)
+    problems += check_landing(site)
     for problem in problems:
         print("check-site: " + problem, file=sys.stderr)
     if problems:
