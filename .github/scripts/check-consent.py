@@ -3,10 +3,13 @@
 no choice made, or after Reject, a page makes no request to any host but its own and sets no analytics cookie; that
 the banner offers Accept and Reject of equal weight and does not show again once a choice is made; that after Accept
 only the page views, the clicks on the landing page's primary call to action, and the visits to the 404 page are
-measured; that withdrawing through the footer's link stops the measurement and removes the analytics cookies; and that
-with JavaScript disabled every page's content and navigation work and no banner shows. It names each problem it finds
-on stderr, one per line, and exits 1 when it finds any. The Checks workflow (.github/workflows/checks.yml) runs it on
-the checkout, and check-consent-test.py proves each check on a tree of its own that breaks it.
+measured; that withdrawing through the footer's link stops the measurement and removes the analytics cookies; that
+with JavaScript disabled every page's content and navigation work and no banner shows; that a page runs no script but
+the consent's, and Google's tag after Accept; that its main content reads the same with JavaScript disabled as with it
+after Reject; and that, with JavaScript disabled, every page can be reached from every page by following the site's
+links. It names each problem it finds on stderr, one per line, and exits 1 when it finds any. The Checks workflow
+(.github/workflows/checks.yml) runs it on the checkout, and check-consent-test.py proves each check on a tree of its own
+that breaks it.
 
 Usage: check-consent.py [ROOT]
 
@@ -38,6 +41,28 @@ PAGE_NOT_FOUND = "page_not_found"
 
 # The site's host, which the browser resolves to the check's own server.
 SITE_HOST = "harmflow.com"
+
+# The one script a page may load before Accept, or after Reject: the consent's.
+CONSENT_SCRIPT = "/scripts/consent.js"
+
+# Every script a page loads or holds, as the browser rendered it: each <script>, with its src or none; each inline
+# event-handler attribute; and each attribute whose value is a javascript: URL.
+PAGE_SCRIPTS = """() => {
+  const found = [];
+  for (const s of document.scripts) {
+    found.push(s.hasAttribute("src") ? ["src", s.src] : ["inline", ""]);
+  }
+  for (const el of document.querySelectorAll("*")) {
+    for (const a of el.attributes) {
+      if (/^on/i.test(a.name)) {
+        found.push(["handler", el.tagName.toLowerCase() + " " + a.name]);
+      } else if (/^\\s*javascript:/i.test(a.value)) {
+        found.push(["url", el.tagName.toLowerCase() + " " + a.name]);
+      }
+    }
+  }
+  return found;
+}"""
 
 # The stand-in for Google's tag: it records every command the page pushes to the data layer, the ones pushed before it
 # loaded and the ones after, and sets a _ga and a _ga_<container> cookie on the site's registrable domain, as the real
@@ -82,8 +107,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+class Server(http.server.ThreadingHTTPServer):
+    """A browser drops a request it no longer needs when it leaves or closes a page, so a connection the client closed
+    while it was answered is no error, and prints nothing on the stderr the problems go to; any other error still
+    prints its traceback."""
+
+    def handle_error(self, request, client_address):
+        if isinstance(sys.exc_info()[1], ConnectionError):
+            return
+        super().handle_error(request, client_address)
+
+
 def serve(root):
-    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Handler, directory=root))
+    server = Server(("127.0.0.1", 0), functools.partial(Handler, directory=root))
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server
 
@@ -115,10 +151,13 @@ class Browser:
     def visitor(self, javascript=True):
         context = self.browser.new_context(java_script_enabled=javascript)
         context.outside = []  # (the page's path, the URL it requested)
+        context.scripts = []  # every script URL requested, in the site or out of it
 
         def route(r):
             url = r.request.url
             parts = urlsplit(url)
+            if r.request.resource_type == "script":
+                context.scripts.append(url)
             if parts.netloc == self.host:
                 return r.continue_()
             frame = r.request.frame
@@ -350,6 +389,143 @@ def check_without_javascript(browser, paths):
     return problems
 
 
+def scripts_of(browser, context, page, allowed):
+    """The scripts a page loaded or holds that allowed, a test of a script's URL, does not admit, each named once."""
+    found = []
+    for url in context.scripts:
+        if not allowed(url):
+            found.append("loads %s" % shown(browser, url))
+    for kind, detail in page.evaluate(PAGE_SCRIPTS):
+        if kind == "src" and not allowed(detail):
+            found.append("holds a <script src> for %s" % shown(browser, detail))
+        elif kind == "inline":
+            found.append("holds an inline <script>")
+        elif kind == "handler":
+            found.append("holds the inline event handler %s" % detail)
+        elif kind == "url":
+            found.append("holds a javascript: URL in %s" % detail)
+    return sorted(set(found))
+
+
+def shown(browser, url):
+    """A URL as a problem names it: a path for the site's own, the whole URL for another host's."""
+    parts = urlsplit(url)
+    return parts.path if parts.netloc == browser.host else url
+
+
+def check_scripts(browser, paths):
+    """Every page, with no choice made and after Reject, loads and holds no script but the consent's; after Accept,
+    Google's tag is the only other one."""
+    consent = browser.origin + CONSENT_SCRIPT
+
+    def only_consent(url):
+        return url == consent
+
+    def consent_or_tag(url):
+        parts = urlsplit(url)
+        return url == consent or (parts.netloc == TAG_HOST and parts.path == "/gtag/js")
+
+    problems = []
+    for choice, allowed in ((None, only_consent), ("denied", only_consent), ("granted", consent_or_tag)):
+        when = {None: "with no choice made", "denied": "after Reject", "granted": "after Accept"}[choice]
+        context = browser.visitor()
+        page = context.new_page()
+        if choice:
+            page.goto(browser.origin + paths[0], wait_until="load")
+            if not banner_shown(page):
+                problems.append("scripts: %s shows no banner to choose from" % paths[0])
+                context.close()
+                continue
+            page.click("[data-consent-banner] button[data-consent=%s]" % choice)
+        for path in paths:
+            del context.scripts[:]
+            page.goto(browser.origin + path, wait_until="load")
+            if choice == "granted":
+                tag_ran(page)
+            found = scripts_of(browser, context, page, allowed)
+            problems += ["scripts: %s %s %s" % (path, what, when) for what in found]
+        context.close()
+    return problems
+
+
+def main_text(page):
+    main = page.locator("main")
+    if main.count() == 0:
+        return None
+    return " ".join(main.first.inner_text().split())
+
+
+def check_content(browser, paths):
+    """Every page's main content, with JavaScript disabled, reads as it does with JavaScript after Reject."""
+    problems = []
+    without = browser.visitor(javascript=False)
+    with_js = browser.visitor()
+    page = open_page(with_js, browser.origin, paths[0])
+    if banner_shown(page):
+        page.click("[data-consent-banner] button[data-consent=denied]")
+    for path in paths:
+        page.goto(browser.origin + path, wait_until="load")
+        enabled = main_text(page)
+        off = open_page(without, browser.origin, path)
+        disabled = main_text(off)
+        off.close()
+        if enabled is not None and enabled != disabled:
+            problems.append(
+                "content: %s's main content differs without JavaScript from what it shows with it after Reject" % path
+            )
+    without.close()
+    with_js.close()
+    return problems
+
+
+def link_target(href, paths):
+    """The page a link into the site leads to, one of paths, or None for a file that is no page."""
+    path = urlsplit(href).path
+    if path.endswith("/index.html"):
+        path = path[: -len("index.html")]
+    if path in paths:
+        return path
+    if path + "/" in paths:
+        return path + "/"
+    return None
+
+
+def unreachable(links, pages, starts):
+    """Each page of pages that following links cannot reach from one of starts, with the first start it cannot be
+    reached from. links maps a page to the pages its links lead to."""
+    missed = {}
+    for start in starts:
+        seen = {start}
+        queue = [start]
+        while queue:
+            for target in links.get(queue.pop(0), ()):
+                if target not in seen:
+                    seen.add(target)
+                    queue.append(target)
+        for page in pages:
+            if page not in seen and page not in missed:
+                missed[page] = start
+    return sorted(missed.items())
+
+
+def check_navigation(browser, paths):
+    """With JavaScript disabled, following only the links into the site, every page can be reached from every page and
+    from the 404 page, which itself need not be reachable."""
+    context = browser.visitor(javascript=False)
+    links = {}
+    for path in paths:
+        page = open_page(context, browser.origin, path)
+        hrefs = page.eval_on_selector_all("a[href^='/']", "links => links.map(a => a.getAttribute('href'))")
+        links[path] = sorted({t for t in (link_target(h, paths) for h in hrefs) if t})
+        page.close()
+    context.close()
+    pages = [p for p in paths if p != MISSING_PATH]
+    return [
+        "navigation: without JavaScript, %s cannot be reached by links from %s" % (page, start)
+        for page, start in unreachable(links, pages, paths)
+    ]
+
+
 def main(argv):
     args = argv[1:]
     if len(args) > 1:
@@ -379,6 +555,9 @@ def main(argv):
                 problems += check_reject(browser, paths)
                 problems += check_accept_and_withdraw(browser, paths)
                 problems += check_without_javascript(browser, paths)
+                problems += check_scripts(browser, paths)
+                problems += check_content(browser, paths)
+                problems += check_navigation(browser, paths)
             finally:
                 browser.close()
     finally:
@@ -389,7 +568,7 @@ def main(argv):
         print("check-consent: %d problems" % len(problems), file=sys.stderr)
         return 1
     print("check-consent: ok: %d paths, with no choice, after Reject, after Accept and withdrawal, and without "
-          "JavaScript" % len(paths))
+          "JavaScript; scripts, content, and navigation" % len(paths))
     return 0
 
 
