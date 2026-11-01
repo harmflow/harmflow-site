@@ -43,6 +43,10 @@ when:
   harmflow-app on GitHub; its link to the community edition's build instructions is missing, comes before the first
   call to action, or is one; its body does not say that HarmFlow is coming to the Mac App Store; or it links to the
   Mac App Store, where HarmFlow has no page yet.
+- **Privacy policy and support page.** In each published language: the privacy policy lacks the heading of one of its
+  five parts, found by its `id` (`app`, `website`, `analytics`, `google`, `withdraw`), or a part has no text after its
+  heading, or the policy does not name Google Analytics; the support page has no link to harmflow-app's issues, or
+  gives an e-mail address, by a `mailto:` link or in its text. Only the support page is read for an address.
 - **Consent and analytics.** In a headless browser, over every page and the 404 page: with no choice made, or after
   Reject, a page requests anything from another host or sets an analytics cookie; the banner's Accept and Reject differ
   in style, or the banner shows again after a choice; after Accept, the page asks Google's tag to send anything but the

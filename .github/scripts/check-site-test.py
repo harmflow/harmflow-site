@@ -26,6 +26,27 @@ ALL_LANGUAGES = ["--languages", "en-US,pt-BR,es-ES"]
 SLUGS = ("index.html", "privacy/index.html", "support/index.html")
 MB = 1000 * 1000
 
+# What the privacy policy and the support page of every language say, which their checks read: the policy's five parts,
+# each a heading by its id with text after it, and the support page's link to an address under harmflow-app's issues.
+PRIVACY_PARTS = (
+    ("app", "the HarmFlow app"),
+    ("website", "this website"),
+    ("analytics", "analytics"),
+    ("google", "how Google processes the data"),
+    ("withdraw", "withdrawing consent"),
+)
+PRIVACY = """<h2 id="app">The HarmFlow app</h2>
+  <p>It sends nothing anywhere.</p>
+  <h2 id="website">This website</h2>
+  <p>It sets no cookie of its own.</p>
+  <h2 id="analytics">Analytics</h2>
+  <p>It measures its visits with Google Analytics, once you accept.</p>
+  <h3 id="google">How Google processes the data</h3>
+  <p>Google receives each measured event.</p>
+  <h3 id="withdraw">Withdrawing your consent</h3>
+  <p>The footer's link reopens the choice.</p>"""
+SUPPORT = '<p><a href="https://github.com/harmflow/harmflow-app/issues/new/choose">Open an issue</a></p>'
+
 
 def prefix_of(language):
     return dict(PREFIXES)[language]
@@ -64,9 +85,13 @@ LANDING = "\n  ".join((BADGE, CTA, COMMUNITY))
 
 
 def page(language, slug, header_html=None, footer_html=None, body="", landing=None):
+    """A page of the fixture. The privacy policy holds its parts and the support page its link to the issues, after
+    BODY; every page but the support page has a mailto: link, which only the support page may not."""
     home = "./" if slug == "index.html" else "../"
     if landing is None:
         landing = LANDING if (language, slug) == ("en-US", "index.html") else ""
+    content = {"privacy/index.html": PRIVACY, "support/index.html": SUPPORT}.get(slug, "")
+    mail = "" if slug == "support/index.html" else ' <a href="mailto:support@example.com">Mail</a>'
     return """<!doctype html>
 <html lang="%(language)s">
 <head>
@@ -87,11 +112,12 @@ def page(language, slug, header_html=None, footer_html=None, body="", landing=No
 <main>
   <h1 id="title">A page</h1>
   <p><a href="#title">Title</a> <a href="#top">Top</a> <a href="%(home)s">Home</a></p>
-  <p><a href="https://github.com/harmflow/harmflow-app">The app</a> <a href="mailto:support@example.com">Mail</a></p>
+  <p><a href="https://github.com/harmflow/harmflow-app">The app</a>%(mail)s</p>
   <img src="/showroom/poster.png" srcset="/showroom/poster.png 1x, https://harmflow.com/showroom/poster.png 2x" alt="">
   <h2 id="contact">Contact</h2>
   %(landing)s
   %(body)s
+  %(content)s
 </main>
 %(footer)s
 </body>
@@ -102,7 +128,9 @@ def page(language, slug, header_html=None, footer_html=None, body="", landing=No
         "header": header_html if header_html is not None else header(language, slug),
         "home": home,
         "landing": landing,
+        "mail": mail,
         "body": body,
+        "content": content,
         "footer": footer_html if footer_html is not None else footer(language),
     }
 
@@ -553,6 +581,100 @@ class CheckSiteTest(unittest.TestCase):
             "landing: index.html:", "https://apps.apple.com/app/harmflow/id1 leads to the Mac App Store"
         )
         self.assertEqual(len([line for line in lines if "landing:" in line]), 1, lines)
+
+    # The privacy policy.
+
+    def test_a_privacy_policy_with_no_heading_for_a_part_fails_naming_it(self):
+        for part_id, part in PRIVACY_PARTS:
+            with self.subTest(part=part_id):
+                text = page("en-US", "privacy/index.html").replace(' id="%s"' % part_id, "")
+                self.write("privacy/index.html", text)
+                lines = self.assertFails(
+                    "privacy: privacy/index.html has no heading with the id %s, for its part on %s" % (part_id, part)
+                )
+                self.assertEqual(len([line for line in lines if "privacy:" in line]), 1, lines)
+        self.write("privacy/index.html", page("en-US", "privacy/index.html"))
+        self.assertPasses()
+
+    # A part ends at the next heading of any level, or where the element that holds it ends: an h3's text is not the h2
+    # part's above it, and the footer's text after the last part is not that part's.
+    def test_a_privacy_policy_part_with_no_text_fails_naming_it(self):
+        analytics = "  <p>It measures its visits with Google Analytics, once you accept.</p>\n"
+        cases = (
+            ("app", "the HarmFlow app", (("  <p>It sends nothing anywhere.</p>\n", ""),)),
+            # The page still names Google Analytics, in the google part, so only the empty part fails.
+            (
+                "analytics",
+                "analytics",
+                ((analytics, ""), ("Google receives each", "Google Analytics sends Google each")),
+            ),
+            ("withdraw", "withdrawing consent", (("  <p>The footer's link reopens the choice.</p>", ""),)),
+        )
+        for part_id, part, edits in cases:
+            with self.subTest(part=part_id):
+                text = page("pt-BR", "privacy/index.html")
+                for old, new in edits:
+                    self.assertIn(old, text)
+                    text = text.replace(old, new)
+                self.write("pt-br/privacy/index.html", text)
+                lines = self.assertFails(
+                    "privacy: pt-br/privacy/index.html: its part on %s (#%s) has no text after its heading"
+                    % (part, part_id)
+                )
+                self.assertEqual(len([line for line in lines if "privacy:" in line]), 1, lines)
+
+    def test_a_privacy_policy_that_does_not_name_google_analytics_fails(self):
+        text = page("es-ES", "privacy/index.html").replace("Google Analytics", "a measurement service")
+        self.write("es-es/privacy/index.html", text)
+        self.assertFails("privacy: es-es/privacy/index.html does not name Google Analytics")
+
+    # The support page.
+
+    def test_a_support_page_with_no_link_to_the_issues_fails(self):
+        text = page("en-US", "support/index.html").replace(
+            "https://github.com/harmflow/harmflow-app/issues/new/choose", "https://github.com/harmflow/harmflow-app"
+        )
+        self.write("support/index.html", text)
+        self.assertFails(
+            "support: support/index.html has no link to https://github.com/harmflow/harmflow-app/issues"
+        )
+
+    def test_a_link_to_the_issues_themselves_passes_and_a_lookalike_fails(self):
+        issues = "https://github.com/harmflow/harmflow-app/issues"
+        text = page("en-US", "support/index.html").replace(issues + "/new/choose", issues)
+        self.write("support/index.html", text)
+        self.assertPasses()
+        self.write("support/index.html", text.replace(issues, issues + "-archive"))
+        self.assertFails("support: support/index.html has no link to " + issues)
+
+    def test_a_support_page_with_a_mailto_link_fails_naming_the_address(self):
+        body = '<p><a href="mailto:help@example.com?subject=HarmFlow">Write to us</a></p>'
+        self.write("support/index.html", page("en-US", "support/index.html", body=body))
+        self.assertFails(
+            "support: support/index.html gives the e-mail address help@example.com; the support page gives none"
+        )
+
+    def test_a_support_page_with_an_e_mail_address_in_its_text_fails_naming_it(self):
+        body = "<p>Or write to help@example.com.</p>"
+        self.write("pt-br/support/index.html", page("pt-BR", "support/index.html", body=body))
+        self.assertFails("support: pt-br/support/index.html gives the e-mail address help@example.com")
+
+    def test_an_e_mail_address_on_another_page_passes(self):
+        body = "<p>Or write to help@example.com.</p>"
+        self.write("privacy/index.html", page("en-US", "privacy/index.html", body=body))
+        self.write("index.html", page("en-US", "index.html", body=body))
+        self.assertPasses()
+
+    # With no privacy policy or support page, the footer's links to them fail, and nothing else does.
+    def test_a_tree_with_no_privacy_or_support_page_fails_only_its_links(self):
+        for _, prefix in PREFIXES:
+            shutil.rmtree(os.path.join(self.root, prefix + "privacy"))
+            shutil.rmtree(os.path.join(self.root, prefix + "support"))
+        self.write("sitemap.xml", sitemap(prefix + "index.html" for _, prefix in PREFIXES))
+        lines = self.assertFails(
+            "links: index.html:", "/privacy/ leads to no file", "/support/#contact leads to no file"
+        )
+        self.assertEqual([line for line in lines if not line.startswith("check-site: links: ")], [], lines)
 
     # Media budget.
 
