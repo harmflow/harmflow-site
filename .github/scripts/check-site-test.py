@@ -354,6 +354,24 @@ class CheckSiteTest(unittest.TestCase):
         self.write("es-es/index.html", page("es-ES", "index.html", footer_html=""))
         self.assertFails("shared blocks: es-es/index.html: its footer differs")
 
+    # The site as it is published for now, checked with the default languages.
+    def test_one_en_us_footer_that_differs_fails_naming_its_page(self):
+        self.en_us_only()
+        changed = footer("en-US").replace("Privacy", "Privacy policy")
+        self.write("support/index.html", page("en-US", "support/index.html", EN_US_HEADER, footer_html=changed))
+        lines = self.assertFails("shared blocks: support/index.html: its footer differs", languages=[])
+        blocks = [line for line in lines if "shared blocks:" in line]
+        self.assertEqual(len(blocks), 1, lines)
+        self.assertIn("shared blocks: support/index.html: its footer differs", blocks[0])
+
+    def test_an_en_us_page_with_no_footer_fails(self):
+        self.en_us_only()
+        self.write("privacy/index.html", page("en-US", "privacy/index.html", EN_US_HEADER, footer_html=""))
+        lines = self.assertFails("shared blocks: privacy/index.html: its footer differs", languages=[])
+        blocks = [line for line in lines if "shared blocks:" in line]
+        self.assertEqual(len(blocks), 1, lines)
+        self.assertIn("shared blocks: privacy/index.html: its footer differs", blocks[0])
+
     def test_a_selector_that_leads_to_another_page_fails(self):
         wrong = header("es-ES", "privacy/index.html").replace("/pt-br/privacy/", "/pt-br/support/")
         self.write("es-es/privacy/index.html", page("es-ES", "privacy/index.html", header_html=wrong))
