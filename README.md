@@ -30,6 +30,9 @@ when:
   same English slug in another published language fails too; the root `404.html` is the one exception. A page whose
   root element declares no language, or one other than its prefix's — en-US at the root, `404.html` included — fails,
   and so does an element inside a page marked with the `lang` of a language the site does not publish.
+- **Paths.** The home page at `/`, or one of the five sections at `/docs/guide/`, `/docs/reference/`, `/showroom/`,
+  `/privacy/`, and `/support/`, has no page of its own in en-US: removed, or moved to another slug, even with its links
+  and its sitemap entry.
 - **Shared blocks.** A page's header or footer differs from the other pages of its language. Whitespace does not
   count, and once the site is translated, neither do a language selector's links to the same page in the other
   languages, which differ on every page by design; every other part of the markup must be the same.
