@@ -23,7 +23,22 @@ PREFIXES = (("en-US", ""), ("pt-BR", "pt-br/"), ("es-ES", "es-es/"))
 # The fixture is published in the three languages, so the parity and the shared blocks of each stay proven while the
 # site itself publishes en-US only, check-site.py's default.
 ALL_LANGUAGES = ["--languages", "en-US,pt-BR,es-ES"]
-SLUGS = ("index.html", "privacy/index.html", "support/index.html")
+SLUGS = (
+    "index.html",
+    "docs/guide/index.html",
+    "docs/reference/index.html",
+    "showroom/index.html",
+    "privacy/index.html",
+    "support/index.html",
+)
+# The sections the footer every page shares links to, as the site's does: each one's path and its link's text.
+SECTIONS = (
+    ("docs/guide/", "Guide"),
+    ("docs/reference/", "Reference"),
+    ("showroom/", "Showroom"),
+    ("privacy/", "Privacy"),
+    ("support/#contact", "Support"),
+)
 MB = 1000 * 1000
 
 # What the privacy policy and the support page of every language say, which their checks read: the policy's five parts,
@@ -68,12 +83,10 @@ def header(language, slug):
     return '<header>\n  <a href="/%s">HarmFlow</a>\n  <nav>\n%s  </nav>\n</header>' % (prefix_of(language), selector)
 
 
-def footer(language):
+def footer(language, sections=SECTIONS):
     prefix = prefix_of(language)
-    return '<footer>\n  <a href="/%sprivacy/">Privacy</a>\n  <a href="/%ssupport/#contact">Support</a>\n</footer>' % (
-        prefix,
-        prefix,
-    )
+    links = "".join('  <a href="/%s%s">%s</a>\n' % (prefix, path, text) for path, text in sections)
+    return "<footer>\n%s</footer>" % links
 
 
 # What the landing page, the en-US index.html, must hold: the badge that says HarmFlow is coming to the Mac App Store,
@@ -87,7 +100,7 @@ LANDING = "\n  ".join((BADGE, CTA, COMMUNITY))
 def page(language, slug, header_html=None, footer_html=None, body="", landing=None):
     """A page of the fixture. The privacy policy holds its parts and the support page its link to the issues, after
     BODY; every page but the support page has a mailto: link, which only the support page may not."""
-    home = "./" if slug == "index.html" else "../"
+    home = "./" if slug == "index.html" else "../" * slug.count("/")
     if landing is None:
         landing = LANDING if (language, slug) == ("en-US", "index.html") else ""
     content = {"privacy/index.html": PRIVACY, "support/index.html": SUPPORT}.get(slug, "")
@@ -186,6 +199,17 @@ class CheckSiteTest(unittest.TestCase):
         self.write("styles/site.css", "body { margin: 0; }\n")
         self.write("showroom/poster.png", "not really a png\n")
         self.write("README.md", "Not a page.\n")
+
+    def lay_out(self, slugs, sections):
+        """The site with only the pages SLUGS in every language, each footer linking to SECTIONS, and a sitemap that
+        lists those pages: a change that moves or removes a page together with its links and its sitemap entry."""
+        for language, prefix in PREFIXES:
+            for slug in SLUGS:
+                if slug not in slugs:
+                    os.remove(os.path.join(self.root, prefix + slug))
+            for slug in slugs:
+                self.write(prefix + slug, page(language, slug, footer_html=footer(language, sections)))
+        self.write("sitemap.xml", sitemap(prefix + slug for _, prefix in PREFIXES for slug in slugs))
 
     def write(self, rel, text):
         path = os.path.join(self.root, rel)
@@ -338,6 +362,50 @@ class CheckSiteTest(unittest.TestCase):
         self.assertEqual(rc, 2, err)
         self.assertIn("usage:", err)
 
+    # Paths.
+
+    # Every other check passes a section deleted with its links and its sitemap entry: only this one names it.
+    def test_a_section_removed_with_its_links_fails_naming_it(self):
+        slugs = tuple(slug for slug in SLUGS if slug != "showroom/index.html")
+        self.lay_out(slugs, tuple(section for section in SECTIONS if section[0] != "showroom/"))
+        lines = self.assertFails("paths: /showroom/ has no page: showroom/index.html is missing")
+        self.assertEqual(lines, ["check-site: paths: /showroom/ has no page: showroom/index.html is missing"])
+
+    # Every other check passes a section moved, in every language, with its links and its sitemap entry.
+    def test_a_section_moved_to_another_slug_fails_naming_it(self):
+        slugs = tuple("docs/guia/index.html" if slug == "docs/guide/index.html" else slug for slug in SLUGS)
+        sections = tuple(("docs/guia/", text) if path == "docs/guide/" else (path, text) for path, text in SECTIONS)
+        self.lay_out(slugs, sections)
+        lines = self.assertFails("paths: /docs/guide/ has no page: docs/guide/index.html is missing")
+        self.assertEqual(lines, ["check-site: paths: /docs/guide/ has no page: docs/guide/index.html is missing"])
+
+    def test_each_missing_path_is_one_problem_line(self):
+        self.lay_out(("privacy/index.html",), (("privacy/", "Privacy"),))
+        missing = [
+            "paths: / has no page: index.html is missing",
+            "paths: /docs/guide/ has no page: docs/guide/index.html is missing",
+            "paths: /docs/reference/ has no page: docs/reference/index.html is missing",
+            "paths: /showroom/ has no page: showroom/index.html is missing",
+            "paths: /support/ has no page: support/index.html is missing",
+        ]
+        lines = self.assertFails(*missing)
+        self.assertEqual([line for line in lines if "paths:" in line], ["check-site: " + text for text in missing])
+
+    def test_a_page_below_a_required_path_does_not_stand_for_it(self):
+        slugs = tuple("docs/guide/install/index.html" if slug == "docs/guide/index.html" else slug for slug in SLUGS)
+        sections = tuple(
+            ("docs/guide/install/", text) if path == "docs/guide/" else (path, text) for path, text in SECTIONS
+        )
+        self.lay_out(slugs, sections)
+        lines = self.assertFails("paths: /docs/guide/ has no page: docs/guide/index.html is missing")
+        self.assertEqual(lines, ["check-site: paths: /docs/guide/ has no page: docs/guide/index.html is missing"])
+
+    # The paths are read at the root, in en-US: a translation at the same slug does not stand for one.
+    def test_a_translation_does_not_stand_for_an_en_us_path(self):
+        os.remove(os.path.join(self.root, "privacy/index.html"))
+        lines = self.assertFails("paths: /privacy/ has no page: privacy/index.html is missing")
+        self.assertEqual(len([line for line in lines if "paths:" in line]), 1, lines)
+
     # Parity.
 
     def test_an_en_us_page_with_no_pt_br_version_fails(self):
@@ -346,14 +414,14 @@ class CheckSiteTest(unittest.TestCase):
         self.assertEqual(len([line for line in lines if "parity:" in line]), 1, lines)
 
     def test_an_en_us_page_with_no_es_es_version_fails(self):
-        self.write("showroom/index.html", page("en-US", "showroom/index.html"))
-        self.write("pt-br/showroom/index.html", page("pt-BR", "showroom/index.html"))
-        self.assertFails("parity: es-es/showroom/index.html is missing")
+        self.write("about/index.html", page("en-US", "about/index.html"))
+        self.write("pt-br/about/index.html", page("pt-BR", "about/index.html"))
+        self.assertFails("parity: es-es/about/index.html is missing")
 
     def test_a_translated_page_with_no_en_us_version_fails(self):
-        self.write("pt-br/showroom/index.html", page("pt-BR", "showroom/index.html"))
-        self.write("es-es/showroom/index.html", page("es-ES", "showroom/index.html"))
-        self.assertFails("parity: showroom/index.html is missing")
+        self.write("pt-br/about/index.html", page("pt-BR", "about/index.html"))
+        self.write("es-es/about/index.html", page("es-ES", "about/index.html"))
+        self.assertFails("parity: about/index.html is missing")
 
     def test_a_translated_slug_fails(self):
         os.rename(os.path.join(self.root, "pt-br/privacy"), os.path.join(self.root, "pt-br/privacidade"))
@@ -406,14 +474,11 @@ class CheckSiteTest(unittest.TestCase):
         self.assertFails("shared blocks: es-es/privacy/index.html: its header differs")
 
     def test_two_versions_with_no_majority_name_every_page(self):
-        for slug in SLUGS[1:]:
+        for slug in SLUGS[len(SLUGS) // 2 :]:
             self.write(slug, page("en-US", slug, footer_html="<footer>Another footer</footer>"))
-        self.write("about/index.html", page("en-US", "about/index.html"))
-        self.write("pt-br/about/index.html", page("pt-BR", "about/index.html"))
-        self.write("es-es/about/index.html", page("es-ES", "about/index.html"))
         lines = self.assertFails("no version is shared by most")
         named = sorted(line.split(": ")[2] for line in lines if "shared blocks:" in line)
-        self.assertEqual(named, ["about/index.html", "index.html", "privacy/index.html", "support/index.html"])
+        self.assertEqual(named, sorted(SLUGS))
 
     def test_the_same_markup_with_other_whitespace_passes(self):
         reflowed = " ".join(header("pt-BR", "privacy/index.html").split())
@@ -665,16 +730,25 @@ class CheckSiteTest(unittest.TestCase):
         self.write("index.html", page("en-US", "index.html", body=body))
         self.assertPasses()
 
-    # With no privacy policy or support page, the footer's links to them fail, and nothing else does.
-    def test_a_tree_with_no_privacy_or_support_page_fails_only_its_links(self):
+    # With no privacy policy or support page, the footer's links to them fail, and so do their two required paths;
+    # nothing else does.
+    def test_a_tree_with_no_privacy_or_support_page_fails_only_its_links_and_paths(self):
         for _, prefix in PREFIXES:
             shutil.rmtree(os.path.join(self.root, prefix + "privacy"))
             shutil.rmtree(os.path.join(self.root, prefix + "support"))
-        self.write("sitemap.xml", sitemap(prefix + "index.html" for _, prefix in PREFIXES))
+        kept = [slug for slug in SLUGS if slug not in ("privacy/index.html", "support/index.html")]
+        self.write("sitemap.xml", sitemap(prefix + slug for _, prefix in PREFIXES for slug in kept))
         lines = self.assertFails(
             "links: index.html:", "/privacy/ leads to no file", "/support/#contact leads to no file"
         )
-        self.assertEqual([line for line in lines if not line.startswith("check-site: links: ")], [], lines)
+        self.assertEqual(
+            [line for line in lines if not line.startswith("check-site: links: ")],
+            [
+                "check-site: paths: /privacy/ has no page: privacy/index.html is missing",
+                "check-site: paths: /support/ has no page: support/index.html is missing",
+            ],
+            lines,
+        )
 
     # Media budget.
 

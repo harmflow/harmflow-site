@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """Checks the site's files as committed, with no build step: that no page sits under a language the site does not
-publish, that each page declares the language of the prefix it sits under on its root element and marks no element
-with a language the site does not publish, the parity of the languages it does, the header and footer every page of
-one language shares, the internal links and #anchors, the media budget, the metadata search engines and link previews
-read: each page's canonical address, description, and Open Graph tags, the sitemap that lists the pages, and the
-robots.txt that points to it, the landing page: its primary call to action leads to harmflow-app on GitHub and comes
-before the community edition's link to the build instructions, and the page says that HarmFlow is coming to the Mac
-App Store and links to no store page yet, and what two pages of each published language must say: the privacy
-policy's five parts, each with a heading and text, and its naming of Google Analytics; the support page's link to
-harmflow-app's issues, and no e-mail address on it. It names each problem it finds on stderr, one per line, and exits
-1 when it finds any. The Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py
-proves each check on a tree of its own that breaks it.
+publish, that the home page and each of its five sections has its own page at its English path, that each page
+declares the language of the prefix it sits under on its root element and marks no element with a language the site
+does not publish, the parity of the languages it does, the header and footer every page of one language shares, the
+internal links and #anchors, the media budget, the metadata search engines and link previews read: each page's
+canonical address, description, and Open Graph tags, the sitemap that lists the pages, and the robots.txt that points
+to it, the landing page: its primary call to action leads to harmflow-app on GitHub and comes before the community
+edition's link to the build instructions, and the page says that HarmFlow is coming to the Mac App Store and links to
+no store page yet, and what two pages of each published language must say: the privacy policy's five parts, each with
+a heading and text, and its naming of Google Analytics; the support page's link to harmflow-app's issues, and no
+e-mail address on it. It names each problem it finds on stderr, one per line, and exits 1 when it finds any. The
+Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves each check on a
+tree of its own that breaks it.
 
 Usage: check-site.py [--languages en-US,pt-BR,es-ES] [ROOT]
 
@@ -34,6 +35,10 @@ LANGUAGES = (("en-US", ""), ("pt-BR", "pt-br/"), ("es-ES", "es-es/"))
 
 # The languages the site publishes unless --languages names others. A page under another language's prefix fails.
 PUBLISHED = ("en-US",)
+
+# The paths the site serves at the root, in en-US, each with a page of its own: the home page and its five sections. A
+# path may hold more pages below it; they do not stand for its own.
+REQUIRED_PATHS = ("/", "/docs/guide/", "/docs/reference/", "/showroom/", "/privacy/", "/support/")
 
 # The root 404 page is the one page that speaks for every language: GitHub Pages serves a custom 404 page only from
 # the root. It has no versions to keep in parity, and belongs to no one language's shared header and footer.
@@ -320,6 +325,19 @@ def check_declared_languages(pages, published):
                     "languages: %s:%d: an element is marked %s, a language the site does not publish"
                     % (rel, line, lang)
                 )
+    return problems
+
+
+def check_paths(pages):
+    """Each required path has its own page; a missing one names the path and the file it expects there. A tree with no
+    page needs none."""
+    if not pages:
+        return []
+    problems = []
+    for path in REQUIRED_PATHS:
+        rel = path.lstrip("/") + "index.html"
+        if rel not in pages:
+            problems.append("paths: %s has no page: %s is missing" % (path, rel))
     return problems
 
 
@@ -644,6 +662,7 @@ def main(argv):
     site_pages = list(pages)
     problems = check_unpublished(pages, published)
     problems += check_declared_languages(pages, published)
+    problems += check_paths(pages)
     problems += check_parity(pages, published)
     problems += check_shared_blocks(root, pages, published)
     site = OrderedDict((rel, pages[rel]) for rel in site_pages)
