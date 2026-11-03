@@ -7,11 +7,13 @@ internal links and #anchors, the media budget, the metadata search engines and l
 canonical address, description, and Open Graph tags, the sitemap that lists the pages, and the robots.txt that points
 to it, the landing page: its primary call to action leads to harmflow-app on GitHub and comes before the community
 edition's link to the build instructions, and the page says that HarmFlow is coming to the Mac App Store and links to
-no store page yet, and what two pages of each published language must say: the privacy policy's five parts, each with
-a heading and text, and its naming of Google Analytics; the support page's link to harmflow-app's issues, and no
-e-mail address on it. It names each problem it finds on stderr, one per line, and exits 1 when it finds any. The
-Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves each check on a
-tree of its own that breaks it.
+no store page yet, what two pages of each published language must say: the privacy policy's five parts, each with a
+heading and text, and its naming of Google Analytics; the support page's link to harmflow-app's issues, and no e-mail
+address on it, and the root 404 page: that the tree has one, that its main says the page was not found in a heading
+and links to the landing page, and that each of its links and assets is a path from the root, which holds at any
+depth. It names each problem it finds on stderr, one per line, and exits 1 when it finds any. The Checks workflow
+(.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves each check on a tree of its own
+that breaks it.
 
 Usage: check-site.py [--languages en-US,pt-BR,es-ES] [ROOT]
 
@@ -108,7 +110,9 @@ ISSUES = "https://github.com/harmflow/harmflow-app/issues"
 # A plain e-mail address, name@domain.tld, in a page's visible text.
 EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")
 
+# The headings, and the addresses of the landing page the 404 page's main may link to.
 HEADINGS = ("h1", "h2", "h3", "h4", "h5", "h6")
+LANDING_PAGE = ("/", ORIGIN + "/")
 
 # Elements with no end tag, which never hold another, and the ones whose text no visitor reads.
 VOID = (
@@ -176,14 +180,14 @@ def references(name, value):
 
 class Page(HTMLParser):
     """One HTML file: the ids its #anchors may name, the references it makes, its header's and footer's tokens, its
-    visible text, and the outline its headings give that text."""
+    visible text, the outline its headings give that text, and the headings' text and the links inside its main."""
 
     def __init__(self, rel):
         super().__init__(convert_charrefs=True)
         self.rel = rel
         self.url = url_of(rel)
         self.ids = set()
-        self.links = []  # (line, reference)
+        self.links = []  # (line, attribute, reference)
         self.raw_blocks = {}  # "header" or "footer": [token], each token a tag or a text
         self.canonical = None
         self.description = None
@@ -199,10 +203,15 @@ class Page(HTMLParser):
         # ("text",) for visible text outside any heading, and ("end", depth) when an element closes, depth after.
         self.outline = []
         self._open = []  # the open elements, outermost first
+        self.main_headings = []  # each heading's text, inside main
+        self.main_links = []  # each a's or area's href, inside main
         self._sectioning = 0
         self._capture = None
         self._depth = 0
         self._tokens = []
+        self._main = 0
+        self._heading = None
+        self._heading_text = []
 
     def handle_starttag(self, tag, attrs):
         line = self.getpos()[0]
@@ -227,6 +236,12 @@ class Page(HTMLParser):
             self.declared = (named.get("lang") or "").strip()
         elif named.get("lang") is not None:
             self.marked.append((line, named["lang"].strip()))
+        if tag == "main":
+            self._main += 1
+        if self._main and tag in HEADINGS and self._heading is None:
+            self._heading, self._heading_text = tag, []
+        if self._main and tag in ("a", "area") and named.get("href") is not None:
+            self.main_links.append(named["href"].strip())
         for name, value in attrs:
             if value is None:
                 continue
@@ -234,7 +249,7 @@ class Page(HTMLParser):
                 self.ids.add(value)
             if name in LINK_ATTRIBUTES.get(tag, ()):
                 for ref in references(name, value):
-                    self.links.append((line, ref))
+                    self.links.append((line, name, ref))
         if self._capture:
             self._tokens.append(("start", tag, attrs))
             if tag == self._capture:
@@ -253,6 +268,11 @@ class Page(HTMLParser):
             self.outline.append(("end", len(self._open)))
         if tag in SECTIONING and self._sectioning:
             self._sectioning -= 1
+        if tag == self._heading:
+            self.main_headings.append(" ".join(" ".join(self._heading_text).split()))
+            self._heading = None
+        if tag == "main" and self._main:
+            self._main -= 1
         if self._capture:
             self._tokens.append(("end", tag, None))
             if tag == self._capture:
@@ -263,6 +283,8 @@ class Page(HTMLParser):
 
     def handle_data(self, data):
         text = " ".join(data.split())
+        if self._heading and text:
+            self._heading_text.append(text)
         if self._capture and text:
             self._tokens.append(("text", text, None))
         if self._in_body and text:
@@ -439,7 +461,7 @@ def check_links(root, pages):
     problems = []
     # A page outside the site's own, read for its ids, joins pages: iterate over the ones there at the start.
     for rel, page in list(pages.items()):
-        for line, ref in page.links:
+        for line, _, ref in page.links:
             target = resolve(page.url, ref)
             if target is None:
                 continue
@@ -642,6 +664,33 @@ def check_support(pages, published):
     return problems
 
 
+def check_not_found(root, pages):
+    """A tree that holds pages has a 404.html at its root, whose main says in a heading that the page was not found
+    and links to the landing page, and whose every link and asset is a path from the root, an absolute URL, or an
+    #anchor: GitHub Pages answers every missing path with this one file, at any depth, where a relative path breaks."""
+    if not pages:
+        return []
+    if not os.path.isfile(os.path.join(root, ROOT_404)):
+        return ["not found: %s is missing: GitHub Pages serves a custom 404 page only from the root" % ROOT_404]
+    page = pages[ROOT_404]
+    problems = []
+    if not any("not found" in heading.lower() for heading in page.main_headings):
+        problems.append("not found: %s: its main has no heading that says the page was not found" % ROOT_404)
+    if not any(href in LANDING_PAGE for href in page.main_links):
+        problems.append(
+            "not found: %s: its main has no link to the landing page (%s)" % (ROOT_404, " or ".join(LANDING_PAGE))
+        )
+    for line, name, ref in page.links:
+        ref = ref.strip()
+        if not ref or ref.startswith(("/", "#")) or urlsplit(ref).scheme:
+            continue
+        problems.append(
+            'not found: %s:%d: %s="%s" is a relative path, which breaks at a missing path\'s depth; '
+            "make it a path from the root" % (ROOT_404, line, name, ref)
+        )
+    return problems
+
+
 def main(argv):
     args = argv[1:]
     published = PUBLISHED
@@ -673,6 +722,7 @@ def main(argv):
     problems += check_landing(site)
     problems += check_privacy(site, published)
     problems += check_support(site, published)
+    problems += check_not_found(root, site)
     for problem in problems:
         print("check-site: " + problem, file=sys.stderr)
     if problems:
