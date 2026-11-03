@@ -35,8 +35,20 @@
     <a class="header-cta" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
   </header>
   <main id="content">
-    <h1>Technical reference</h1>
-    <p>This page is being written.</p>
+    <article class="prose">
+      <h1>Technical reference</h1>
+      <p>For whoever extends or integrates HarmFlow — writes a task file by hand, drives the daemon from a script, or
+        checks what HarmFlow asks of a harness — rather than one who only uses the app.</p>
+      <ul>
+        <li><a href="/docs/reference/task-file/"><strong>The task file</strong></a> — the YAML a task is kept in: its
+          top-level keys, each task type&#x27;s section, and every field with its type and default.</li>
+        <li><a href="/docs/reference/local-api/"><strong>The local API</strong></a> — how a client reaches the daemon
+          on the Mac and authenticates, the resources it serves, its event stream, and the shape of an error.</li>
+        <li><a href="/docs/reference/harnesses/"><strong>The harnesses</strong></a> — Claude Code and Codex: how
+          HarmFlow finds them, what it gives a session, what it reads back, and how a task fails over from one to the
+          other.</li>
+      </ul>
+    </article>
   </main>
   <footer class="site-footer">
     <div class="footer-about">
