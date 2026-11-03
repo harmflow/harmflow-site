@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """Checks the site's files as committed, with no build step: that no page sits under a language the site does not
-publish, that the home page and each of its five sections has its own page at its English path, that each page
-declares the language of the prefix it sits under on its root element and marks no element with a language the site
-does not publish, the parity of the languages it does, the header and footer every page of one language shares, the
-internal links and #anchors, the media budget, the metadata search engines and link previews read: each page's
-canonical address, description, and Open Graph tags, the sitemap that lists the pages, and the robots.txt that points
-to it; the landing page: its primary call to action leads to harmflow-app on GitHub and comes before the community
-edition's link to the build instructions, and the page says that HarmFlow is coming to the Mac App Store and links to
-no store page yet; what two pages of each published language must say: the privacy policy's five parts, each with a
-heading and text, and its naming of Google Analytics, and the support page's link to harmflow-app's issues, and no
-e-mail address on it; the root 404 page: that the tree has one, that its main says the page was not found in a heading
-and links to the landing page, and that each of its links and assets is a path from the root, which holds at any
-depth; and the typefaces: that every @font-face rule takes its fonts only from WOFF2 files of the site under /fonts/,
-that each font's folder holds its SIL Open Font License 1.1, and that the text and monospace stacks keep the system's
-fonts as fallbacks. It names each problem it finds on stderr, one per line, and exits 1 when it finds any. The Checks
-workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves each check on a tree of
-its own that breaks it.
+publish, that the home page and each of its five sections has its own page at its English path, that each page declares
+the language of the prefix it sits under on its root element and marks no element with a language the site does not
+publish, the parity of the languages it does, the header and footer every page of one language shares, the internal
+links and #anchors, the media budget, the poster image of every recording, the metadata search engines and link previews
+read: each page's canonical address, description, and Open Graph tags, the sitemap that lists the pages, and the
+robots.txt that points to it; the landing page: its primary call to action leads to harmflow-app on GitHub and comes
+before the community edition's link to the build instructions, and the page says that HarmFlow is coming to the Mac App
+Store and links to no store page yet; what two pages of each published language must say: the privacy policy's five
+parts, each with a heading and text, and its naming of Google Analytics, and the support page's link to harmflow-app's
+issues, and no e-mail address on it; the root 404 page: that the tree has one, that its main says the page was not found
+in a heading and links to the landing page, and that each of its links and assets is a path from the root, which holds
+at any depth; and the typefaces: that every @font-face rule takes its fonts only from WOFF2 files of the site under
+/fonts/, that each font's folder holds its SIL Open Font License 1.1, and that the text and monospace stacks keep the
+system's fonts as fallbacks. It names each problem it finds on stderr, one per line, and exits 1 when it finds any. The
+Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves each check on a
+tree of its own that breaks it.
 
 Usage: check-site.py [--languages en-US,pt-BR,es-ES] [ROOT]
 
@@ -71,12 +71,14 @@ LINK_ATTRIBUTES = {
 # A header or footer inside one of these is that section's own, not the page's.
 SECTIONING = ("article", "aside", "main", "nav", "section")
 
-# Images, recordings, and sound, wherever they are in the tree. MB is 1,000,000 bytes, the stricter reading.
-MEDIA_EXTENSIONS = (
+# Images, recordings, and sound, wherever they are in the tree. MB is 1,000,000 bytes, the stricter reading. A
+# recording's poster is one of the images.
+IMAGE_EXTENSIONS = (
     ".apng", ".avif", ".bmp", ".gif", ".heic", ".ico", ".jpeg", ".jpg", ".png", ".svg", ".tif", ".tiff", ".webp",
-    ".avi", ".m4v", ".mkv", ".mov", ".mp4", ".mpeg", ".mpg", ".ogv", ".webm",
-    ".aac", ".flac", ".m4a", ".mp3", ".oga", ".ogg", ".opus", ".wav",
 )
+RECORDING_EXTENSIONS = (".avi", ".m4v", ".mkv", ".mov", ".mp4", ".mpeg", ".mpg", ".ogv", ".webm")
+SOUND_EXTENSIONS = (".aac", ".flac", ".m4a", ".mp3", ".oga", ".ogg", ".opus", ".wav")
+MEDIA_EXTENSIONS = IMAGE_EXTENSIONS + RECORDING_EXTENSIONS + SOUND_EXTENSIONS
 MEDIA_FILE_LIMIT = 10 * 1000 * 1000
 MEDIA_TOTAL_LIMIT = 300 * 1000 * 1000
 
@@ -191,8 +193,9 @@ def references(name, value):
 
 
 class Page(HTMLParser):
-    """One HTML file: the ids its #anchors may name, the references it makes, its header's and footer's tokens, its
-    visible text, the outline its headings give that text, and the headings' text and the links inside its main."""
+    """One HTML file: the ids its #anchors may name, the references it makes, its recordings, its header's and footer's
+    tokens, its visible text, the outline its headings give that text, and the headings' text and the links inside its
+    main."""
 
     def __init__(self, rel):
         super().__init__(convert_charrefs=True)
@@ -200,6 +203,8 @@ class Page(HTMLParser):
         self.url = url_of(rel)
         self.ids = set()
         self.links = []  # (line, attribute, reference)
+        self.videos = []  # {"line", "src", "poster"}: poster is None with no attribute, "" with an empty one
+        self._video = None
         self.raw_blocks = {}  # "header" or "footer": [token], each token a tag or a text
         self.canonical = None
         self.description = None
@@ -254,6 +259,14 @@ class Page(HTMLParser):
             self._heading, self._heading_text = tag, []
         if self._main and tag in ("a", "area") and named.get("href") is not None:
             self.main_links.append(named["href"].strip())
+        if tag == "video":
+            # A bare poster attribute has no value: as empty as poster="".
+            poster = (named.get("poster") or "").strip() if "poster" in named else None
+            self._video = {"line": line, "src": (named.get("src") or "").strip(), "poster": poster}
+            self.videos.append(self._video)
+        if tag == "source" and self._video is not None and not self._video["src"]:
+            # A video with no src of its own plays its first <source>.
+            self._video["src"] = (named.get("src") or "").strip()
         for name, value in attrs:
             if value is None:
                 continue
@@ -278,6 +291,8 @@ class Page(HTMLParser):
             while self._open.pop() != tag:
                 pass
             self.outline.append(("end", len(self._open)))
+        if tag == "video":
+            self._video = None
         if tag in SECTIONING and self._sectioning:
             self._sectioning -= 1
         if tag == self._heading:
@@ -513,6 +528,26 @@ def check_media(root):
             % (count, format(total, ","), format(MEDIA_TOTAL_LIMIT, ","))
         )
     return problems, count, total
+
+
+def check_posters(root, pages):
+    """Every recording on a page has a poster, and its poster is an image by its extension. A poster that names no
+    file of the tree is the link rule's failure, not this one's, whatever its extension."""
+    problems = []
+    for rel, page in pages.items():
+        for video in page.videos:
+            where = "posters: %s:%d: the video %s" % (rel, video["line"], video["src"] or "(with no source)")
+            poster = video["poster"]
+            target = resolve(page.url, poster) if poster else None
+            if poster is None:
+                problems.append("%s has no poster" % where)
+            elif not poster:
+                problems.append("%s has an empty poster" % where)
+            elif target is not None and file_of(root, target[0]) is None:
+                continue
+            elif posixpath.splitext(unquote(urlsplit(poster).path))[1].lower() not in IMAGE_EXTENSIONS:
+                problems.append("%s has the poster %s, which is not an image file" % (where, poster))
+    return problems
 
 
 def address_of(rel):
@@ -855,6 +890,7 @@ def main(argv):
     problems += check_links(root, pages)
     media_problems, media_count, media_total = check_media(root)
     problems += media_problems
+    problems += check_posters(root, site)
     problems += check_metadata(root, site)
     problems += check_landing(site)
     problems += check_privacy(site, published)
