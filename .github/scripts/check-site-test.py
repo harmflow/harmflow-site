@@ -931,6 +931,63 @@ class CheckSiteTest(unittest.TestCase):
         self.restyle('  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;\n', "")
         self.assertFails("fonts: no stylesheet declares --font-mono, the stack of JetBrains Mono")
 
+    # Posters. Every case writes the recording and the poster its <video> names, so only the poster rule can fail.
+
+    def with_video(self, video):
+        self.write("showroom/demo.mp4", "not really an mp4\n")
+        self.write("showroom/demo.webm", "not really a webm\n")
+        self.write("index.html", page("en-US", "index.html", body=video))
+
+    def assertOnePosterProblem(self, *texts):
+        lines = self.assertFails(*texts)
+        self.assertEqual([line for line in lines if "posters:" in line], lines, lines)
+        self.assertEqual(len(lines), 1, lines)
+
+    def test_a_video_with_no_poster_fails_naming_the_page(self):
+        self.with_video('<video src="/showroom/demo.mp4" controls></video>')
+        self.assertOnePosterProblem("posters: index.html:", "the video /showroom/demo.mp4 has no poster")
+
+    def test_a_video_with_an_empty_poster_fails_naming_the_page(self):
+        self.with_video('<video src="/showroom/demo.mp4" poster="" controls></video>')
+        self.assertOnePosterProblem("posters: index.html:", "the video /showroom/demo.mp4 has an empty poster")
+
+    def test_a_video_with_a_bare_poster_attribute_fails_as_empty(self):
+        self.with_video("<video poster controls>\n  <source src=\"/showroom/demo.mp4\" type=\"video/mp4\">\n</video>")
+        self.assertOnePosterProblem("posters: index.html:", "the video /showroom/demo.mp4 has an empty poster")
+
+    def test_a_video_whose_poster_is_a_recording_fails_naming_the_poster(self):
+        self.with_video('<video src="/showroom/demo.mp4" poster="/showroom/demo.webm" controls></video>')
+        self.assertOnePosterProblem(
+            "posters: index.html:",
+            "the video /showroom/demo.mp4 has the poster /showroom/demo.webm, which is not an image file",
+        )
+
+    def test_a_video_with_an_image_poster_passes(self):
+        self.with_video('<video src="/showroom/demo.mp4" poster="/showroom/poster.png" controls></video>')
+        self.assertPasses()
+
+    def test_a_video_whose_source_is_a_child_with_an_image_poster_passes(self):
+        video = """<video poster="../showroom/poster.png" controls>
+    <source src="/showroom/demo.webm" type="video/webm">
+    <source src="/showroom/demo.mp4" type="video/mp4">
+  </video>"""
+        self.with_video(video)
+        self.assertPasses()
+
+    def test_a_video_whose_source_is_a_child_with_no_poster_fails_naming_that_source(self):
+        self.with_video('<video controls>\n  <source src="/showroom/demo.webm" type="video/webm">\n</video>')
+        self.assertOnePosterProblem("posters: index.html:", "the video /showroom/demo.webm has no poster")
+
+    def test_a_poster_that_names_no_file_fails_only_as_a_link(self):
+        self.with_video('<video src="/showroom/demo.mp4" poster="/showroom/missing.png" controls></video>')
+        lines = self.assertFails("/showroom/missing.png leads to no file")
+        self.assertEqual([line for line in lines if "posters:" in line], [], lines)
+
+    def test_a_recording_poster_that_names_no_file_fails_only_as_a_link(self):
+        self.with_video('<video src="/showroom/demo.mp4" poster="/showroom/missing.webm" controls></video>')
+        lines = self.assertFails("/showroom/missing.webm leads to no file")
+        self.assertEqual([line for line in lines if "posters:" in line], [], lines)
+
 
 if __name__ == "__main__":
     unittest.main()

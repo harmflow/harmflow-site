@@ -39,6 +39,8 @@ when:
 - **Links.** A link, image, or other reference into the site leads to no file, or its `#anchor` to no `id` of its
   page. A reference to `harmflow.com` is one into the site; one to another host is not checked.
 - **Media budget.** A media file is over 10 MB, or all of them together are over 300 MB (1 MB is 1,000,000 bytes).
+- **Posters.** A page's `<video>` has no `poster`, an empty one, or one that is not an image file by its extension. A
+  poster that names no file of the site is the links check's failure.
 - **Metadata.** A page other than `404.html` lacks its canonical address, its description, or an Open Graph tag;
   its `og:url` is not its canonical address, or its `og:image` is no image of the site; `sitemap.xml` misses a page or
   lists one the site does not hold; or `robots.txt` does not point to the sitemap.
