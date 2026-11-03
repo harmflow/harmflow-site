@@ -2,6 +2,10 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://harmflow.com/</loc></url>
   <url><loc>https://harmflow.com/docs/guide/</loc></url>
+  <url><loc>https://harmflow.com/docs/guide/install/</loc></url>
+  <url><loc>https://harmflow.com/docs/guide/repository-access/</loc></url>
+  <url><loc>https://harmflow.com/docs/guide/tasks/</loc></url>
+  <url><loc>https://harmflow.com/docs/guide/executions/</loc></url>
   <url><loc>https://harmflow.com/docs/reference/</loc></url>
   <url><loc>https://harmflow.com/docs/reference/task-file/</loc></url>
   <url><loc>https://harmflow.com/docs/reference/local-api/</loc></url>
