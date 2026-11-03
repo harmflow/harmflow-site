@@ -184,6 +184,40 @@ def sitemap(rels):
 
 ROBOTS = "User-agent: *\nAllow: /\n\nSitemap: https://harmflow.com/sitemap.xml\n"
 
+# The fixture's typefaces: one WOFF2 file per family, named from the root and relative to the stylesheet, and the two
+# stacks, each with a system font before its generic family.
+STYLESHEET = """/* A comment with @font-face { src: url("https://example.com/x.ttf"); } in it, which no check reads. */
+@font-face {
+  font-family: "Inter";
+  font-display: swap;
+  src: url("/fonts/inter/inter.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url(../fonts/jetbrains-mono/jetbrains-mono.woff2) format('woff2');
+}
+
+:root {
+  --font-text: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+
+body { margin: 0; font-family: var(--font-text); }
+"""
+
+# Not really a font: the four bytes every WOFF2 file starts with, then text.
+WOFF2 = "wOF2 not really a font\n"
+
+FONT_LICENSE = """Copyright 2026 The Fixture Project Authors
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+"""
+
 
 class CheckSiteTest(unittest.TestCase):
     def setUp(self):
@@ -197,7 +231,10 @@ class CheckSiteTest(unittest.TestCase):
         self.write("sitemap.xml", sitemap(prefix + slug for _, prefix in PREFIXES for slug in SLUGS))
         self.write("robots.txt", ROBOTS)
         self.write("og-image.png", "not really a png\n")
-        self.write("styles/site.css", "body { margin: 0; }\n")
+        self.write("styles/site.css", STYLESHEET)
+        for family in ("inter", "jetbrains-mono"):
+            self.write("fonts/%s/%s.woff2" % (family, family), WOFF2)
+            self.write("fonts/%s/LICENSE" % family, FONT_LICENSE)
         self.write("showroom/poster.png", "not really a png\n")
         self.write("README.md", "Not a page.\n")
 
@@ -255,6 +292,11 @@ class CheckSiteTest(unittest.TestCase):
         for text in texts:
             self.assertIn(text, err)
         return [line for line in err.splitlines() if not line.endswith(" problems")]
+
+    def restyle(self, old, new):
+        """The fixture's stylesheet with OLD replaced by NEW; OLD must be in it, so a case cannot pass unbroken."""
+        self.assertIn(old, STYLESHEET)
+        self.write("styles/site.css", STYLESHEET.replace(old, new, 1))
 
     # The site every case breaks passes: three languages, a selector whose links differ on every page, relative,
     # root, and harmflow.com links, anchors, a srcset, and the root 404 page in all three languages.
@@ -822,6 +864,72 @@ class CheckSiteTest(unittest.TestCase):
             self.sparse("showroom/clip-%02d.webm" % i, 9900 * 1000)
         lines = self.assertFails("over the 300 MB limit for all media together")
         self.assertEqual(len([line for line in lines if "media:" in line]), 1, lines)
+
+    # Typefaces.
+
+    def test_a_font_from_another_host_fails_naming_the_stylesheet_and_the_family(self):
+        self.restyle('url("/fonts/inter/inter.woff2")', 'url("https://fonts.example.com/inter.woff2")')
+        self.assertFails(
+            "fonts: styles/site.css: the Inter rule takes https://fonts.example.com/inter.woff2 from another host"
+        )
+
+    def test_a_font_in_another_format_fails(self):
+        self.restyle('"/fonts/inter/inter.woff2") format("woff2")', '"/fonts/inter/inter.ttf") format("truetype")')
+        self.write("fonts/inter/inter.ttf", "not really a font\n")
+        self.assertFails(
+            "fonts: styles/site.css: the Inter rule takes /fonts/inter/inter.ttf, which is not a .woff2 file under "
+            "/fonts/",
+            'fonts: styles/site.css: the Inter rule takes /fonts/inter/inter.ttf without format("woff2")',
+        )
+
+    def test_a_woff2_file_with_another_format_hint_fails(self):
+        self.restyle("format('woff2')", "format('woff')")
+        self.assertFails(
+            "fonts: styles/site.css: the JetBrains Mono rule takes ../fonts/jetbrains-mono/jetbrains-mono.woff2 "
+            'without format("woff2")'
+        )
+
+    def test_a_woff2_file_that_is_not_woff2_inside_fails(self):
+        self.write("fonts/inter/inter.woff2", "wOFF a WOFF 1.0 font\n")
+        self.assertFails(
+            "fonts: styles/site.css: the Inter rule takes /fonts/inter/inter.woff2, which is not a WOFF2 file: "
+            "it does not start with wOF2"
+        )
+
+    def test_a_font_rule_naming_a_missing_file_fails(self):
+        os.remove(os.path.join(self.root, "fonts/jetbrains-mono/jetbrains-mono.woff2"))
+        self.assertFails(
+            "fonts: styles/site.css: the JetBrains Mono rule takes ../fonts/jetbrains-mono/jetbrains-mono.woff2, "
+            "which is no file of the site"
+        )
+
+    def test_a_font_outside_the_fonts_folder_fails(self):
+        self.restyle('"/fonts/inter/inter.woff2"', '"/styles/inter.woff2"')
+        self.write("styles/inter.woff2", WOFF2)
+        self.assertFails("the Inter rule takes /styles/inter.woff2, which is not a .woff2 file under /fonts/")
+
+    def test_a_family_folder_with_no_license_fails_naming_it(self):
+        os.remove(os.path.join(self.root, "fonts/inter/LICENSE"))
+        self.assertFails("fonts: fonts/inter has no LICENSE beside its fonts")
+
+    def test_a_family_folder_with_another_license_fails_naming_it(self):
+        self.write("fonts/jetbrains-mono/LICENSE", "Apache License\nVersion 2.0, January 2004\n")
+        self.assertFails("fonts: fonts/jetbrains-mono/LICENSE is not the SIL Open Font License 1.1")
+
+    def test_a_stack_with_no_fallback_fails_naming_it(self):
+        self.restyle('--font-text: "Inter", system-ui, sans-serif;', '--font-text: "Inter";')
+        self.assertFails("fonts: styles/site.css: --font-text (Inter) does not end in sans-serif")
+
+    def test_a_stack_with_no_system_font_fails_naming_it(self):
+        self.restyle("ui-monospace, Menlo, monospace", "monospace")
+        self.assertFails(
+            "fonts: styles/site.css: --font-mono (JetBrains Mono, monospace) names no system font between "
+            "JetBrains Mono and monospace"
+        )
+
+    def test_a_site_with_no_stack_fails(self):
+        self.restyle('  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;\n', "")
+        self.assertFails("fonts: no stylesheet declares --font-mono, the stack of JetBrains Mono")
 
 
 if __name__ == "__main__":

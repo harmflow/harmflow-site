@@ -50,6 +50,11 @@ when:
   five parts, found by its `id` (`app`, `website`, `analytics`, `google`, `withdraw`), or a part has no text after its
   heading, or the policy does not name Google Analytics; the support page has no link to harmflow-app's issues, or
   gives an e-mail address, by a `mailto:` link or in its text. Only the support page is read for an address.
+- **Typefaces.** An `@font-face` rule takes a font from another host, from a file that is not a `.woff2` file under
+  `/fonts/` with `format("woff2")` and the WOFF2 signature, or from no file at all; a family's folder under
+  `site/fonts/` has no `LICENSE` with the SIL Open Font License 1.1; or `--font-text` or `--font-mono` loses the
+  system's fonts or its generic family. In the browser, on every page and the 404 page, Inter or JetBrains Mono does
+  not load, or is fetched from anywhere but `/fonts/` on the site itself as a `.woff2` file that answers 200.
 - **Consent and analytics.** In a headless browser, over every page and the 404 page: with no choice made, or after
   Reject, a page requests anything from another host or sets an analytics cookie; the banner's Accept and Reject differ
   in style, or the banner shows again after a choice; after Accept, the page asks Google's tag to send anything but the

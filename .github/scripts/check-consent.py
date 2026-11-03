@@ -6,8 +6,9 @@ only the page views, the clicks on the landing page's primary call to action, an
 measured; that withdrawing through the footer's link stops the measurement and removes the analytics cookies; that
 with JavaScript disabled every page's content and navigation work and no banner shows; that a page runs no script but
 the consent's, and Google's tag after Accept; that its main content reads the same with JavaScript disabled as with it
-after Reject; and that, with JavaScript disabled, every page can be reached from every page by following the site's
-links. It names each problem it finds on stderr, one per line, and exits 1 when it finds any. The Checks workflow
+after Reject; that, with JavaScript disabled, every page can be reached from every page by following the site's
+links; and that on every page the site's typefaces load from the site itself, as WOFF2 files under /fonts/. It names
+each problem it finds on stderr, one per line, and exits 1 when it finds any. The Checks workflow
 (.github/workflows/checks.yml) runs it on the checkout, and check-consent-test.py proves each check on a tree of its own
 that breaks it.
 
@@ -78,6 +79,43 @@ TAG_STAND_IN = """
   document.cookie = "_ga=GA1.1.1234567890.1234567890; path=/; domain=.harmflow.com";
   document.cookie = "_ga_CHECK=GS1.1.1234567890.1.0.1234567890.0.0.0; path=/; domain=.harmflow.com";
 })();
+"""
+
+# The site's typefaces, which every page loads from /fonts/ on its own host.
+FONT_FAMILIES = ("Inter", "JetBrains Mono")
+FONTS_PATH = "/fonts/"
+
+# Loads each family, as text set in it would, and answers whether a face of it loaded. A browser fetches a font only
+# for text that uses it, and not every page holds monospace text, so the check asks for both families itself.
+LOAD_FAMILIES = """
+async (families) => {
+  const loaded = {};
+  for (const family of families) {
+    try { await document.fonts.load('16px "' + family + '"'); } catch (e) {}
+    loaded[family] = Array.from(document.fonts).some(
+      (face) => face.family.replace(/^["']|["']$/g, "") === family && face.status === "loaded");
+  }
+  return loaded;
+}
+"""
+
+# The family of each font file the page's @font-face rules name, by its absolute URL.
+FONT_SOURCES = """
+() => {
+  const families = {};
+  for (const sheet of Array.from(document.styleSheets)) {
+    let rules;
+    try { rules = sheet.cssRules; } catch (e) { continue; }
+    for (const rule of Array.from(rules)) {
+      if (!(rule instanceof CSSFontFaceRule)) continue;
+      const family = rule.style.getPropertyValue("font-family").trim().replace(/^["']|["']$/g, "");
+      for (const match of rule.style.getPropertyValue("src").matchAll(/url\\(\\s*["']?([^"')]+)["']?\\s*\\)/g)) {
+        families[new URL(match[1], sheet.href || document.baseURI).href] = family;
+      }
+    }
+  }
+  return families;
+}
 """
 
 # The computed styles that make one button stand out from another.
@@ -526,6 +564,50 @@ def check_navigation(browser, paths):
     ]
 
 
+def check_fonts(browser, paths):
+    """Every page and the 404 page, a visitor of its own each, so no font comes from the cache: once the page loads
+    both families itself, each of them loaded, and every font file it fetched came from the page's own host, under
+    /fonts/, as a .woff2 file that answered 200."""
+    problems = []
+    for path in paths:
+        context = browser.visitor()
+        page = context.new_page()
+        fetched = []  # (URL, status), the status None when the request failed
+
+        def answered(response, fetched=fetched):
+            if response.request.resource_type == "font":
+                fetched.append((response.url, response.status))
+
+        def failed(request, fetched=fetched):
+            if request.resource_type == "font":
+                fetched.append((request.url, None))
+
+        page.on("response", answered)
+        page.on("requestfailed", failed)
+        page.goto(browser.origin + path, wait_until="load")
+        loaded = page.evaluate(LOAD_FAMILIES, list(FONT_FAMILIES))
+        families = page.evaluate(FONT_SOURCES)
+        for family in FONT_FAMILIES:
+            if not loaded.get(family):
+                problems.append("fonts: %s does not load %s" % (path, family))
+        for url, status in fetched:
+            family = families.get(url, "a font")
+            parts = urlsplit(url)
+            if parts.netloc != browser.host:
+                problems.append("fonts: %s fetches %s from %s, not from the site itself" % (path, family, url))
+            elif not parts.path.startswith(FONTS_PATH) or not parts.path.endswith(".woff2"):
+                problems.append(
+                    "fonts: %s fetches %s from %s, which is not a .woff2 file under %s" % (path, family, url, FONTS_PATH)
+                )
+            elif status != 200:
+                problems.append(
+                    "fonts: %s fetches %s from %s, which answers %s"
+                    % (path, family, url, "nothing" if status is None else status)
+                )
+        context.close()
+    return problems
+
+
 def main(argv):
     args = argv[1:]
     if len(args) > 1:
@@ -558,6 +640,7 @@ def main(argv):
                 problems += check_scripts(browser, paths)
                 problems += check_content(browser, paths)
                 problems += check_navigation(browser, paths)
+                problems += check_fonts(browser, paths)
             finally:
                 browser.close()
     finally:
@@ -568,7 +651,7 @@ def main(argv):
         print("check-consent: %d problems" % len(problems), file=sys.stderr)
         return 1
     print("check-consent: ok: %d paths, with no choice, after Reject, after Accept and withdrawal, and without "
-          "JavaScript; scripts, content, and navigation" % len(paths))
+          "JavaScript; scripts, content, navigation, and the site's typefaces" % len(paths))
     return 0
 
 
