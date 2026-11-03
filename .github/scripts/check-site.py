@@ -5,15 +5,17 @@ declares the language of the prefix it sits under on its root element and marks 
 does not publish, the parity of the languages it does, the header and footer every page of one language shares, the
 internal links and #anchors, the media budget, the metadata search engines and link previews read: each page's
 canonical address, description, and Open Graph tags, the sitemap that lists the pages, and the robots.txt that points
-to it, the landing page: its primary call to action leads to harmflow-app on GitHub and comes before the community
+to it; the landing page: its primary call to action leads to harmflow-app on GitHub and comes before the community
 edition's link to the build instructions, and the page says that HarmFlow is coming to the Mac App Store and links to
-no store page yet, what two pages of each published language must say: the privacy policy's five parts, each with a
-heading and text, and its naming of Google Analytics; the support page's link to harmflow-app's issues, and no e-mail
-address on it, and the root 404 page: that the tree has one, that its main says the page was not found in a heading
+no store page yet; what two pages of each published language must say: the privacy policy's five parts, each with a
+heading and text, and its naming of Google Analytics, and the support page's link to harmflow-app's issues, and no
+e-mail address on it; the root 404 page: that the tree has one, that its main says the page was not found in a heading
 and links to the landing page, and that each of its links and assets is a path from the root, which holds at any
-depth. It names each problem it finds on stderr, one per line, and exits 1 when it finds any. The Checks workflow
-(.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves each check on a tree of its own
-that breaks it.
+depth; and the typefaces: that every @font-face rule takes its fonts only from WOFF2 files of the site under /fonts/,
+that each font's folder holds its SIL Open Font License 1.1, and that the text and monospace stacks keep the system's
+fonts as fallbacks. It names each problem it finds on stderr, one per line, and exits 1 when it finds any. The Checks
+workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves each check on a tree of
+its own that breaks it.
 
 Usage: check-site.py [--languages en-US,pt-BR,es-ES] [ROOT]
 
@@ -119,6 +121,16 @@ VOID = (
     "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr",
 )
 HIDDEN = ("head", "script", "style", "template")
+
+# The site's typefaces, each with the custom property of its stack and the generic family that ends it.
+FONT_STACKS = (("Inter", "--font-text", "sans-serif"), ("JetBrains Mono", "--font-mono", "monospace"))
+
+# The folder the fonts are served from, one folder per family, and the first four bytes of every WOFF2 file.
+FONTS = "fonts/"
+WOFF2_SIGNATURE = b"wOF2"
+
+# The title line of the SIL Open Font License 1.1, which its full text carries.
+OFL = "sil open font license version 1.1"
 
 
 def language_of(rel):
@@ -691,6 +703,131 @@ def check_not_found(root, pages):
     return problems
 
 
+def stylesheets(root):
+    """Every stylesheet of the tree, as a path relative to ROOT, with its text, its comments removed."""
+    sheets = OrderedDict()
+    for rel in site_files(root, skip_hidden=True):
+        if rel.endswith(".css"):
+            with open(os.path.join(root, rel), encoding="utf-8", errors="replace") as f:
+                sheets[rel] = re.sub(r"/\*.*?\*/", "", f.read(), flags=re.S)
+    return sheets
+
+
+def split_list(value):
+    """The items of a comma-separated CSS value; a comma inside parentheses or quotes separates nothing."""
+    items, current, depth, quote = [], "", 0, None
+    for char in value:
+        if quote:
+            if char == quote:
+                quote = None
+        elif char in "\"'":
+            quote = char
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+        elif char == "," and depth == 0:
+            items.append(current.strip())
+            current = ""
+            continue
+        current += char
+    if current.strip():
+        items.append(current.strip())
+    return items
+
+
+def unquote_css(value):
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        return value[1:-1]
+    return value
+
+
+def check_font_faces(root, sheets):
+    """Every @font-face rule takes its src only from .woff2 files of the site under /fonts/, each with the hint
+    format("woff2"), and each a file of the tree that starts with the WOFF2 signature."""
+    problems = []
+    for rel, text in sheets.items():
+        for body in re.findall(r"@font-face\s*\{([^}]*)\}", text):
+            family = re.search(r"(?:^|;)\s*font-family\s*:\s*([^;]+)", body)
+            src = re.search(r"(?:^|;)\s*src\s*:\s*([^;]+)", body)
+            rule = "fonts: %s: the %s rule" % (rel, unquote_css(family.group(1)) if family else "(no font-family)")
+            sources = split_list(src.group(1)) if src else []
+            if not sources:
+                problems.append("%s has no src" % rule)
+            for source in sources:
+                url = re.match(r"url\(\s*(['\"]?)(.*?)\1\s*\)\s*(.*)$", source, flags=re.S)
+                if not url:
+                    problems.append("%s takes %s, which is no file of the site" % (rule, clip(source)))
+                    continue
+                ref = url.group(2)
+                hint = re.match(r"format\(\s*(['\"]?)(.*?)\1\s*\)", url.group(3))
+                parts = urlsplit(ref)
+                if parts.scheme or parts.netloc:
+                    problems.append("%s takes %s from another host" % (rule, ref))
+                    continue
+                path = urljoin(url_of(rel), parts.path)
+                if not path.startswith("/" + FONTS) or not path.endswith(".woff2"):
+                    problems.append("%s takes %s, which is not a .woff2 file under /%s" % (rule, ref, FONTS))
+                if not hint or hint.group(2).lower() != "woff2":
+                    problems.append('%s takes %s without format("woff2")' % (rule, ref))
+                file = posixpath.normpath(unquote(path).lstrip("/"))
+                if file.startswith("..") or not os.path.isfile(os.path.join(root, file)):
+                    problems.append("%s takes %s, which is no file of the site" % (rule, ref))
+                    continue
+                if path.endswith(".woff2"):
+                    with open(os.path.join(root, file), "rb") as f:
+                        if f.read(len(WOFF2_SIGNATURE)) != WOFF2_SIGNATURE:
+                            problems.append(
+                                "%s takes %s, which is not a WOFF2 file: it does not start with %s"
+                                % (rule, ref, WOFF2_SIGNATURE.decode())
+                            )
+    return problems
+
+
+def check_font_licenses(root):
+    """Each family's folder under fonts/ holds a LICENSE with the text of the SIL Open Font License 1.1."""
+    problems = []
+    if not os.path.isdir(os.path.join(root, FONTS)):
+        return problems
+    for name in sorted(os.listdir(os.path.join(root, FONTS))):
+        folder = FONTS + name
+        if name.startswith(".") or not os.path.isdir(os.path.join(root, folder)):
+            continue
+        license_file = os.path.join(root, folder, "LICENSE")
+        if not os.path.isfile(license_file):
+            problems.append("fonts: %s has no LICENSE beside its fonts" % folder)
+            continue
+        with open(license_file, encoding="utf-8", errors="replace") as f:
+            if OFL not in " ".join(f.read().split()).lower():
+                problems.append("fonts: %s/LICENSE is not the SIL Open Font License 1.1" % folder)
+    return problems
+
+
+def check_font_stacks(sheets, pages):
+    """--font-text names system fonts after Inter and ends in sans-serif, and --font-mono names system fonts after
+    JetBrains Mono and ends in monospace, wherever a stylesheet declares them. A tree with no page needs neither."""
+    problems = []
+    for family, name, generic in FONT_STACKS:
+        declared = [
+            (rel, value)
+            for rel, text in sheets.items()
+            for value in re.findall(r"%s\s*:\s*([^;}]+)" % re.escape(name), text)
+        ]
+        if not declared and pages:
+            problems.append("fonts: no stylesheet declares %s, the stack of %s" % (name, family))
+        for rel, value in declared:
+            fonts = [unquote_css(font) for font in split_list(value)]
+            stack = "%s: %s (%s)" % (rel, name, clip(", ".join(fonts)))
+            if family not in fonts:
+                problems.append("fonts: %s does not name %s" % (stack, family))
+            elif fonts[-1] != generic:
+                problems.append("fonts: %s does not end in %s" % (stack, generic))
+            elif len(fonts) - fonts.index(family) < 3:
+                problems.append("fonts: %s names no system font between %s and %s" % (stack, family, generic))
+    return problems
+
+
 def main(argv):
     args = argv[1:]
     published = PUBLISHED
@@ -723,6 +860,10 @@ def main(argv):
     problems += check_privacy(site, published)
     problems += check_support(site, published)
     problems += check_not_found(root, site)
+    sheets = stylesheets(root)
+    problems += check_font_faces(root, sheets)
+    problems += check_font_licenses(root)
+    problems += check_font_stacks(sheets, site)
     for problem in problems:
         print("check-site: " + problem, file=sys.stderr)
     if problems:

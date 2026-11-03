@@ -22,6 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SCRIPT = os.path.join(HERE, "check-consent.py")
 SITE = os.path.join(os.path.dirname(os.path.dirname(HERE)), "site")
 CONSENT = "scripts/consent.js"
+STYLES = "styles/site.css"
 
 HAS_PLAYWRIGHT = importlib.util.find_spec("playwright") is not None
 
@@ -143,6 +144,25 @@ class CheckConsentTest(unittest.TestCase):
         os.makedirs(os.path.join(self.root, "orphan"))
         shutil.copy(os.path.join(self.root, "support", "index.html"), os.path.join(self.root, "orphan", "index.html"))
         self.assertFailsNaming("navigation: without JavaScript, /orphan/ cannot be reached by links from /")
+
+    def test_a_family_that_does_not_load_fails_naming_the_page_and_the_family(self):
+        self.replace(
+            STYLES,
+            '"/fonts/jetbrains-mono/jetbrains-mono-latin-wght-normal.woff2"',
+            '"/fonts/jetbrains-mono/missing.woff2"',
+        )
+        self.assertFailsNaming(
+            "fonts: / does not load JetBrains Mono",
+            "fonts: /no-such-page/ does not load JetBrains Mono",
+            "/fonts/jetbrains-mono/missing.woff2, which answers 404",
+        )
+
+    def test_a_family_fetched_from_another_host_fails_naming_the_page_and_the_family(self):
+        self.replace(STYLES, '"/fonts/inter/inter-latin-opsz-normal.woff2"', '"https://fonts.example.com/inter.woff2"')
+        self.assertFailsNaming(
+            "fonts: /support/ does not load Inter",
+            "fonts: /support/ fetches Inter from https://fonts.example.com/inter.woff2, not from the site itself",
+        )
 
 
 def load_check():
