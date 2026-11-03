@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>The harnesses · HarmFlow</title>
+  <meta name="description" content="Claude Code and Codex in HarmFlow: how it finds an installed CLI, what it passes to a session, what it reads back, and how a task fails over from one to the other.">
+  <link rel="canonical" href="https://harmflow.com/docs/reference/harnesses/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="The harnesses · HarmFlow">
+  <meta property="og:description" content="Claude Code and Codex in HarmFlow: how it finds an installed CLI, what it passes to a session, what it reads back, and how a task fails over from one to the other.">
+  <meta property="og:url" content="https://harmflow.com/docs/reference/harnesses/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>The harnesses</h1>
+      <p>A harness is the agent CLI a task&#x27;s session runs on: Claude Code (<code>claude-code</code>) or Codex
+        (<code>codex</code>). HarmFlow installs neither and signs in to neither: it starts the one you installed and
+        signed in to, under your own account. This page says what HarmFlow asks of each. The authority is the harness
+        adapters in <code>harmflow-app</code>,
+        <a href="https://github.com/harmflow/harmflow-app/tree/e79a8257a2e7949f893fc12d008ba0d85f26c4a8/daemon/internal/adapters/harness"><code>daemon/internal/adapters/harness/</code></a>.</p>
+
+      <h2 id="finding">Finding an installed harness</h2>
+      <p>The daemon looks for each harness when it starts and again on <code>POST /harnesses/refresh</code>, and checks
+        the one a task needs again before each attempt. A harness is read in steps — not installed, installed, version
+        identified — and ends ready or not ready, with the reason. A path set by hand
+        (<code>PUT /harnesses/{harnessId}</code>) comes before the search.</p>
+
+      <h3 id="finding-claude-code">Claude Code</h3>
+      <ul>
+        <li><strong>Where.</strong> <code>claude</code> on the <code>PATH</code>, then its usual places:
+          <code>~/.claude/local/</code>, <code>~/.local/bin/</code>, <code>/opt/homebrew/bin/</code>,
+          <code>/usr/local/bin/</code>, <code>~/.npm-global/bin/</code>, and <code>~/.bun/bin/</code>.</li>
+        <li><strong>Which version.</strong> <code>claude --version</code> must name Claude Code, at version 2.0 or
+          later. A version newer than the ones HarmFlow was tested with runs, with a warning.</li>
+        <li><strong>Which flags.</strong> <code>claude --help</code> must list <code>--print</code>,
+          <code>--output-format</code>, <code>--permission-mode</code>, <code>--allowedTools</code>, and
+          <code>--append-system-prompt</code>. The efforts a task may ask for are the ones its <code>--effort</code>
+          help lists.</li>
+        <li><strong>Signed in.</strong> <code>claude auth status</code> must not say it is signed out. A harness signed
+          out is not ready: run <code>claude</code> in a terminal and sign in, or start its sign-in from HarmFlow
+          (<code>POST /harnesses/claude-code/sign-in</code>). A long-lived token saved through HarmFlow
+          (<code>PUT /harnesses/claude-code/token</code>) reaches every check and session as
+          <code>CLAUDE_CODE_OAUTH_TOKEN</code>.</li>
+      </ul>
+
+      <h3 id="finding-codex">Codex</h3>
+      <ul>
+        <li><strong>Where.</strong> <code>codex</code> on the <code>PATH</code>, then the CLI inside the Codex app in
+          <code>/Applications</code> or <code>~/Applications</code>, and <code>/opt/homebrew/bin/</code>,
+          <code>/usr/local/bin/</code>, <code>~/.local/bin/</code>, <code>~/.npm-global/bin/</code>, and
+          <code>~/.bun/bin/</code>.</li>
+        <li><strong>Which version.</strong> <code>codex --version</code> must name Codex. A version newer than the ones
+          HarmFlow was tested with runs, with a warning.</li>
+        <li><strong>Which flags.</strong> <code>codex exec --help</code> must list <code>--json</code>,
+          <code>--sandbox</code>, <code>--cd</code>, and <code>--skip-git-repo-check</code>, and
+          <code>codex --help</code> must list <code>app-server</code>.</li>
+        <li><strong>Signed in.</strong> <code>codex login status</code> must not say it is signed out: run
+          <code>codex login</code>. Through <code>codex app-server</code>, HarmFlow also reads the account&#x27;s
+          sign-in method and plan, and warns when requirements an administrator set refuse the approval policy or the
+          sandbox modes HarmFlow uses.</li>
+        <li><strong>Models and efforts.</strong> Read from the models cache in Codex&#x27;s home folder; when it cannot
+          be read, a task&#x27;s model and effort go unchecked, with a warning.</li>
+      </ul>
+
+      <h2 id="session">What a session is given</h2>
+      <ul>
+        <li><strong>One process per attempt</strong>, started in the task&#x27;s workspace, in a process group of its
+          own.</li>
+        <li><strong>The prompt on standard input</strong>, never on the command line.</li>
+        <li><strong>A context note</strong> on what the execution is and where its files go, and, after a failover,
+          what the attempt before it did (<a href="#failover">below</a>).</li>
+        <li><strong>The environment.</strong> The daemon&#x27;s own, without the variables of a harness session it may
+          itself be running in and without any <code>HARMFLOW_</code> variable it inherited, plus
+          <code>HARMFLOW_EXECUTION_ID</code>, <code>HARMFLOW_TASK_ID</code>, <code>HARMFLOW_EXECUTION_DIR</code>, and
+          <code>HARMFLOW_WORKSPACE</code>.</li>
+        <li><strong>The model and the effort</strong> of the task&#x27;s harness profile, passed only when they are not
+          <code>default</code>.</li>
+      </ul>
+
+      <h3 id="session-claude-code">Claude Code</h3>
+<pre><code>claude -p --output-format stream-json --verbose \
+  --no-session-persistence \
+  --model &lt;model&gt; --effort &lt;effort&gt; \
+  --append-system-prompt &lt;context note&gt; \
+  --permission-mode &lt;mode&gt; --allowedTools &lt;tools&gt; \
+  --add-dir &lt;execution folder&gt;</code></pre>
+      <ul>
+        <li><strong>Sessions are not kept:</strong> <code>--no-session-persistence</code> where the CLI has it.
+          Claude Code does not take <code>ephemeral: false</code>.</li>
+        <li><strong>Permissions.</strong> <code>workspace_write</code> runs with <code>--permission-mode acceptEdits</code>
+          and an allowlist of the reading, editing, and shell tools. <code>read_only</code> runs with
+          <code>--permission-mode dontAsk</code> and only the reading tools, the shell and the editing tools
+          disallowed. <code>custom</code> passes its <code>allowedTools</code> and <code>deniedTools</code> as
+          <code>--allowedTools</code> and <code>--disallowedTools</code>, and each <code>writablePaths</code> entry as
+          <code>--add-dir</code>. A denied network disallows the web tools.</li>
+        <li><strong>What Claude Code cannot enforce</strong> runs with a warning: its shell is not confined to the
+          workspace, a denied network does not stop a shell command, and allow rules in your own Claude Code settings
+          can widen a task&#x27;s permissions.</li>
+        <li><strong>Agents and skills.</strong> HarmFlow&#x27;s built-in skills reach the session as a plugin of that
+          session only (<code>--plugin-dir</code>), and its built-in agents as <code>--agents</code>, each a subagent:
+          the session runs as Claude Code&#x27;s default agent. Your own agents and skills are the ones Claude Code
+          loads itself, from its configuration and the workspace; HarmFlow checks that each one a task cites is
+          there.</li>
+      </ul>
+
+      <h3 id="session-codex">Codex</h3>
+<pre><code>codex exec --json --skip-git-repo-check \
+  --cd &lt;workspace&gt; --ephemeral --color never \
+  --model &lt;model&gt; \
+  -c model_reasoning_effort="&lt;effort&gt;" \
+  -c approval_policy="never" \
+  --sandbox workspace-write \
+  -c sandbox_workspace_write.network_access=true \
+  --add-dir &lt;execution folder&gt; -</code></pre>
+      <ul>
+        <li><strong>Sessions are not kept:</strong> <code>--ephemeral</code>, unless the profile sets
+          <code>ephemeral: false</code>.</li>
+        <li><strong>Nothing waits for an approval:</strong> <code>approval_policy="never"</code>.</li>
+        <li><strong>Permissions.</strong> <code>read_only</code> runs in the <code>read-only</code> sandbox, which
+          blocks the network; until a real run proves that it also refuses the file changes Codex makes itself, the
+          profile runs with a warning that it is not enforced. Every other profile runs in the <code>workspace-write</code> sandbox, whose writes stay in
+          the workspace and the added folders, with the network as the task sets it. <code>custom</code> passes each
+          <code>writablePaths</code> entry as <code>--add-dir</code>; Codex has no per-tool lists, so its
+          <code>allowedTools</code> and <code>deniedTools</code> run with a warning that they are not enforced.</li>
+        <li><strong>Agents and skills.</strong> The instructions on standard input are the context note, then a list of
+          the cited agents and a list of the cited skills — each with its description and the path of its file, to read
+          in full and follow — then the prompt. Your own agents come from Codex&#x27;s home folder, and your skills are
+          the ones <code>codex app-server</code> lists for the workspace.</li>
+      </ul>
+
+      <h2 id="reading">What HarmFlow reads back</h2>
+      <ul>
+        <li><strong>Claude Code</strong> prints one JSON object per line (<code>stream-json</code>). HarmFlow reads the
+          session id and the model from its <code>init</code> line, the messages, the tool calls and their results —
+          the shell commands, and the files the editing tools changed — the rate-limit notices, and the
+          <code>result</code> line: the final text, whether it is an error, the cost, the token use per model, and the
+          tool calls Claude Code refused.</li>
+        <li><strong>Codex</strong> prints JSON lines (<code>--json</code>). HarmFlow reads the thread id, the token use
+          of each turn, the shell commands with their exit codes, the changed files, the final message, a failed turn,
+          and the notices that a setting was overridden by an administrator&#x27;s requirements. The cost is priced from
+          the token use.</li>
+        <li><strong>Each attempt ends in one class:</strong> none (it succeeded), <code>quota_exhausted</code>,
+          <code>rate_limited</code>, <code>harness_unavailable</code> (signed out included), <code>network</code>,
+          <code>timeout</code>, <code>cancelled</code>, <code>task_error</code>, or <code>unknown</code>. HarmFlow
+          reads the class from what the harness reported, and anything it cannot tell apart is a
+          <code>task_error</code>, never a quota: only a clear signal makes a task fail over.</li>
+        <li><strong>Extra usage.</strong> Claude Code says when a session turns to usage billed beyond its plan; when
+          the task does not allow extra usage, HarmFlow ends that attempt. Codex does not say it, so on Codex the
+          setting runs with a warning that it is not enforced.</li>
+      </ul>
+
+      <h2 id="stopping">How an attempt is stopped</h2>
+      <p>On a cancel, a timeout, or the end of the harness itself, HarmFlow signals the harness&#x27;s process group and
+        every process the attempt started with <code>SIGTERM</code>, waits up to the task&#x27;s
+        <code>execution.cancelGraceSeconds</code>, then ends what is left with <code>SIGKILL</code>. A process the
+        attempt left running is found by its group, its descent, and the execution id in its environment, and the
+        execution records what it ended. After a restart of the daemon, the processes an attempt left are found and
+        ended too.</p>
+
+      <h2 id="failover">How a task fails over</h2>
+      <p>A task names its harnesses in <code>spec.harness</code> of its <a href="/docs/reference/task-file/#harness">task
+        file</a>: <code>preferred</code>, then <code>fallback.candidates</code> in order. A candidate that lacks one of
+        the task&#x27;s agents or skills is left out of the chain, with an <code>invalid_fallback</code> warning.</p>
+      <ul>
+        <li><strong>Before each attempt</strong>, HarmFlow checks the harness again: one not ready counts as
+          <code>harness_unavailable</code>, and one whose quota is exhausted, when the task does not allow extra usage,
+          counts as <code>quota_exhausted</code> without starting.</li>
+        <li><strong><code>quota_exhausted</code> and <code>harness_unavailable</code></strong> switch to the next
+          harness of the chain, when <code>fallback.on</code> lists the class, a next harness exists, and the execution
+          has switched fewer times than <code>fallback.maxSwitches</code>. With no harness left, the execution fails with
+          <code>harness.no_alternative</code>.</li>
+        <li><strong><code>rate_limited</code> never switches.</strong> The attempt retries on the same harness, up to
+          <code>execution.rateLimit.maxRetries</code> times, waiting for the reset the harness reported or else for
+          <code>initialWaitSeconds</code>, doubling up to <code>maxWaitSeconds</code>.</li>
+        <li><strong>Every other class ends the execution</strong>: <code>network</code>, <code>timeout</code>,
+          <code>task_error</code>, and <code>unknown</code> fail it, and <code>cancelled</code> cancels it. One
+          <code>execution.timeoutMinutes</code> covers every attempt.</li>
+        <li><strong>The next harness starts a new session.</strong> Its context note names the harness and model before
+          it, how that attempt ended, its last operation, and its last message, with the files changed in the workspace
+          so far; and the execution&#x27;s <code>context.json</code> carries each work item&#x27;s branch, head commit,
+          and last test result. The note asks the session to check what the attempt before it already did before it
+          commits, pushes, or opens a pull request again. The switch is a <code>harness.switched</code> event.</li>
+      </ul>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>

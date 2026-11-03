@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>The local API · HarmFlow</title>
+  <meta name="description" content="How a client reaches the HarmFlow daemon on the Mac and authenticates, the resources it serves, its event stream, and the shape of an error.">
+  <link rel="canonical" href="https://harmflow.com/docs/reference/local-api/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="The local API · HarmFlow">
+  <meta property="og:description" content="How a client reaches the HarmFlow daemon on the Mac and authenticates, the resources it serves, its event stream, and the shape of an error.">
+  <meta property="og:url" content="https://harmflow.com/docs/reference/local-api/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>The local API</h1>
+      <p>The HarmFlow window is one client of the daemon, the background process that runs your tasks; a script of
+        yours can be another. Everything the window does goes through this API. The authority is the OpenAPI
+        description in <code>harmflow-app</code>,
+        <a href="https://github.com/harmflow/harmflow-app/blob/e79a8257a2e7949f893fc12d008ba0d85f26c4a8/contracts/api/openapi.yaml"><code>contracts/api/openapi.yaml</code></a>,
+        version <code>v1</code>: where this page and it differ, it wins.</p>
+
+      <h2 id="reach">Reaching the daemon</h2>
+      <ul>
+        <li><strong>Only from the Mac itself.</strong> The daemon serves HTTP on the loopback address,
+          <code>127.0.0.1</code>, which no other computer can reach. Every path is under <code>/api/v1/</code>.</li>
+        <li><strong>A port of its own each start.</strong> The daemon picks a free port when it starts and writes it to
+          its runtime file, <code>run/daemon.json</code> in HarmFlow&#x27;s data folder
+          (<code>~/Library/Application Support/HarmFlow</code>, or the folder <code>HARMFLOW_HOME</code> names). The
+          file holds <code>address</code>, <code>port</code>, <code>pid</code>, <code>version</code>,
+          <code>startedAt</code>, and <code>tokenStore</code>; only you can read it, and it goes away when the daemon
+          stops.</li>
+        <li><strong>Not from a web page.</strong> A request whose <code>Host</code> is not the loopback address, or
+          whose <code>Origin</code> is a web page, is refused with <code>403</code>.</li>
+      </ul>
+
+      <h2 id="authentication">Authenticating</h2>
+      <ul>
+        <li><strong>A bearer token on every request</strong>, the event stream included:
+          <code>Authorization: Bearer &lt;token&gt;</code>. A missing or wrong token is refused with
+          <code>401</code>.</li>
+        <li><strong>One token per installation.</strong> The daemon makes it on its first start and keeps it, by default, in
+          your Mac&#x27;s Keychain, as the item of service <code>com.harmflow.local-api</code> and account
+          <code>token</code>, which the window reads too. A start never replaces it.</li>
+        <li><strong>Replacing it.</strong> <code>POST /settings/token/rotate</code> makes a new token; its answer is the
+          last one the old token authorizes.</li>
+      </ul>
+      <p>From a terminal on the Mac, with <code>jq</code> installed:</p>
+<pre><code>dir=~/Library/Application\ Support/HarmFlow
+port=$(jq .port "$dir/run/daemon.json")
+token=$(security find-generic-password \
+  -s com.harmflow.local-api -a token -w)
+curl -H "Authorization: Bearer $token" \
+  "http://127.0.0.1:$port/api/v1/tasks"</code></pre>
+
+      <h2 id="conventions">Conventions</h2>
+      <ul>
+        <li>Resources are plural, and an action is a <code>POST</code> to a verb under its resource:
+          <code>POST /tasks/{taskId}/run</code>.</li>
+        <li>Bodies are JSON. Keys are camelCase, and values from a closed set are snake_case.</li>
+        <li>A task is written as its YAML text, <code>yaml</code>, or as its document, <code>document</code>, and both
+          go through the same validation as a <a href="/docs/reference/task-file/">task file</a>. An update names the
+          <code>baseRevision</code> it started from: a file that changed meanwhile is a <code>409</code> conflict,
+          never a silent overwrite.</li>
+      </ul>
+
+      <h2 id="resources">The resources</h2>
+
+      <h3 id="tasks">Tasks</h3>
+      <ul>
+        <li><code>GET /tasks</code> — every task, with its next firing and its latest execution.</li>
+        <li><code>POST /tasks</code> — create a task; <code>POST /tasks/validate</code> — validate one, writing
+          nothing; <code>POST /tasks/import</code> — import a portable task file.</li>
+        <li><code>GET</code>, <code>PUT</code>, and <code>DELETE /tasks/{taskId}</code> — read, update, and delete a
+          task.</li>
+        <li><code>POST /tasks/{taskId}/run</code> — start it by hand; <code>/enable</code> and <code>/disable</code>
+          — enable and disable it; <code>/duplicate</code> — copy it, disabled, under a new identifier.</li>
+        <li><code>GET /tasks/{taskId}/export</code> — its portable YAML, with no secrets, logs, or state.</li>
+        <li><code>POST /schedules/preview</code> — the next occurrences of a schedule, in its time zone.</li>
+        <li><code>GET /templates</code> and <code>POST /templates/{templateId}/draft</code> — the task templates, and
+          a new task&#x27;s document built from one.</li>
+        <li><code>GET /catalog</code> — the agents and skills a task can cite.</li>
+      </ul>
+
+      <h3 id="executions">Executions</h3>
+      <ul>
+        <li><code>GET /executions</code> — executions, newest first, filtered by <code>taskId</code>,
+          <code>status</code>, <code>active</code>, <code>createdFrom</code>, and <code>createdUntil</code>, and paged
+          with <code>limit</code> and <code>before</code>.</li>
+        <li><code>GET /executions/{executionId}</code> — one execution: its attempts, work items, warnings, changed
+          files, and commands.</li>
+        <li><code>POST /executions/{executionId}/cancel</code> — cancel it; the others go on.</li>
+        <li><code>GET /executions/{executionId}/output</code> — what the harness printed, one capture per attempt,
+          with secrets redacted.</li>
+        <li><code>GET /executions/{executionId}/events</code> — its stored events, after the event id
+          <code>after</code>.</li>
+        <li><code>GET /stats</code> and <code>GET /queue</code> — counters of the executions, and the firings that
+          wait or come next.</li>
+      </ul>
+
+      <h3 id="daemon">The daemon and its harnesses</h3>
+      <ul>
+        <li><code>GET /health</code> — its state and version; <code>GET /diagnostics</code> — its folders, address, and
+          token store; <code>POST /daemon/stop</code> — stop it.</li>
+        <li><code>GET /harnesses</code> and <code>POST /harnesses/refresh</code> — Claude Code and Codex as the daemon
+          found them, and a new search for them. <a href="/docs/reference/harnesses/">The harnesses</a> says
+          how.</li>
+        <li><code>GET /tools</code> — Git and the GitHub CLI as found on the Mac.</li>
+        <li><code>GET</code> and <code>PATCH /settings</code>, <code>GET /notifications</code>, and
+          <code>POST /notifications/read</code>.</li>
+      </ul>
+
+      <h2 id="example">An example</h2>
+<pre><code>GET /api/v1/tasks
+
+200 OK
+[
+  {
+    "id": "weekly-notes",
+    "name": "Weekly notes",
+    "type": "general",
+    "enabled": true,
+    "revision": "3f9c2a7d1e4b8a60",
+    "harness": "claude-code",
+    "fallbackHarnesses": ["codex"],
+    "schedule": "0 9 * * 1",
+    "timezone": "America/New_York",
+    "nextFireAt": "2026-11-09T14:00:00Z",
+    "running": false,
+    "queued": false,
+    "repositories": [],
+    "warnings": []
+  }
+]</code></pre>
+      <p><code>revision</code> identifies the task file&#x27;s content: an update sends it back as
+        <code>baseRevision</code>.</p>
+
+      <h2 id="stream">The event stream</h2>
+      <ul>
+        <li><code>GET /events/stream</code> answers with <code>text/event-stream</code>: Server-Sent Events, every
+          task&#x27;s and execution&#x27;s, as they happen.</li>
+        <li>Each message is <code>id: &lt;event id&gt;</code>, <code>event: &lt;type&gt;</code>, and
+          <code>data: &lt;event JSON&gt;</code>. An event holds <code>id</code>, <code>schemaVersion</code>,
+          <code>timestamp</code>, <code>type</code>, and <code>severity</code> (<code>debug</code>, <code>info</code>,
+          <code>warning</code>, or <code>error</code>), and, when they apply, <code>taskId</code>,
+          <code>executionId</code>, <code>attempt</code>, <code>harness</code>, <code>message</code>, and
+          <code>payload</code>. Its types read <code>object.action</code>, such as
+          <code>execution.completed</code>.</li>
+        <li>A client that reconnects sends the last id it read, as <code>Last-Event-ID</code> or as the query
+          <code>after</code>, and first receives the events after it that the daemon still holds. An
+          <code>event: replay_gap</code> message says older ones are gone from the stream: read them per execution,
+          from <code>GET /executions/{executionId}/events</code>.</li>
+      </ul>
+
+      <h2 id="errors">Errors</h2>
+      <p>Every error answers with one object, <code>error</code>, which holds a <code>code</code> and a
+        <code>message</code> in English, and may hold <code>messageKey</code> and <code>params</code> to translate the
+        message, <code>validation</code> with each problem a task has, and <code>currentRevision</code> on a conflict
+        over a task file.</p>
+<pre><code>404 Not Found
+{
+  "error": {
+    "code": "not_found",
+    "message": "no task weekly-report"
+  }
+}</code></pre>
+      <p>The codes are <code>bad_request</code>, <code>unauthorized</code>, <code>forbidden</code>,
+        <code>not_found</code>, <code>conflict</code>, <code>validation_failed</code>, <code>task_disabled</code>,
+        <code>executions_running</code>, and <code>internal</code>. A task that fails validation answers with
+        <code>422</code>, and nothing is written.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
