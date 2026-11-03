@@ -154,7 +154,8 @@ NOT_FOUND = """<!doctype html>
 <body>
 <header><a href="/">HarmFlow</a></header>
 <main>
-  <p>Page not found. <a href="/">Home</a></p>
+  <h1>Page not found</h1>
+  <p><a href="/">Home</a></p>
   <p lang="pt-BR">Página não encontrada. <a href="/pt-br/">Início</a></p>
   <p lang="es-ES">Página no encontrada. <a href="/es-es/">Inicio</a></p>
 </main>
@@ -749,6 +750,62 @@ class CheckSiteTest(unittest.TestCase):
             ],
             lines,
         )
+
+    # The root 404 page.
+
+    def test_a_tree_with_pages_and_no_root_404_page_fails(self):
+        os.remove(os.path.join(self.root, "404.html"))
+        lines = self.assertFails("not found: 404.html is missing")
+        self.assertEqual(len([line for line in lines if "not found:" in line]), 1, lines)
+
+    def test_a_404_page_with_no_heading_that_says_not_found_fails(self):
+        self.write("404.html", NOT_FOUND.replace("<h1>Page not found</h1>", "<h1>Oops</h1>"))
+        self.assertFails("not found: 404.html: its main has no heading that says the page was not found")
+
+    def test_a_not_found_heading_outside_main_fails(self):
+        moved = NOT_FOUND.replace("  <h1>Page not found</h1>\n", "").replace(
+            "</a></header>", "</a><h1>Page not found</h1></header>"
+        )
+        self.write("404.html", moved)
+        self.assertFails("not found: 404.html: its main has no heading that says the page was not found")
+
+    def test_a_not_found_heading_in_any_case_passes(self):
+        self.write("404.html", NOT_FOUND.replace("<h1>Page not found</h1>", "<h2>404 · <em>Not  Found</em></h2>"))
+        self.assertPasses()
+
+    # The header's link home is outside main, so it does not count.
+    def test_a_404_page_with_no_link_to_the_landing_page_fails(self):
+        self.write("404.html", NOT_FOUND.replace('<p><a href="/">Home</a></p>', '<p><a href="/support/">Help</a></p>'))
+        self.assertFails("not found: 404.html: its main has no link to the landing page (/ or https://harmflow.com/)")
+
+    def test_a_link_to_the_landing_page_at_harmflow_com_passes(self):
+        self.write("404.html", NOT_FOUND.replace('<a href="/">Home</a>', '<a href="https://harmflow.com/">Home</a>'))
+        self.assertPasses()
+
+    # Each of these resolves from the root, where the file sits, so only the 404 page's own rule sees it break.
+    def test_a_relative_link_in_the_404_page_fails_naming_the_attribute_and_value(self):
+        self.write("404.html", NOT_FOUND.replace('<a href="/">Home</a>', '<a href="/">Home</a> <a href="privacy/">x</a>'))
+        lines = self.assertFails("not found: 404.html:", 'href="privacy/" is a relative path')
+        self.assertEqual([line for line in lines if "links:" in line], [], lines)
+
+    def test_a_relative_asset_in_the_404_page_fails_naming_the_attribute_and_value(self):
+        styled = NOT_FOUND.replace("<head>", '<head><link rel="stylesheet" href="styles/site.css">')
+        self.write("404.html", styled.replace("<h1>", '<img src="showroom/poster.png" alt=""><h1>'))
+        self.assertFails('href="styles/site.css" is a relative path', 'src="showroom/poster.png" is a relative path')
+
+    def test_a_relative_srcset_candidate_in_the_404_page_fails(self):
+        image = '<img src="/showroom/poster.png" srcset="/showroom/poster.png 1x, ./showroom/poster.png 2x" alt="">'
+        self.write("404.html", NOT_FOUND.replace("<h1>", image + "<h1>"))
+        lines = self.assertFails('srcset="./showroom/poster.png" is a relative path')
+        self.assertEqual(len([line for line in lines if "not found:" in line]), 1, lines)
+
+    def test_root_paths_absolute_urls_and_anchors_in_the_404_page_pass(self):
+        links = (
+            '<p><a href="#top">Top</a> <a href="https://github.com/harmflow/harmflow-app">The app</a> '
+            '<a href="mailto:support@example.com">Mail</a> <a href="/privacy/">Privacy</a></p>'
+        )
+        self.write("404.html", NOT_FOUND.replace("</main>", links + "\n</main>"))
+        self.assertPasses()
 
     # Media budget.
 
