@@ -851,6 +851,7 @@ class CheckSiteTest(unittest.TestCase):
             '<a href="mailto:support@example.com">Mail</a> <a href="/privacy/">Privacy</a></p>'
         )
         self.write("404.html", NOT_FOUND.replace("</main>", links + "\n</main>"))
+        self.assertPasses()
 
     # Colors.
 
