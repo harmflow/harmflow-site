@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>The queue panel's statuses · HarmFlow</title>
+  <meta name="description" content="What To resume and To retry mean in the execution queue, which work items appear under each, and when an item needs attention instead.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/executions/queue-statuses/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="The queue panel's statuses · HarmFlow">
+  <meta property="og:description" content="What To resume and To retry mean in the execution queue, which work items appear under each, and when an item needs attention instead.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/executions/queue-statuses/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>The queue panel's statuses</h1>
+      <p>A task that works items such as issues keeps a list of the work items its sessions have taken on, with the
+        state each one was left in. The <strong>Execution queue</strong> panel of the Executions screen shows what waits
+        for a later run: the firings still waiting to start, marked <strong>Waiting</strong>, the next scheduled runs,
+        marked <strong>Scheduled</strong>, and the work items a later run takes up again, marked
+        <strong>To resume</strong> or <strong>To retry</strong>. Selecting a work item opens the last execution that
+        worked it.</p>
+
+      <h2 id="statuses">To resume and To retry</h2>
+      <ul>
+        <li><strong>To resume</strong> is a work item still in progress: one whose draft pull request's tests failed,
+          or one whose execution you cancelled. A later run continues the work it holds.</li>
+        <li><strong>To retry</strong> is a work item that failed: its session reported it failed, or left it without a
+          result. A later run tries it again.</li>
+      </ul>
+      <p>The panel lists no other work item. An item that was completed or closed is done, and one that needs
+        attention waits for you, not for a later run.</p>
+
+      <h2 id="skipped">A skipped item</h2>
+      <p>An item a session reports as skipped keeps the status it had before that session. An item HarmFlow did not
+        hold before gets no entry at all, so the panel never lists a skipped item as work to resume.</p>
+
+      <h2 id="no-result">An item left without a result</h2>
+      <p>An item a session selected and left without a result counts as one failed attempt, however the execution
+        ended, unless you cancelled it: the session failed, timed out, or stopped when the daemon stopped. The item then
+        reads as failed, shown as <strong>To retry</strong>. Every item the session selected counts, not only the last
+        one.</p>
+
+      <h2 id="cancelled">A cancelled execution</h2>
+      <p>When you cancel an execution, its work items count no failure. Each one stays in progress, shown as
+        <strong>To resume</strong>.</p>
+
+      <h2 id="needs-attention">When an item needs attention</h2>
+      <p>Two settings of the task limit how often a later run takes an item up again, both 3 by default:</p>
+      <ul>
+        <li><strong>Retries of a failed item.</strong> An item whose failed attempts go past this limit needs
+          attention.</li>
+        <li><strong>Resumptions before needs attention.</strong> An item resumed this many times that would still be
+          resumed needs attention.</li>
+      </ul>
+      <p>An item that needs attention leaves the panel. Its last execution says what happened to it.</p>
+
+      <h2 id="unreadable-report">When a report cannot be read</h2>
+      <p>When a session's report is not valid JSON or does not follow its schema, HarmFlow cannot read the results it
+        held. The execution then needs attention and says why, and each item the session selected counts as left
+        without a result. <a href="/docs/guide/executions/ignored-report/">An execution whose report was ignored</a>
+        explains how to read its reason.</p>
+
+      <h2 id="after-update">After an update</h2>
+      <p>Earlier versions of HarmFlow left skipped items, and items left without a result, in progress for good. The
+        first time HarmFlow starts after the update that changed this, it repairs those entries once: a skipped item
+        with no resumption or failure counted leaves the list, and an item left without a result counts one failed
+        attempt.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
