@@ -46,8 +46,9 @@
 
       <h2 id="statuses">To resume and To retry</h2>
       <ul>
-        <li><strong>To resume</strong> is a work item still in progress: one whose draft pull request's tests failed,
-          or one whose execution you cancelled. A later run continues the work it holds.</li>
+        <li><strong>To resume</strong> is a work item still in progress: one a running execution is working on, one
+          whose draft pull request's tests failed, or one whose execution you cancelled. Once no execution works it, a
+          later run continues the work it holds.</li>
         <li><strong>To retry</strong> is a work item that failed: its session reported it failed, or left it without a
           result. A later run tries it again.</li>
       </ul>
@@ -56,7 +57,7 @@
 
       <h2 id="skipped">A skipped item</h2>
       <p>An item a session reports as skipped keeps the status it had before that session. An item HarmFlow did not
-        hold before gets no entry at all, so the panel never lists a skipped item as work to resume.</p>
+        hold before gets no entry at all, so a skip never puts an item under <strong>To resume</strong>.</p>
 
       <h2 id="no-result">An item left without a result</h2>
       <p>An item a session selected and left without a result counts as one failed attempt, however the execution
