@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>A script task's working directory, variables, and timeout · HarmFlow</title>
+  <meta name="description" content="Where a HarmFlow script task's program starts, which environment variables it sees and which value wins when a name repeats, and when HarmFlow stops it.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/tasks/script-task-environment/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="A script task's working directory, variables, and timeout · HarmFlow">
+  <meta property="og:description" content="Where a HarmFlow script task's program starts, which environment variables it sees and which value wins when a name repeats, and when HarmFlow stops it.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/tasks/script-task-environment/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>A script task's working directory, variables, and timeout</h1>
+      <p>A script task runs a program you name, on a schedule or by hand, with no AI tool involved. This page says where
+        that program starts, which environment variables it sees, and when HarmFlow stops it. In the task editor, they
+        are the task's <strong>Working directory</strong>, <strong>Environment variables</strong>, and
+        <strong>Timeout (minutes), shared by all attempts</strong> fields.</p>
+
+      <h2 id="working-directory">Where the program starts</h2>
+      <p>A script task can set the working directory its program starts in.</p>
+      <ul>
+        <li><strong>A working directory set.</strong> The program starts in that folder. <code>~</code> in it stands
+          for your home folder.</li>
+        <li><strong>None set.</strong> The program starts in your home folder.</li>
+      </ul>
+
+      <h2 id="variables">The variables the program sees</h2>
+      <p>A script task can set environment variables, one <code>NAME=value</code> per line. The program sees your own
+        environment, as HarmFlow runs with it, plus the task's variables:</p>
+      <ul>
+        <li><strong>A name only the task sets.</strong> The program sees it with the task's value.</li>
+        <li><strong>A name your environment already has.</strong> The task's variable replaces it. The program sees
+          the name once, with the task's value.</li>
+        <li><strong>A name the task does not set.</strong> It reaches the program unchanged.</li>
+      </ul>
+
+      <h2 id="timeout">When the program is stopped</h2>
+      <p>A script task can set a timeout, in minutes.</p>
+      <ul>
+        <li><strong>A timeout set.</strong> HarmFlow stops the program once it has run that long.</li>
+        <li><strong>None set.</strong> HarmFlow stops the program after 60 minutes.</li>
+      </ul>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
