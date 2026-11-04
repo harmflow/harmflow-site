@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>A script task's systems and run record · HarmFlow</title>
+  <meta name="description" content="Which systems a HarmFlow script task runs on, what the app shows when it does not run, and what the record of each run keeps and hides.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/tasks/script-task-systems-and-records/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="A script task's systems and run record · HarmFlow">
+  <meta property="og:description" content="Which systems a HarmFlow script task runs on, what the app shows when it does not run, and what the record of each run keeps and hides.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/tasks/script-task-systems-and-records/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>A script task's systems and run record</h1>
+      <p>A script task runs a program you name, on a schedule or by hand, with no AI tool involved. This page says which
+        systems a saved script task runs on, what the app shows when it does not run, and what HarmFlow keeps of each
+        run.</p>
+
+      <h2 id="systems">The systems a script task runs on</h2>
+      <p>A script task can declare the operating systems it runs on: macOS, Linux, or Windows. In the task editor, they
+        are the task's <strong>Runs on</strong> choices.</p>
+      <ul>
+        <li><strong>None declared.</strong> The task runs on every system.</li>
+        <li><strong>Some declared.</strong> The task runs only on the systems it declares.</li>
+      </ul>
+      <p>A task can declare systems other than the one you are on, for example a task written on, or imported from,
+        another computer. HarmFlow still saves it, and keeps it from running here.</p>
+
+      <h2 id="not-here">On a system the task does not declare</h2>
+      <p>On a system it does not declare, a script task does not run: its program is never started, whether its
+        schedule fires or you press Run now.</p>
+      <ul>
+        <li><strong>The Tasks screen</strong> shows the task with a warning that names the systems it declares and the
+          system you are on.</li>
+        <li><strong>Run now</strong> starts no execution and explains the refusal, with that same text.</li>
+        <li><strong>A firing of its schedule</strong> is skipped, not run.</li>
+        <li><strong>The task editor</strong> shows the same warning, with the field it belongs to: the systems the task
+          runs on.</li>
+      </ul>
+
+      <h2 id="record">What the record of a run keeps</h2>
+      <p>The record of each run of a script task keeps the program as it ran:</p>
+      <ul>
+        <li><strong>The program.</strong> Its arguments, or its interpreter and its whole inline script.</li>
+        <li><strong>The working directory</strong> it started in.</li>
+        <li><strong>The variables</strong> the task set.</li>
+        <li><strong>Its exit status.</strong></li>
+      </ul>
+      <p>The record keeps what ran at the time. Editing the task afterwards never changes what an older run shows.</p>
+
+      <h2 id="redacted">What the record hides</h2>
+      <p>The record hides secrets the way the run's output does. A token inside an argument, the interpreter's
+        arguments, the script, or a variable's value shows as <code>[REDACTED]</code>. The rest of the text, and each
+        variable's name, stay as written.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
