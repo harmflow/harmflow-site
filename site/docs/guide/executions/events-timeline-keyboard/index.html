@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>The events timeline and the keyboard · HarmFlow</title>
+  <meta name="description" content="Stepping through an execution's events timeline from the keyboard: the keys, when they act, and how assistive technology reads the list.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/executions/events-timeline-keyboard/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="The events timeline and the keyboard · HarmFlow">
+  <meta property="og:description" content="Stepping through an execution's events timeline from the keyboard: the keys, when they act, and how assistive technology reads the list.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/executions/events-timeline-keyboard/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>The events timeline and the keyboard</h1>
+      <p>The Events tab of an execution's detail lists its events in a timeline, and the Event details pane shows the
+        event selected in it. You can move that selection from the keyboard as well as with the mouse.</p>
+
+      <h2 id="keys">The keys</h2>
+      <ul>
+        <li><strong>↓ and ↑.</strong> ↓ selects the next event, and ↑ the previous one. They do not wrap: at the last
+          event ↓ changes nothing, and at the first ↑ changes nothing.</li>
+        <li><strong>Home and End.</strong> Home selects the first event, and End the last.</li>
+      </ul>
+      <p>A key that moves the selection scrolls that event into view, shows it in the Event details pane, and turns
+        Follow off, as a click on the event does. The page itself does not scroll.</p>
+
+      <h2 id="focus">When the keys act</h2>
+      <ul>
+        <li><strong>One tab stop.</strong> The timeline is one stop in the tab order. Its events are not stops of their
+          own, so Tab moves past the whole list in one step.</li>
+        <li><strong>Only with focus.</strong> The keys act only while the timeline has focus. Pressed from another
+          control, such as the Follow checkbox, or with ⌘, Ctrl, or Alt held, they change nothing.</li>
+        <li><strong>A click gives focus.</strong> Clicking an event gives the timeline focus, so the arrow keys work
+          right after the click.</li>
+      </ul>
+
+      <h2 id="assistive-technology">With assistive technology</h2>
+      <p>Assistive technology reads the timeline as a list named "Event timeline", whose selected option is the
+        selected event.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
