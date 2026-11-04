@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Editing a task while it runs · HarmFlow</title>
+  <meta name="description" content="What happens when you edit a HarmFlow task while one of its executions runs: what the running execution keeps, when the edit takes effect, and what an invalid edit changes.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/tasks/editing-while-running/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="Editing a task while it runs · HarmFlow">
+  <meta property="og:description" content="What happens when you edit a HarmFlow task while one of its executions runs: what the running execution keeps, when the edit takes effect, and what an invalid edit changes.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/tasks/editing-while-running/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>Editing a task while it runs</h1>
+      <p>You can edit and save a task while one of its executions is running. The edit does not reach the run in
+        progress: it waits for the task's next execution. This page says what the running execution keeps, when the
+        edit takes effect, and what happens to an edit HarmFlow cannot accept.</p>
+
+      <h2 id="kept">What the running execution keeps</h2>
+      <p>An execution runs the task as it was when the execution started, from its first step to its last. Saving an
+        edit meanwhile changes none of these for it:</p>
+      <ul>
+        <li><strong>Its prompt.</strong> The harness keeps working on the prompt it started with, and so does a
+          fallback harness the execution switches to later.</li>
+        <li><strong>Its failover settings.</strong> The fallback harnesses it may switch to, even when the edit adds
+          or removes one.</li>
+        <li><strong>Its notification settings.</strong> The events it notifies you about.</li>
+        <li><strong>Its timeout.</strong> Lengthening or shortening the timeout does not move the end of the run in
+          progress.</li>
+        <li><strong>Its rate-limit retries.</strong> How many times it waits and tries again after a rate limit.</li>
+        <li><strong>Its harness switches.</strong> How many times it may turn to a fallback harness.</li>
+      </ul>
+
+      <h2 id="next">When the edit takes effect</h2>
+      <p>The edit applies from the task's next execution, which starts with the edited values: the new prompt, the
+        new timeout, the new fallback harnesses. A firing that is still waiting to start when you save, behind the
+        execution that runs, is a next execution too, and it starts with the edit.</p>
+
+      <h2 id="invalid">An edit that is not valid</h2>
+      <p>HarmFlow checks an edit before it saves it. An edit that fails that check is refused, and HarmFlow names what
+        is wrong with it. A refused edit changes nothing:</p>
+      <ul>
+        <li>the running execution goes on with the values it started with;</li>
+        <li>the saved task stays as it was, so its next execution runs the last valid version, not part of the
+          refused one.</li>
+      </ul>
+      <p>Correct the edit and save it again: once it is saved, it applies from the next execution.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
