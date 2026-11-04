@@ -198,7 +198,11 @@ class Browser:
                 context.scripts.append(url)
             if parts.netloc == self.host:
                 return r.continue_()
-            frame = r.request.frame
+            try:
+                frame = r.request.frame
+            except Exception:
+                # A link that opens a new tab navigates before its frame exists.
+                frame = None
             context.outside.append((urlsplit(frame.url).path if frame and frame.url else "?", url))
             if parts.netloc == TAG_HOST and parts.path == "/gtag/js":
                 return r.fulfill(status=200, content_type="text/javascript", body=TAG_STAND_IN)
