@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>One timeout across a failover · HarmFlow</title>
+  <meta name="description" content="How the timeout of an execution works when it switches to a fallback harness: one timeout from the start, when the running harness is asked to stop, and how late the execution can end.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/executions/timeout-across-failover/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="One timeout across a failover · HarmFlow">
+  <meta property="og:description" content="How the timeout of an execution works when it switches to a fallback harness: one timeout from the start, when the running harness is asked to stop, and how late the execution can end.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/executions/timeout-across-failover/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>One timeout across a failover</h1>
+      <p>A task can name fallback harnesses, and it has a timeout. When the harness running an execution runs out of
+        quota, or is unavailable, the execution moves to the next harness the task names. The timeout does not start again: the whole
+        execution has one, whichever harnesses it runs on.</p>
+
+      <h2 id="one-timeout">One timeout, from the start</h2>
+      <p>An execution's timeout is counted from when the execution began. A switch to a fallback harness does not start
+        a new one, so the next harness has only the time the timeout has left. Set the timeout for the whole execution,
+        not for each harness: it is <code>timeoutMinutes</code> in the
+        <a href="/docs/reference/task-file/#execution">task file's <code>execution</code> section</a>, 60 minutes by
+        default.</p>
+
+      <h2 id="stop">When the timeout passes</h2>
+      <p>When the timeout passes, HarmFlow asks the harness running at that moment to stop, whichever harness it is. It
+        does not wait for a timeout of that harness's own.</p>
+
+      <h2 id="end">How late the execution can end</h2>
+      <p>A harness that does not stop when asked is ended once the grace period after the timeout is over. That is
+        <code>cancelGraceSeconds</code> in the same section, 30 seconds by default, and
+        <a href="/docs/reference/harnesses/#stopping">How an attempt is stopped</a> tells how the harness's processes
+        are ended. So the execution ends no later than the grace period after the timeout, even when the harness
+        ignores the request to stop.</p>
+      <p>The execution then ends as failed, and its result says that the execution timeout elapsed.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
