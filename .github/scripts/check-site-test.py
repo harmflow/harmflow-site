@@ -184,8 +184,9 @@ def sitemap(rels):
 
 ROBOTS = "User-agent: *\nAllow: /\n\nSitemap: https://harmflow.com/sitemap.xml\n"
 
-# The fixture's typefaces: one WOFF2 file per family, named from the root and relative to the stylesheet, and the two
-# stacks, each with a system font before its generic family.
+# The fixture's styles: one WOFF2 file per family, named from the root and relative to the stylesheet; the two
+# stacks, each with a system font before its generic family; and two placeholders in site.css's :root block, used
+# through their custom properties.
 STYLESHEET = """/* A comment with @font-face { src: url("https://example.com/x.ttf"); } in it, which no check reads. */
 @font-face {
   font-family: "Inter";
@@ -198,12 +199,15 @@ STYLESHEET = """/* A comment with @font-face { src: url("https://example.com/x.t
   src: url(../fonts/jetbrains-mono/jetbrains-mono.woff2) format('woff2');
 }
 
+/* The placeholders, until the palette is approved. */
 :root {
+  --bg: #0b0f1a;
+  --text: #e6e8ee;
   --font-text: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
 }
 
-body { margin: 0; font-family: var(--font-text); }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-text); }
 """
 
 # Not really a font: the four bytes every WOFF2 file starts with, then text.
@@ -847,6 +851,74 @@ class CheckSiteTest(unittest.TestCase):
             '<a href="mailto:support@example.com">Mail</a> <a href="/privacy/">Privacy</a></p>'
         )
         self.write("404.html", NOT_FOUND.replace("</main>", links + "\n</main>"))
+
+    # Colors.
+
+    def assertColorFails(self, *texts):
+        """The check fails with one colors problem, and its output holds each of TEXTS."""
+        lines = self.assertFails(*texts)
+        self.assertEqual(len([line for line in lines if "colors:" in line]), 1, lines)
+
+    def test_a_hex_color_that_is_neither_fails_naming_it(self):
+        self.write("styles/landing.css", ".tag {\n  color: #c4b5fd;\n}\n")
+        self.assertColorFails(
+            "colors: styles/landing.css:2: #c4b5fd is neither one of the logo's colors nor a placeholder"
+        )
+
+    def test_an_rgb_color_that_is_neither_fails_naming_it(self):
+        self.write("styles/landing.css", ".window { box-shadow: 0 40px 120px rgb(0 0 0 / 0.6); }\n")
+        self.assertColorFails("colors: styles/landing.css:1: rgb(0 0 0 / 0.6) is neither")
+
+    def test_an_hsl_color_that_is_neither_fails_naming_it(self):
+        self.write("styles/landing.css", ".badge {\n  margin: 0;\n  border-color: hsla(200, 50%, 40%, 0.5);\n}\n")
+        self.assertColorFails("colors: styles/landing.css:3: hsla(200, 50%, 40%, 0.5) is neither")
+
+    def test_a_named_color_that_is_neither_fails_naming_it(self):
+        self.write("styles/landing.css", ".cta { color: White; background: transparent; border-color: currentColor; }\n")
+        self.assertColorFails("colors: styles/landing.css:1: White is neither")
+
+    def test_a_page_style_attribute_with_a_color_that_is_neither_fails_naming_it(self):
+        body = '<p style="margin: 0;\n  color: #123456">A note</p>'
+        self.write("privacy/index.html", page("en-US", "privacy/index.html", body=body))
+        self.assertColorFails("colors: privacy/index.html:", "#123456 is neither")
+
+    def test_a_page_style_element_with_a_color_that_is_neither_fails_naming_its_line(self):
+        style = "<style>\n  .note { margin: 0; }\n  .note { color: rgb(18, 52, 86); }\n</style>"
+        text = page("en-US", "support/index.html").replace("</head>", style + "\n</head>")
+        self.write("support/index.html", text)
+        line = text.split("\n").index("  .note { color: rgb(18, 52, 86); }") + 1
+        self.assertColorFails("colors: support/index.html:%d: rgb(18, 52, 86) is neither" % line)
+
+    # A custom property declares no placeholder outside site.css's :root block.
+    def test_a_custom_property_outside_the_placeholder_block_fails(self):
+        self.write("styles/landing.css", ".landing { --raised: #121829; }\n.window { background: var(--raised); }\n")
+        self.assertColorFails("colors: styles/landing.css:1: #121829 is neither")
+
+    def test_a_logo_color_at_an_opacity_passes(self):
+        css = (
+            ".landing { --logo-violet: #8b5cf6; --logo-cyan: #22D3EE; }\n"
+            ".tag { background: rgb(139 92 246 / 0.15); border-color: #e040fb80; }\n"
+            ".tag.running { background: rgba(34, 211, 238, 0.12); color: var(--logo-cyan); }\n"
+        )
+        self.write("styles/landing.css", css)
+        self.assertPasses()
+
+    def test_a_placeholder_through_its_custom_property_or_its_value_at_an_opacity_passes(self):
+        css = ".site-header { background: rgb(11 15 26 / 0.72); color: var(--text); border-color: #0b0f1a; }\n"
+        self.write("styles/landing.css", css)
+        self.write("index.html", page("en-US", "index.html", body='<p style="color: var(--text)">A note</p>'))
+        self.assertPasses()
+
+    # What a value does not say is no color: a comment, a string, a url(), an at-rule's condition, or a word that only
+    # holds a color's name, as --logo-cyan and white-space do.
+    def test_a_color_outside_a_value_passes(self):
+        css = (
+            "/* Not #c4b5fd, nor red. */\n"
+            '@font-face { font-family: "Red Hat"; src: url("/fonts/inter/inter.woff2#fff") format("woff2"); }\n'
+            "@media (max-width: 52rem) { .cta { white-space: nowrap; color: var(--logo-cyan); } }\n"
+            "#fff, .red { margin: 0; }\n"
+        )
+        self.write("styles/landing.css", css)
         self.assertPasses()
 
     # Media budget.

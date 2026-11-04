@@ -69,6 +69,10 @@ when:
   `site/fonts/` has no `LICENSE` with the SIL Open Font License 1.1; or `--font-text` or `--font-mono` loses the
   system's fonts or its generic family. In the browser, on every page and the 404 page, Inter or JetBrains Mono does
   not load, or is fetched from anywhere but `/fonts/` on the site itself as a `.woff2` file that answers 200.
+- **Colors.** A stylesheet under `styles/`, a `<style>` element, or a `style` attribute uses a color — hex, `rgb()`,
+  `hsl()`, or a named color — that is neither one of the logo's fixed colors (`#22d3ee`, `#8b5cf6`, `#e040fb`) nor a
+  placeholder, at any opacity. The placeholders are the custom properties of `site.css`'s `:root` block, which stand
+  in until the palette is approved: a new color joins them there.
 - **Consent and analytics.** In a headless browser, over every page and the 404 page: with no choice made, or after
   Reject, a page requests anything from another host or sets an analytics cookie; the banner's Accept and Reject differ
   in style, or the banner shows again after a choice; after Accept, the page asks Google's tag to send anything but the
