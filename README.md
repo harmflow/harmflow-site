@@ -20,6 +20,18 @@ The site is published at [`harmflow.com`](https://harmflow.com).
 | [`.github/scripts/`](.github/scripts/) | The site's checks and their tests |
 | [`scripts/dns-cutover-wizard.sh`](scripts/dns-cutover-wizard.sh) | Walks the domain's owner through pointing `harmflow.com` at GitHub Pages at GoDaddy and enforcing HTTPS, checking each record; safe to re-run |
 
+## Run it locally
+
+The site has no build step: serve `site/` with the standard library's Python and open
+[`http://localhost:8000`](http://localhost:8000).
+
+```bash
+python3 -m http.server 8000 --directory site
+```
+
+This server answers a missing page with its own error, not the site's `404.html`; open
+[`http://localhost:8000/404.html`](http://localhost:8000/404.html) to see that page.
+
 ## Checks
 
 Every pull request and every push to `main` runs the site's checks, which read the files as committed. A check fails
