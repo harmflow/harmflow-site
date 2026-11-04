@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Failover when a quota runs out · HarmFlow</title>
+  <meta name="description" content="What happens to an execution when its harness runs out of quota: the same execution continues on the next harness, what that harness is given, and where the timeline shows the switch.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/executions/failover/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="Failover when a quota runs out · HarmFlow">
+  <meta property="og:description" content="What happens to an execution when its harness runs out of quota: the same execution continues on the next harness, what that harness is given, and where the timeline shows the switch.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/executions/failover/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>Failover when a quota runs out</h1>
+      <p>A task can name fallback harnesses. When the harness running an execution runs out of quota, the task does not
+        stop and does not start over: HarmFlow carries the same execution on to the next harness the task names, and
+        what the first harness did is kept.</p>
+
+      <h2 id="same-execution">The same execution, on the next harness</h2>
+      <p>The execution continues on the next harness of the task's fallback chain, in the same workspace and with the
+        task's prompt. It stays one execution, with one history and
+        <a href="/docs/guide/executions/timeout-across-failover/">one timeout</a>. The files the first harness changed
+        are still in the workspace, and its branch is still there to continue.</p>
+      <p>The next harness starts a new session. It is not given the first session's conversation: it picks the work up
+        from what the first attempt left, below. The
+        <a href="/docs/reference/harnesses/#failover">Harnesses reference</a> tells which harnesses the chain holds and
+        how many times an execution may switch.</p>
+
+      <h2 id="what-it-is-given">What the next harness is given</h2>
+      <p>The new session is given a summary of the first attempt — the harness and model it ran on, how it ended, its
+        last recorded operation, and its last message — and the execution's <code>context.json</code> file, which lists,
+        for each earlier attempt and each work item it worked:</p>
+      <ul>
+        <li>the branch, and its latest commit;</li>
+        <li>how its last tests ended: passed, failed, or not run, with their summary;</li>
+        <li>the files it changed.</li>
+      </ul>
+      <p>The session is asked to check what the first attempt already did before it commits, pushes, or opens a pull
+        request, so nothing is done twice.</p>
+
+      <h2 id="where-values-come-from">Where those values come from</h2>
+      <p>HarmFlow reads those values from what the attempt reported while it ran and from the files in the workspace.
+        So they are there even when the attempt ended without writing a report, as an attempt that runs out of quota
+        often does. A value the attempt never reported is left out, never guessed.</p>
+      <p>The test output itself is not copied to the next harness: it stays in the execution's log.</p>
+
+      <h2 id="timeline">Where to see the switch</h2>
+      <p>Select the execution on the Executions screen and open its <strong>Events</strong> tab. Its timeline shows,
+        in order, each with the harness it names:</p>
+      <ul>
+        <li>the quota: <em>Claude Code exhausted its quota</em>;</li>
+        <li>the switch: <em>switching from Claude Code to Codex</em>;</li>
+        <li>the start of the next attempt: <em>Codex … started</em>, with the version of Codex in place of the
+          dots.</li>
+      </ul>
+      <p>The harness names above are an example: the timeline names the harnesses your task runs on.
+        <a href="/docs/guide/executions/events-timeline-keyboard/">The events timeline and the keyboard</a> tells how to
+        step through these events.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
