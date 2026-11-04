@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Codex's managed requirements · HarmFlow</title>
+  <meta name="description" content="What HarmFlow shows when Codex's managed requirements do not allow the settings it runs Codex with: the warning in the AI tools list, the warning on an execution, and why neither stops a task.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/install/codex-managed-requirements/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="Codex's managed requirements · HarmFlow">
+  <meta property="og:description" content="What HarmFlow shows when Codex's managed requirements do not allow the settings it runs Codex with: the warning in the AI tools list, the warning on an execution, and why neither stops a task.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/install/codex-managed-requirements/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>Codex's managed requirements</h1>
+      <p>An organization can deploy managed requirements for Codex on your Mac: rules that limit the settings Codex may
+        run with. HarmFlow runs Codex tasks unattended, with settings of its own: the approval policy
+        <code>never</code>, and the sandbox mode the task's permission profile maps to. When the requirements do not
+        allow one of those settings, HarmFlow warns you, in the AI tools list and on the executions it concerns. Neither
+        warning stops a task: Codex's tasks still start and run.</p>
+
+      <h2 id="ai-tools-list">The warning in the AI tools list</h2>
+      <p>HarmFlow asks Codex for its managed requirements when it checks it. When they do not allow a setting HarmFlow
+        runs Codex with, Codex still reads <strong>Ready</strong> in the AI tools list, but in a warning tone rather
+        than as a plain ready tool, with a diagnostic that says why. The diagnostic shows when you hover over Codex's
+        status in the AI tools list, and in the Diagnostic row of Codex in the AI tools section of Settings, where the
+        Managed requirements row reads "Managed by an administrator" and lists what the requirements allow.</p>
+      <p>The diagnostic names each setting the requirements do not allow, and what they allow instead. For requirements
+        that allow only the approval policies <code>on-request</code> and <code>untrusted</code>, it reads: "Codex's
+        managed requirements do not allow approval_policy = never, which HarmFlow runs it with, so Codex falls back to
+        what they allow: approval_policy = on-request, untrusted"</p>
+      <p>When the requirements do not allow a sandbox mode a permission profile maps to, the diagnostic names
+        <code>sandbox_mode</code> the same way; when they disallow both settings, it names both.</p>
+      <p>The warning does not keep Codex from running: tasks that use Codex still start, as they would with no
+        requirements.</p>
+      <p>When HarmFlow cannot read the requirements, it does not guess: Codex shows no warning tone and no diagnostic
+        about them, as it would with none.</p>
+
+      <h2 id="execution-warning">The warning on an execution</h2>
+      <p>As a task starts, Codex may report that its requirements override one of the settings HarmFlow gave it, and
+        that it falls back to a value they allow. The execution goes on, and carries a warning that quotes Codex's own
+        notice, which begins, for the approval policy: "Configured value for `approval_policy` is disallowed by
+        requirements; falling back to required value OnRequest."</p>
+      <p>The warning is in two places:</p>
+      <ul>
+        <li><strong>The Results view.</strong> Its Warnings list shows it, marked Warning and followed by Codex's
+          notice.</li>
+        <li><strong>The Events view.</strong> The execution's log holds it as a warning event, with the same notice.</li>
+      </ul>
+      <p>Only what needs the setting Codex did not take is affected: a command that the allowed value holds back may
+        not run as the task expects. The notice tells you which setting changed, and the requirements your organization
+        manages say what Codex allows.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
