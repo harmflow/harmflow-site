@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>The share of each harness's quota · HarmFlow</title>
+  <meta name="description" content="How to cap the share of each quota window HarmFlow may spend on Claude Code and Codex: where to set it, what it holds back, and what it never interrupts.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/executions/quota-share/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="The share of each harness's quota · HarmFlow">
+  <meta property="og:description" content="How to cap the share of each quota window HarmFlow may spend on Claude Code and Codex: where to set it, what it holds back, and what it never interrupts.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/executions/quota-share/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>The share of each harness's quota</h1>
+      <p>Claude Code and Codex each have a quota, counted in windows that reset after a while. A scheduled task could
+        spend a window up to 100% and leave nothing for your own work. You can cap the share of each window HarmFlow
+        may spend on each harness, so part of it always stays yours.</p>
+
+      <h2 id="where">Where to set it</h2>
+      <p>Open Settings, then <strong>AI tools</strong>, and find the <strong>Quota</strong> panel. It has one slider
+        per harness, Claude Code and Codex, from 1% to 100%, with the share shown beside it. The share is saved when you
+        let go of the slider.</p>
+      <p>The panel shows only the share, not how much of a window is used now.</p>
+
+      <h2 id="global">One share for all your tasks</h2>
+      <p>The share is yours, not a task's: it applies to every task, and no task sets or changes it. A harness whose
+        share you never set may spend the whole of each window, as it could before the slider existed.</p>
+
+      <h2 id="before">Checked before each attempt</h2>
+      <p>Before an attempt starts on a harness, HarmFlow checks that harness's windows. When a window is at or above
+        the share, the attempt does not start on that harness:</p>
+      <ul>
+        <li>When the task has a fallback harness left, the execution moves to it, as it does when a quota runs out.
+          Failing over on an exhausted quota is on unless the task's
+          <a href="/docs/reference/task-file/#harness"><code>fallback.on</code></a> leaves out
+          <code>quota_exhausted</code>.</li>
+        <li>Otherwise the execution fails. Its result names the harness, the share, the window, and when the window
+          resets, when the harness reports it.</li>
+      </ul>
+      <p>When the quota cannot be read, the attempt starts without this check, and the execution shows a warning that
+        says so.</p>
+
+      <h2 id="running">Never during an attempt</h2>
+      <p>The share never ends a running attempt. If a window passes the share while an attempt runs, the attempt runs
+        to its end, and the share holds back the next one.</p>
+
+      <h2 id="extra-usage">Tasks that allow extra usage</h2>
+      <p>A task that allows extra usage, <code>allowExtraUsage</code> in the
+        <a href="/docs/reference/task-file/#execution">task file's <code>execution</code> section</a>, is not held back
+        by the share.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
