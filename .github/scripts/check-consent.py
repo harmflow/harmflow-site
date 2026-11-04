@@ -176,11 +176,17 @@ def page_paths(root):
     return sorted(paths) + [MISSING_PATH]
 
 
-class Browser:
-    """One headless Chromium, with a context per visitor; every request outside the site is recorded and answered here."""
+def launch(playwright):
+    """A headless Chromium that resolves the site's host to this machine, on whichever port the site is served."""
+    return playwright.chromium.launch(args=["--host-resolver-rules=MAP %s 127.0.0.1" % SITE_HOST])
 
-    def __init__(self, playwright, port):
-        self.browser = playwright.chromium.launch(args=["--host-resolver-rules=MAP %s 127.0.0.1" % SITE_HOST])
+
+class Browser:
+    """A Chromium from launch(), with a context per visitor on the site served at port; every request outside the site
+    is recorded and answered here."""
+
+    def __init__(self, chromium, port):
+        self.browser = chromium
         self.origin = "http://%s:%d" % (SITE_HOST, port)
         self.host = urlsplit(self.origin).netloc
         # The same server, for requests made outside the browser, which do not follow its host rules.
@@ -213,10 +219,6 @@ class Browser:
 
         context.route("**/*", route)
         return context
-
-    def close(self):
-        self.browser.close()
-
 
 def analytics_cookies(context):
     return sorted(c["name"] for c in context.cookies() if c["name"] == "_ga" or c["name"].startswith("_ga_"))
@@ -612,6 +614,34 @@ def check_fonts(browser, paths):
     return problems
 
 
+# Every check, in the order a run makes them.
+CHECKS = (
+    check_no_choice,
+    check_reject,
+    check_accept_and_withdraw,
+    check_without_javascript,
+    check_scripts,
+    check_content,
+    check_navigation,
+    check_fonts,
+)
+
+
+def run_checks(chromium, root, checks=CHECKS):
+    """The problems checks find on the tree at root, served for the run, in a Chromium from launch()."""
+    paths = page_paths(root)
+    server = serve(root)
+    try:
+        browser = Browser(chromium, server.server_address[1])
+        problems = []
+        for check in checks:
+            problems += check(browser, paths)
+        return problems
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
 def main(argv):
     args = argv[1:]
     if len(args) > 1:
@@ -631,24 +661,17 @@ def main(argv):
         )
         return 2
     paths = page_paths(root)
-    server = serve(root)
-    problems = []
-    try:
-        with sync_playwright() as playwright:
-            browser = Browser(playwright, server.server_address[1])
-            try:
-                problems += check_no_choice(browser, paths)
-                problems += check_reject(browser, paths)
-                problems += check_accept_and_withdraw(browser, paths)
-                problems += check_without_javascript(browser, paths)
-                problems += check_scripts(browser, paths)
-                problems += check_content(browser, paths)
-                problems += check_navigation(browser, paths)
-                problems += check_fonts(browser, paths)
-            finally:
-                browser.close()
-    finally:
-        server.shutdown()
+    with sync_playwright() as playwright:
+        chromium = launch(playwright)
+        try:
+            problems = run_checks(chromium, root)
+        finally:
+            chromium.close()
+    return report(problems, paths)
+
+
+def report(problems, paths):
+    """Names each problem on stderr and answers the exit status: 1 when there is any, 0 with the line that says so."""
     for problem in problems:
         print("check-consent: " + problem, file=sys.stderr)
     if problems:
