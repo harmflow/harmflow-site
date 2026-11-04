@@ -60,7 +60,7 @@ The consent check needs [Playwright](https://playwright.dev/python/) for Python 
 a virtual environment of its own. Keep yours outside the clone, where the secret scan does not read it:
 
 ```bash
-python3 -m venv ~/.venvs/harmflow-site && ~/.venvs/harmflow-site/bin/pip install playwright==1.55.0
+python3 -m venv ~/.venvs/harmflow-site && ~/.venvs/harmflow-site/bin/pip install playwright==1.64.1
 ~/.venvs/harmflow-site/bin/python -m playwright install chromium
 ~/.venvs/harmflow-site/bin/python .github/scripts/check-consent.py site    # the consent check
 ~/.venvs/harmflow-site/bin/python .github/scripts/check-consent-test.py    # its tests, skipped without Playwright

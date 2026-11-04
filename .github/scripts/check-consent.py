@@ -276,7 +276,8 @@ def check_accept_and_withdraw(browser, paths):
         problems.append("measured: / has no primary call to action (main a.cta) to measure")
     else:
         before = len(calls_of(page))
-        cta.first.click()
+        # The route answers the link out with 204, so its navigation never commits: do not wait for it.
+        cta.first.click(no_wait_after=True)
         page.wait_for_timeout(300)
         clicks = [c for c in calls_of(page)[before:] if c[:2] == ["event", CTA_CLICK]]
         if len(clicks) != 1:
