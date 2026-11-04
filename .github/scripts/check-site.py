@@ -11,11 +11,12 @@ Store and links to no store page yet; what two pages of each published language 
 parts, each with a heading and text, and its naming of Google Analytics, and the support page's link to harmflow-app's
 issues, and no e-mail address on it; the root 404 page: that the tree has one, that its main says the page was not found
 in a heading and links to the landing page, and that each of its links and assets is a path from the root, which holds
-at any depth; and the typefaces: that every @font-face rule takes its fonts only from WOFF2 files of the site under
-/fonts/, that each font's folder holds its SIL Open Font License 1.1, and that the text and monospace stacks keep the
-system's fonts as fallbacks. It names each problem it finds on stderr, one per line, and exits 1 when it finds any. The
-Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves each check on a
-tree of its own that breaks it.
+at any depth; the typefaces: that every @font-face rule takes its fonts only from WOFF2 files of the site under /fonts/,
+that each font's folder holds its SIL Open Font License 1.1, and that the text and monospace stacks keep the system's
+fonts as fallbacks; and the colors of the styles: each is one of the logo's fixed colors or a placeholder until the
+palette is approved. It names each problem it finds on stderr, one per line, and exits 1 when it finds any. The Checks
+workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves each check on a tree of
+its own that breaks it.
 
 Usage: check-site.py [--languages en-US,pt-BR,es-ES] [ROOT]
 
@@ -26,6 +27,7 @@ back later under the prefixes LANGUAGES keeps for them.
 The standard library only, and Python 3.9, so it runs on a Mac's own python3 as it does in CI.
 """
 
+import colorsys
 import os
 import posixpath
 import re
@@ -134,6 +136,56 @@ WOFF2_SIGNATURE = b"wOF2"
 # The title line of the SIL Open Font License 1.1, which its full text carries.
 OFL = "sil open font license version 1.1"
 
+# The logo's colors, fixed whatever the palette becomes. Every other color of the styles is a placeholder until the
+# palette is approved, declared once as a custom property of the :root block of PLACEHOLDERS. The rule reads every
+# stylesheet under STYLES, and every <style> element and style attribute of the pages.
+LOGO_COLORS = ("#22d3ee", "#8b5cf6", "#e040fb")
+PLACEHOLDERS = "styles/site.css"
+STYLES = "styles"
+
+# CSS's named colors, which a value may write in place of a hex color. transparent, currentColor, and inherit are no
+# color of their own, so the rule reads none of them.
+_NAMED = """
+    aliceblue f0f8ff antiquewhite faebd7 aqua 00ffff aquamarine 7fffd4 azure f0ffff beige f5f5dc bisque ffe4c4
+    black 000000 blanchedalmond ffebcd blue 0000ff blueviolet 8a2be2 brown a52a2a burlywood deb887 cadetblue 5f9ea0
+    chartreuse 7fff00 chocolate d2691e coral ff7f50 cornflowerblue 6495ed cornsilk fff8dc crimson dc143c cyan 00ffff
+    darkblue 00008b darkcyan 008b8b darkgoldenrod b8860b darkgray a9a9a9 darkgreen 006400 darkgrey a9a9a9
+    darkkhaki bdb76b darkmagenta 8b008b darkolivegreen 556b2f darkorange ff8c00 darkorchid 9932cc darkred 8b0000
+    darksalmon e9967a darkseagreen 8fbc8f darkslateblue 483d8b darkslategray 2f4f4f darkslategrey 2f4f4f
+    darkturquoise 00ced1 darkviolet 9400d3 deeppink ff1493 deepskyblue 00bfff dimgray 696969 dimgrey 696969
+    dodgerblue 1e90ff firebrick b22222 floralwhite fffaf0 forestgreen 228b22 fuchsia ff00ff gainsboro dcdcdc
+    ghostwhite f8f8ff gold ffd700 goldenrod daa520 gray 808080 green 008000 greenyellow adff2f grey 808080
+    honeydew f0fff0 hotpink ff69b4 indianred cd5c5c indigo 4b0082 ivory fffff0 khaki f0e68c lavender e6e6fa
+    lavenderblush fff0f5 lawngreen 7cfc00 lemonchiffon fffacd lightblue add8e6 lightcoral f08080 lightcyan e0ffff
+    lightgoldenrodyellow fafad2 lightgray d3d3d3 lightgreen 90ee90 lightgrey d3d3d3 lightpink ffb6c1
+    lightsalmon ffa07a lightseagreen 20b2aa lightskyblue 87cefa lightslategray 778899 lightslategrey 778899
+    lightsteelblue b0c4de lightyellow ffffe0 lime 00ff00 limegreen 32cd32 linen faf0e6 magenta ff00ff maroon 800000
+    mediumaquamarine 66cdaa mediumblue 0000cd mediumorchid ba55d3 mediumpurple 9370db mediumseagreen 3cb371
+    mediumslateblue 7b68ee mediumspringgreen 00fa9a mediumturquoise 48d1cc mediumvioletred c71585
+    midnightblue 191970 mintcream f5fffa mistyrose ffe4e1 moccasin ffe4b5 navajowhite ffdead navy 000080
+    oldlace fdf5e6 olive 808000 olivedrab 6b8e23 orange ffa500 orangered ff4500 orchid da70d6 palegoldenrod eee8aa
+    palegreen 98fb98 paleturquoise afeeee palevioletred db7093 papayawhip ffefd5 peachpuff ffdab9 peru cd853f
+    pink ffc0cb plum dda0dd powderblue b0e0e6 purple 800080 rebeccapurple 663399 red ff0000 rosybrown bc8f8f
+    royalblue 4169e1 saddlebrown 8b4513 salmon fa8072 sandybrown f4a460 seagreen 2e8b57 seashell fff5ee
+    sienna a0522d silver c0c0c0 skyblue 87ceeb slateblue 6a5acd slategray 708090 slategrey 708090 snow fffafa
+    springgreen 00ff7f steelblue 4682b4 tan d2b48c teal 008080 thistle d8bfd8 tomato ff6347 turquoise 40e0d0
+    violet ee82ee wheat f5deb3 white ffffff whitesmoke f5f5f5 yellow ffff00 yellowgreen 9acd32
+""".split()
+NAMED_COLORS = dict(zip(_NAMED[::2], ("#" + value for value in _NAMED[1::2])))
+
+# What a value says, once its comments, strings, and url()s are blanked out: no color is read in any of them.
+CSS_COMMENT = re.compile(r"/\*.*?\*/", re.S)
+CSS_STRING = re.compile(r"\"[^\"\n]*\"|'[^'\n]*'|\burl\([^)]*\)", re.I)
+CSS_DECLARATION = re.compile(r"([-\w]+)\s*:([^;]*)")
+# A color as a value writes it: hex of 3, 4, 6, or 8 digits, a color function, or a word that may be a named color.
+# A word that is part of another, such as cyan in --logo-cyan, is no word of its own.
+CSS_COLOR = re.compile(
+    r"(?<![\w#-])(?:#(?P<hex>[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])"
+    r"|(?P<function>(?:rgba?|hsla?)\([^)]*\))"
+    r"|(?P<word>[a-z][\w-]*))",
+    re.I,
+)
+
 
 def language_of(rel):
     """The language of a page and its slug, the path it has in every language."""
@@ -212,6 +264,8 @@ class Page(HTMLParser):
         self.anchors = []  # (line, href, is a primary call to action), each a element with an href, in the page's order
         self.hrefs = []  # (line, href), every href of the page, the head's included
         self.body_text = []  # the text of the body, what the visitor reads
+        self.style_elements = []  # (line, css), the text of each <style> element from the line it starts on
+        self.style_attributes = []  # (line, declarations), each style attribute on the line of its tag
         self._in_body = False
         self.declared = None  # the lang of the root element, "" when it has none
         self.marked = []  # (line, lang) of every other element with a lang
@@ -222,6 +276,7 @@ class Page(HTMLParser):
         self._open = []  # the open elements, outermost first
         self.main_headings = []  # each heading's text, inside main
         self.main_links = []  # each a's or area's href, inside main
+        self._in_style = False
         self._sectioning = 0
         self._capture = None
         self._depth = 0
@@ -245,6 +300,10 @@ class Page(HTMLParser):
             self.open_graph.setdefault(named["property"], (named.get("content") or "").strip())
         if tag == "body":
             self._in_body = True
+        if tag == "style":
+            self._in_style = True
+        if named.get("style") is not None:
+            self.style_attributes.append((line, named["style"]))
         if named.get("href") is not None:
             self.hrefs.append((line, named["href"]))
             if tag == "a":
@@ -293,6 +352,8 @@ class Page(HTMLParser):
             self.outline.append(("end", len(self._open)))
         if tag == "video":
             self._video = None
+        if tag == "style":
+            self._in_style = False
         if tag in SECTIONING and self._sectioning:
             self._sectioning -= 1
         if tag == self._heading:
@@ -309,6 +370,8 @@ class Page(HTMLParser):
                     self._capture = None
 
     def handle_data(self, data):
+        if self._in_style:
+            self.style_elements.append((self.getpos()[0], data))
         text = " ".join(data.split())
         if self._heading and text:
             self._heading_text.append(text)
@@ -863,6 +926,120 @@ def check_font_stacks(sheets, pages):
     return problems
 
 
+def blank(match):
+    """The text of MATCH as spaces, its newlines kept, so that offsets and lines stay where they were."""
+    return re.sub(r"[^\n]", " ", match.group(0))
+
+
+def declarations(css, inline=False):
+    """The declarations of a stylesheet's rules, or, INLINE, of a style attribute: the text read, comments, strings,
+    and url()s blanked out, and (offset of the value in it, property, value, the rule's selector) for each. Only a rule
+    that holds no other rule is read, so an at-rule's condition is no value."""
+    text = CSS_STRING.sub(blank, CSS_COMMENT.sub(blank, css))
+    bodies = [(0, text, "")] if inline else []
+    opened = []  # [offset of a {, whether a rule opened inside it]
+    for brace in re.finditer(r"[{}]", "" if inline else text):
+        if brace.group() == "{":
+            if opened:
+                opened[-1][1] = True
+            opened.append([brace.start(), False])
+        elif opened:
+            start, nested = opened.pop()
+            if not nested:
+                selector = text[max(text.rfind(c, 0, start) for c in "{};") + 1 : start].strip()
+                bodies.append((start + 1, text[start + 1 : brace.start()], selector))
+    found = []
+    for offset, body, selector in bodies:
+        for declaration in CSS_DECLARATION.finditer(body):
+            found.append((offset + declaration.start(2), declaration.group(1).lower(), declaration.group(2), selector))
+    return text, found
+
+
+def rgb_of(color):
+    """The red, green, and blue of a color as CSS writes it, its opacity aside, or None when it is none this reads."""
+    color = color.strip().lower()
+    color = NAMED_COLORS.get(color, color)
+    if color.startswith("#"):
+        digits = color[1:]
+        if len(digits) in (3, 4):
+            digits = "".join(digit * 2 for digit in digits)
+        if len(digits) not in (6, 8) or re.search(r"[^0-9a-f]", digits):
+            return None
+        return tuple(int(digits[i : i + 2], 16) for i in (0, 2, 4))
+    function = re.match(r"(rgba?|hsla?)\((.*)\)$", color, re.S)
+    if not function:
+        return None
+    parts = function.group(2).replace(",", " ").replace("/", " ").split()
+    if len(parts) < 3:
+        return None
+    try:
+        if function.group(1).startswith("rgb"):
+            return tuple(round(float(p[:-1]) * 2.55) if p.endswith("%") else round(float(p)) for p in parts[:3])
+        hue = re.match(r"(-?[\d.]+)(deg|grad|rad|turn)?$", parts[0])
+        if not hue:
+            return None
+        turns = {"grad": 400.0, "rad": 6.283185307179586, "turn": 1.0}.get(hue.group(2), 360.0)
+        saturation, lightness = (float(p.rstrip("%")) / 100 for p in parts[1:3])
+        rgb = colorsys.hls_to_rgb((float(hue.group(1)) / turns) % 1, lightness, saturation)
+        return tuple(round(channel * 255) for channel in rgb)
+    except ValueError:
+        return None
+
+
+def colors_in(css, inline=False):
+    """(line, the color as written, its red, green, and blue or None) for each color the declarations of CSS write,
+    the first line of CSS being line 1."""
+    text, found = declarations(css, inline)
+    colors = []
+    for offset, _, value, _ in found:
+        for match in CSS_COLOR.finditer(value):
+            written = match.group(0)
+            if match.group("word") is not None and written.lower() not in NAMED_COLORS:
+                continue
+            colors.append((text.count("\n", 0, offset + match.start()) + 1, written, rgb_of(written)))
+    return colors
+
+
+def placeholder_colors(root):
+    """The placeholders' colors: the value of each custom property the :root block of PLACEHOLDERS declares as a color.
+    A tree with no such file has none."""
+    path = os.path.join(root, PLACEHOLDERS)
+    if not os.path.isfile(path):
+        return set()
+    with open(path, encoding="utf-8", errors="replace") as f:
+        _, found = declarations(f.read())
+    colors = set()
+    for _, name, value, selector in found:
+        rgb = rgb_of(value)
+        if selector == ":root" and name.startswith("--") and rgb is not None:
+            colors.add(rgb)
+    return colors
+
+
+def check_colors(root, pages):
+    """Every color of the styles — the stylesheets under styles/, and the pages' <style> elements and style
+    attributes — is one of the logo's colors or a placeholder, at any opacity. A placeholder used through its custom
+    property is a var(), no color; one written as its value passes as that value does."""
+    allowed = set(rgb_of(color) for color in LOGO_COLORS) | placeholder_colors(root)
+    sources = []  # (file, the line its CSS starts on, the CSS, whether it is a style attribute)
+    for rel in site_files(root, skip_hidden=True):
+        if rel.startswith(STYLES + "/") and rel.endswith(".css"):
+            with open(os.path.join(root, rel), encoding="utf-8", errors="replace") as f:
+                sources.append((rel, 1, f.read(), False))
+    for rel, page in pages.items():
+        sources += [(rel, line, css, False) for line, css in page.style_elements]
+        sources += [(rel, line, css, True) for line, css in page.style_attributes]
+    problems = []
+    for rel, first, css, inline in sources:
+        for line, written, rgb in colors_in(css, inline):
+            if rgb not in allowed:
+                problems.append(
+                    "colors: %s:%d: %s is neither one of the logo's colors nor a placeholder of %s's :root block"
+                    % (rel, first + line - 1, written, PLACEHOLDERS)
+                )
+    return problems
+
+
 def main(argv):
     args = argv[1:]
     published = PUBLISHED
@@ -900,6 +1077,7 @@ def main(argv):
     problems += check_font_faces(root, sheets)
     problems += check_font_licenses(root)
     problems += check_font_stacks(sheets, site)
+    problems += check_colors(root, site)
     for problem in problems:
         print("check-site: " + problem, file=sys.stderr)
     if problems:

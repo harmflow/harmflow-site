@@ -5,8 +5,6 @@
   --logo-cyan: #22d3ee;
   --logo-violet: #8b5cf6;
   --logo-magenta: #e040fb;
-  --raised: #121829;
-  --sunken: #070a12;
   padding: 0;
 }
 
@@ -19,12 +17,12 @@
   border-radius: 999px;
   background: linear-gradient(90deg, var(--logo-cyan), var(--logo-violet) 55%, var(--logo-magenta));
   box-shadow: 0 8px 40px rgb(139 92 246 / 0.35);
-  color: #fff;
+  color: var(--white);
   font-weight: 650;
   text-decoration: none;
 }
 
-.cta:hover, .cta:focus-visible { color: #fff; box-shadow: 0 8px 48px rgb(139 92 246 / 0.55); }
+.cta:hover, .cta:focus-visible { color: var(--white); box-shadow: 0 8px 48px rgb(139 92 246 / 0.55); }
 
 /* The hero, centered, over a soft glow in the logo's three colors */
 .hero {
@@ -104,7 +102,7 @@
 
 .window-bar { display: flex; gap: 0.4rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--rule); }
 
-.window-bar i { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: #2c3346; }
+.window-bar i { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--subtle); }
 
 .window-body { display: grid; grid-template-columns: 11rem 1fr; min-height: 20rem; }
 
@@ -143,7 +141,7 @@
   padding: 0.125rem 0.5rem;
   border-radius: 4px;
   background: rgb(139 92 246 / 0.15);
-  color: #c4b5fd;
+  color: var(--text);
   font-family: var(--font-mono);
   font-size: 0.6875rem;
 }
@@ -179,7 +177,7 @@
 
 pre.feature-art { overflow-x: auto; }
 
-.comment { color: #5b6378; }
+.comment { color: var(--faint); }
 
 .landing .events { list-style: none; }
 
