@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>The Overview's spend band · HarmFlow</title>
+  <meta name="description" content="What the Overview's Spend this month band shows: one column per day, the cost or the tokens, the month's total, and the mark on a day whose figures undercount.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/executions/spend-band/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="The Overview's spend band · HarmFlow">
+  <meta property="og:description" content="What the Overview's Spend this month band shows: one column per day, the cost or the tokens, the month's total, and the mark on a day whose figures undercount.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/executions/spend-band/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>The Overview's spend band</h1>
+      <p>The Overview shows what your executions spent this month, day by day, in a band across the full width of the
+        screen, directly under its four counters. The band is titled <strong>Spend this month</strong>.</p>
+
+      <h2 id="columns">One column per day</h2>
+      <p>The band has one column for each day of the month that has passed, today included, filling it from the left.
+        On the first day of a month it shows one column. The days still to come have no column: their place in the band
+        stays empty until they come. The numbers under the band mark the first day and every fifth one.</p>
+      <p>Each column is that day's own total across every task, never a running sum of the days before it. In the
+        token view, a column is one block, every kind of token summed, not a stack of them.</p>
+
+      <h2 id="view">Cost or tokens</h2>
+      <p>A selector at the top of the band switches it between <strong>Cost</strong> and <strong>Tokens</strong>:</p>
+      <ul>
+        <li><strong>Cost</strong>, the default, is the estimated cost in US dollars. It is an estimate at API list
+          prices, from a price table.</li>
+        <li><strong>Tokens</strong> is the number of tokens the attempts used.</li>
+      </ul>
+      <p>HarmFlow keeps your choice, so the band opens in the same view the next time you launch the app. The month's
+        total sits in a corner of the band, in the unit the selector shows: in dollars, as "this month, an estimate at
+        API list prices", or in tokens, as "tokens this month".</p>
+
+      <h2 id="days">Which day an attempt counts on</h2>
+      <p>Days follow your Mac's local time zone. An attempt counts on the day it ended, so an execution whose attempts
+        end on both sides of midnight counts in both days, each attempt on its own day. An attempt still running
+        counts on no day until it ends.</p>
+
+      <h2 id="marks">A marked day</h2>
+      <p>A day whose figures undercount carries a mark, ▲, above its column, and a note under the band says what the
+        mark means. A day is marked when one of its attempts:</p>
+      <ul>
+        <li><strong>used a model the price table omits.</strong> Its tokens are known and its cost is not, so it
+          undercounts the cost only: this mark shows in the cost view and not in the token view.</li>
+        <li><strong>reported no usage.</strong> Its harness reported no figures for it, so it undercounts both views.</li>
+        <li><strong>ended with only a partial count.</strong> It has input tokens but no output tokens and no cost, so it
+          counts as partial in both views.</li>
+        <li><strong>is still running.</strong> While an attempt runs, the day in progress carries the mark in both
+          views.</li>
+      </ul>
+      <p>Hovering over a day, or moving to it with the keyboard, shows its date, its figure, and how many attempts ended
+        that day. On a marked day, it also shows how many attempts are behind the mark, one line for each reason.</p>
+
+      <h2 id="axis">The axis</h2>
+      <p>The axis tops out at no less than $10 in the cost view, or 2M tokens in the token view, so that one small day
+        never fills the band. Once the month's dearest day passes that figure, the axis tops out at that day.</p>
+
+      <h2 id="empty">A month with no execution</h2>
+      <p>When no execution has run in the month, the band still shows its grid and its axis, with the message
+        <strong>No execution this month</strong> and a total of zero.</p>
+
+      <h2 id="figures">Where the figures come from</h2>
+      <p>HarmFlow sums the figures each time the band asks for them, from what each execution's record keeps of its
+        attempts. It keeps no file of totals.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
