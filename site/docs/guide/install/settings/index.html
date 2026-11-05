@@ -92,7 +92,7 @@
         <li><strong>A detected tool</strong> shows its version and its path, and whether it is ready: Ready, or a status
           such as Not ready, with a diagnostic that says why when there is one. Its card also says where the path came from, the installations found, whether
           it is signed in, and when it was last checked. You can set its path by hand, or let the app detect it again.
-          Claude Code's card also has a field for a long-lived token.</li>
+          Claude Code's card can also have a field for a long-lived token.</li>
         <li><strong>A tool that is not detected</strong> reads Not detected, with the status Not installed. The app
           never installs or updates an AI tool: install it, then use Detect again, or set its path by hand.</li>
       </ul>
@@ -101,7 +101,8 @@
         never shown.</p>
 
       <h2 id="storage">The folders Storage shows</h2>
-      <p>Storage shows the disk space HarmFlow uses, and lists the folders it keeps its files in, each with its path:</p>
+      <p>Storage shows the disk space HarmFlow uses, and lists the folders it keeps its files in, and its runtime file,
+        each with its path, as the daemon reports them:</p>
       <ul>
         <li>HarmFlow folder</li>
         <li>Tasks</li>
@@ -112,7 +113,7 @@
         <li>Runtime file</li>
         <li>Built-in agents and skills</li>
       </ul>
-      <p>In the desktop app, each folder has a Show in Finder button, which opens it in the Finder.</p>
+      <p>In the desktop app, each one has a Show in Finder button, which opens it in the Finder.</p>
 
       <h2 id="security">The access token</h2>
       <p>The dashboard talks to the daemon over a local API that asks for an access token. Security says where that
