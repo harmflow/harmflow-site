@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>First use · HarmFlow</title>
+  <meta name="description" content="The five steps the HarmFlow app walks you through the first time you open it, from what it detected on your Mac to the live executions screen with a first task.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/install/first-use/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="First use · HarmFlow">
+  <meta property="og:description" content="The five steps the HarmFlow app walks you through the first time you open it, from what it detected on your Mac to the live executions screen with a first task.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/install/first-use/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>First use</h1>
+      <p>The first time you open the HarmFlow app after installing it, it walks you through first use before it shows
+        anything else. First use has five steps, under the title <strong>Welcome to HarmFlow</strong> and a line such
+        as <strong>Step 1 of 5</strong>. <strong>Next</strong> goes on to the following step, and
+        <strong>Back</strong>, from the second step on, returns to the one before.</p>
+
+      <h2 id="scope">Step 1: Everything runs on this computer</h2>
+      <p>The first step says how HarmFlow works: it schedules, runs, and monitors automations carried out by the AI
+        tools you already installed, Claude Code and Codex, and it never installs or updates them. Four points follow:</p>
+      <ul>
+        <li>Tasks, state, and logs stay on your Mac.</li>
+        <li>Each task declares what its session may touch. HarmFlow applies it through the AI tool's own controls, and
+          warns when a restriction can't be enforced.</li>
+        <li>GitHub work uses your own <code>gh</code> and Git sign-in, and the built-in issue implementer never merges
+          a pull request.</li>
+        <li>The dashboard talks to the daemon over an authenticated local API.</li>
+      </ul>
+
+      <h2 id="detection">Step 2: AI tools and command-line tools found</h2>
+      <p>The second step lists what HarmFlow found on your Mac, one row each:</p>
+      <ul>
+        <li><strong>Claude Code</strong> and <strong>Codex</strong>, the AI tools. A tool HarmFlow found shows its
+          version and its path, and is marked with its readiness: <strong>Ready</strong> when a task can run on it,
+          or <strong>Not ready</strong> when something stops it, such as a sign-in it lacks. A tool it did not find
+          reads <strong>Not detected</strong> and is marked <strong>Not installed</strong>. While a tool's first check
+          runs, its row reads <strong>Checking…</strong>.</li>
+        <li><strong>Git</strong> and <strong>GitHub CLI (gh)</strong>, the command-line tools. Each shows its version
+          and its path, or <strong>Not detected</strong>. A tool found is marked <strong>Detected</strong>, and
+          <code>gh</code>, when HarmFlow can tell whether it is signed in, <strong>Authenticated</strong> or
+          <strong>Not authenticated</strong>.</li>
+      </ul>
+      <p>You can change a tool's path later, in Settings. The list never shows a credential.</p>
+      <p>The list comes from the daemon, the background process that fires schedules and runs tasks. When the daemon
+        is not running, the step says <strong>The daemon is not running yet.</strong> instead of the list, with a
+        <strong>Start the daemon now</strong> button. Press it: once the daemon runs, the list fills in and the button
+        goes away. Starting the daemon by hand has a section of its own in this guide.</p>
+
+      <h2 id="daemon">Step 3: The daemon</h2>
+      <p>The third step says whether the daemon runs, <strong>The daemon is running.</strong> or
+        <strong>The daemon is not running yet.</strong>, with the same <strong>Start the daemon now</strong> button
+        while it does not. It runs schedules and tasks with or without the app's window open.</p>
+      <p>The step also offers <strong>Start the daemon automatically with the system</strong>. The option is unchecked:
+        the daemon starts with your Mac only if you check it, and you can change it later in Settings. Your choice is
+        saved when you finish first use, on its last step.</p>
+
+      <h2 id="first-task">Step 4: Your first task</h2>
+      <p>The fourth step offers two ways to a first task, while the daemon runs:</p>
+      <ul>
+        <li><strong>A template.</strong> The step shows the three templates HarmFlow comes with, each named and
+          described: <strong>General task</strong>, <strong>Implement GitHub issues</strong>, and
+          <strong>Script task</strong>. Picking one opens the editor of a new task made from it, on the Tasks screen.
+          Creating a task from a template has a section of its own in this guide.</li>
+        <li><strong>An import.</strong> <strong>Import</strong> opens the dialog that imports a task file exported from
+          another machine, as <a href="/docs/guide/tasks/export-import/#import">Exporting and importing a task</a>
+          explains.</li>
+      </ul>
+      <p>Once you save the new task, or import one, first use comes back on its last step. If you leave the editor or
+        the dialog without saving or importing, it comes back on this step. <strong>Later</strong> goes to the last step
+        with no first task.</p>
+
+      <h2 id="done">Step 5: All set</h2>
+      <p>The last step says that live executions are the app's main screen: every running execution, its events, and
+        the queue. Its button, <strong>Go to live executions</strong>, ends first use and opens the Executions screen.
+        There, <a href="/docs/guide/executions/active-executions/">the active executions</a> are listed beside the
+        <strong>Execution queue</strong>, where a first task with a schedule is shown with its next run.</p>
+      <p>Only this button ends first use: picking a template or importing a task does not. Once it is pressed, first use
+        does not come back.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
