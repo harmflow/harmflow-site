@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Creating a task from a template · HarmFlow</title>
+  <meta name="description" content="How a new HarmFlow task starts from a built-in template: the three templates, what each one sets up, what you still fill in, and why nothing is saved until you save.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/tasks/templates/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="Creating a task from a template · HarmFlow">
+  <meta property="og:description" content="How a new HarmFlow task starts from a built-in template: the three templates, what each one sets up, what you still fill in, and why nothing is saved until you save.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/tasks/templates/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>Creating a task from a template</h1>
+      <p>Every new task starts from a template: a ready-made starting point for one kind of automation. HarmFlow comes
+        with three built-in templates. This page says what each one sets up, what you still fill in, and what happens
+        between choosing a template and saving the task.</p>
+
+      <h2 id="where">Where you choose a template</h2>
+      <p>HarmFlow offers the same templates, in the same order, wherever you create a task:</p>
+      <ul>
+        <li>the <strong>New task</strong> button at the top of the window, or its shortcut, ⌘N;</li>
+        <li>the Tasks screen;</li>
+        <li>the Overview, while you have no task yet;</li>
+        <li>the first-run setup.</li>
+      </ul>
+      <p>Each template shows its name and a line on what it is for, in the interface's language. Change the
+        <a href="/docs/guide/install/languages/">language</a> and they change with it, with no restart.</p>
+
+      <h2 id="built-in">The three built-in templates</h2>
+      <ul>
+        <li><strong>General task.</strong> Any automation whose behavior lives in its prompt, agents, and skills: an AI
+          tool works on a prompt you write. Its harness is set to Claude Code.</li>
+        <li><strong>Implement GitHub issues.</strong> Selects issues, implements them in a worktree, runs the tests,
+          and opens a draft pull request. The task starts as a copy of HarmFlow's built-in issue implementer: its
+          prompt is that agent's, with the skills that pick the issues, prepare the worktree, and open the draft pull
+          request. Its harness is set to Claude Code, and the repository it works starts on the <code>main</code>
+          branch.</li>
+        <li><strong>Script task.</strong> Runs a program or a script of yours on a schedule, in place of a launchd
+          agent, the Task Scheduler, or cron. It runs no AI tool.</li>
+      </ul>
+
+      <h2 id="draft">Choosing a template opens a draft</h2>
+      <p>Choosing a template opens the task editor with a new task already filled in from it. The task is named after
+        the template, such as General task, and gets an identifier no other task has: a second task from the same
+        template becomes <code>general-task-2</code>. You can rename it before you save. The name is set when the
+        editor opens: a later change of language does not rename the task.</p>
+      <p>The draft is not a task yet. Nothing is saved, enabled, or run until you choose <strong>Save</strong>. Close
+        the editor before you save, and nothing is written.</p>
+
+      <h2 id="fill-in">What you still fill in</h2>
+      <p>A template leaves open the values only you can give. The editor leaves those fields empty for you; saving
+        without one is refused, and the editor names each missing value and marks its field.</p>
+      <ul>
+        <li><strong>General task:</strong> the <strong>Prompt</strong>, what the task does.</li>
+        <li><strong>Implement GitHub issues:</strong> the repository it works, in its <strong>Repository
+          (owner/repo)</strong> and <strong>Local path</strong> fields. Its prompt and skills are already there.</li>
+        <li><strong>Script task:</strong> what it runs: <strong>A program</strong> with its arguments, or <strong>An
+          inline script</strong> with its interpreter. Its
+          <a href="/docs/guide/tasks/script-task-environment/">working directory, variables, and timeout</a> are
+          optional.</li>
+      </ul>
+      <p>None of the three sets a schedule. A task saved without one is <strong>Manual only</strong>: it runs when you
+        start it. Give it a cron expression or an interval in the editor to have it run on its own.</p>
+
+      <h2 id="read-only">Built-in templates do not change</h2>
+      <p>The built-in templates ship with HarmFlow. You cannot change or delete them: what you change in the editor
+        belongs to the new task, and the template stays as it was for the next task you create from it.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
