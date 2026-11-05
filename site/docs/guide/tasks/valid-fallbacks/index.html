@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Which fallback harnesses are valid · HarmFlow</title>
+  <meta name="description" content="Which fallback harnesses are valid for a HarmFlow task: the agents and skills a fallback must have, the warning the task editor shows, and what a run does when a fallback lacks one.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/tasks/valid-fallbacks/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="Which fallback harnesses are valid · HarmFlow">
+  <meta property="og:description" content="Which fallback harnesses are valid for a HarmFlow task: the agents and skills a fallback must have, the warning the task editor shows, and what a run does when a fallback lacks one.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/tasks/valid-fallbacks/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>Which fallback harnesses are valid</h1>
+      <p>A task names the harness it prefers and the fallback harnesses it switches to when that one runs out of quota.
+        A fallback harness counts only when it can load every agent and every skill the task cites. This page says what
+        HarmFlow checks, what the task editor's warning says, and what a run does when a fallback is not valid.</p>
+
+      <h2 id="check">What HarmFlow checks</h2>
+      <p>When you save a task, HarmFlow checks that every agent and every skill the task cites can be found for each of
+        its fallback harnesses, as it does for the harness it prefers. The check covers both:</p>
+      <ul>
+        <li><strong>Agents.</strong> A fallback harness that cannot find one of the task's agents is not a valid
+          fallback.</li>
+        <li><strong>Skills.</strong> A fallback harness that cannot find one of the task's skills is not a valid
+          fallback either.</li>
+      </ul>
+      <p>So a task that cites a skill only Claude Code has, with Codex as its fallback, has no valid fallback until
+        Codex has that skill too. The fallback harnesses are <code>fallback.candidates</code> in the
+        <a href="/docs/reference/task-file/#harness">task file's <code>harness</code> section</a>.</p>
+
+      <h2 id="warning">The task editor's warning</h2>
+      <p>The task editor lists a fallback that is not valid under <strong>Warnings</strong>, beside the form. The
+        warning names the harness, says whether what it lacks is an agent or a skill, and names that agent or skill.
+        For a task whose Codex fallback cannot find the skill <code>review-notes</code>, it reads:</p>
+      <p><samp>Invalid fallback: Codex is not a valid fallback: skill "review-notes" cannot be found for it (the Codex
+        configuration)</samp></p>
+      <p>The words in parentheses say where HarmFlow looked for the item, and the warning ends with the place of the
+        fallback in the task file. For a missing agent, the warning says <samp>agent</samp> where this one says
+        <samp>skill</samp>. When a fallback lacks both an agent and a skill, the editor lists a warning for each, so
+        both are named.</p>
+
+      <h2 id="save">The task still saves</h2>
+      <p>The warning does not stop you from saving the task: the task saves, and the warning stays on it. It goes away
+        once the agent or skill is installed for that harness, or once you remove that harness from the task's
+        fallbacks.</p>
+
+      <h2 id="run">What a run does</h2>
+      <p>An execution of the task carries the same warning: it is under <strong>Warnings</strong> in the
+        <strong>Results</strong> tab of the execution's detail. It names the first agent or skill the fallback lacks.</p>
+      <p>When the harness the task prefers runs out of quota, the execution does not switch to a fallback that lacks one
+        of the task's agents or skills. With no valid fallback left, the execution fails, and its result says that no
+        alternative is available, as in:</p>
+      <p><samp>Claude Code cannot continue (quota exhausted) and no alternative AI tool is available</samp></p>
+      <p><a href="/docs/reference/harnesses/#failover">How a task fails over</a>, in the reference, tells when a switch
+        happens and how many switches an execution may make.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
