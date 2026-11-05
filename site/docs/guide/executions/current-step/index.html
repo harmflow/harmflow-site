@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>The current step of a running execution · HarmFlow</title>
+  <meta name="description" content="The step a running execution's card shows beside its elapsed time: where it comes from, what it says before the first step, and why there is no percentage.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/executions/current-step/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="The current step of a running execution · HarmFlow">
+  <meta property="og:description" content="The step a running execution's card shows beside its elapsed time: where it comes from, what it says before the first step, and why there is no percentage.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/executions/current-step/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>The current step of a running execution</h1>
+      <p>While an execution runs, its card on the Executions screen tells you what it is doing right now. The card's
+        Step row names the execution's current step, and sits right under the Start field, which gives the elapsed
+        time: together they say what the execution is doing and how long it has been at it. The rest of the card is
+        described in <a href="/docs/guide/executions/active-executions/">the list of active executions</a>.</p>
+
+      <h2 id="source">Where the step comes from</h2>
+      <p>The step follows the execution's own events. It is the latest entry of the execution's events timeline, such
+        as a tool the AI tool started, with the command it runs or the file it reads or edits, the tests the execution
+        is running, or a step the session reported. As each new event arrives, the step changes to follow it. The AI
+        tool's raw output is not a step: it stays in the execution's output.</p>
+      <p>Before the dashboard has received any event of the execution, the card shows the step HarmFlow itself reports
+        for the execution instead, such as:</p>
+      <ul>
+        <li>Preparing the workspace</li>
+        <li>Checking the AI tool</li>
+        <li>Starting Claude Code, or Starting Codex</li>
+        <li>Switching to Codex, when the execution moves to the next AI tool the task names</li>
+        <li>Waiting for the rate limit</li>
+        <li>For a script task, Preparing the program, then Running followed by the program's name</li>
+      </ul>
+
+      <h2 id="language">The language of the step</h2>
+      <p>A step HarmFlow names itself, such as starting an AI tool, is written in the language of the interface: with
+        the interface in Portuguese, the card reads "Iniciando Claude Code" rather than "Starting Claude Code". What
+        the AI tool wrote, the commands it runs, and the paths of the files it touches appear as they are, never
+        translated.</p>
+
+      <h2 id="waiting">Before the first step</h2>
+      <p>An execution that has no step yet, neither an event nor a step HarmFlow reports, shows "Waiting for the first
+        step…" in its Step row until the first one arrives.</p>
+
+      <h2 id="no-percentage">Why there is no percentage</h2>
+      <p>The card never shows a percentage, a progress bar, or any other measure of how much of the work is done. An
+        AI tool's session has no known length: how many steps it takes depends on what it finds along the way, so
+        nothing could say honestly that it is halfway through. Rather than invent a number, the card shows what the
+        execution is doing and how long it has been running.</p>
+      <p>The thin line under the step sweeps from side to side while the execution is active. It shows that the
+        execution is at work; it never fills up and measures nothing.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
