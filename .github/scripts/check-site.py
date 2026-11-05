@@ -9,14 +9,15 @@ robots.txt that points to it; the landing page: its primary call to action leads
 before the community edition's link to the build instructions, and the page says that HarmFlow is coming to the Mac App
 Store and links to no store page yet; what two pages of each published language must say: the privacy policy's five
 parts, each with a heading and text, and its naming of Google Analytics, and the support page's link to harmflow-app's
-issues, and no e-mail address on it; the root 404 page: that the tree has one, that its main says the page was not found
-in a heading and links to the landing page, and that each of its links and assets is a path from the root, which holds
-at any depth; the typefaces: that every @font-face rule takes its fonts only from WOFF2 files of the site under /fonts/,
-that each font's folder holds its SIL Open Font License 1.1, and that the text and monospace stacks keep the system's
-fonts as fallbacks; and the colors of the styles: each is one of the logo's fixed colors or a placeholder until the
-palette is approved. It names each problem it finds on stderr, one per line, and exits 1 when it finds any. The Checks
-workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves each check on a tree of
-its own that breaks it.
+issues, and no e-mail address on it; the user guide: that its index leads to its four parts in their order, and that
+each part is a page with its title and a paragraph of text, no longer a stub; the root 404 page: that the tree has one,
+that its main says the page was not found in a heading and links to the landing page, and that each of its links and
+assets is a path from the root, which holds at any depth; the typefaces: that every @font-face rule takes its fonts only
+from WOFF2 files of the site under /fonts/, that each font's folder holds its SIL Open Font License 1.1, and that the
+text and monospace stacks keep the system's fonts as fallbacks; and the colors of the styles: each is one of the logo's
+fixed colors or a placeholder until the palette is approved. It names each problem it finds on stderr, one per line, and
+exits 1 when it finds any. The Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and
+check-site-test.py proves each check on a tree of its own that breaks it.
 
 Usage: check-site.py [--languages en-US,pt-BR,es-ES] [ROOT]
 
@@ -112,6 +113,18 @@ SUPPORT = "support/index.html"
 
 # Where the support page leads for defects and requests: this address, or one under it.
 ISSUES = "https://github.com/harmflow/harmflow-app/issues"
+
+# The user guide, in en-US at the root: its index, and its four parts, each a page of its own whose h1 is the part's
+# title, in the order the index leads to them. Only the main of each page is read: the header and footer every page
+# shares link to the guide and hold text of their own.
+GUIDE = "docs/guide/index.html"
+GUIDE_PARTS = (
+    ("/docs/guide/install/", "Installing HarmFlow"),
+    ("/docs/guide/repository-access/", "Granting access to repositories"),
+    ("/docs/guide/tasks/", "Creating tasks"),
+    ("/docs/guide/executions/", "Reading executions"),
+)
+STUB = "This page is being written."
 
 # A plain e-mail address, name@domain.tld, in a page's visible text.
 EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")
@@ -246,8 +259,8 @@ def references(name, value):
 
 class Page(HTMLParser):
     """One HTML file: the ids its #anchors may name, the references it makes, its recordings, its header's and footer's
-    tokens, its visible text, the outline its headings give that text, and the headings' text and the links inside its
-    main."""
+    tokens, its visible text, the outline its headings give that text, and the headings' text, the h1s' text, the links,
+    the visible text, and the paragraphs' text inside its main."""
 
     def __init__(self, rel):
         super().__init__(convert_charrefs=True)
@@ -275,7 +288,10 @@ class Page(HTMLParser):
         self.outline = []
         self._open = []  # the open elements, outermost first
         self.main_headings = []  # each heading's text, inside main
+        self.main_titles = []  # each h1's text, inside main
         self.main_links = []  # each a's or area's href, inside main
+        self.main_text = []  # the text inside main
+        self.main_paragraphs = []  # the text inside main's p elements
         self._in_style = False
         self._sectioning = 0
         self._capture = None
@@ -357,7 +373,10 @@ class Page(HTMLParser):
         if tag in SECTIONING and self._sectioning:
             self._sectioning -= 1
         if tag == self._heading:
-            self.main_headings.append(" ".join(" ".join(self._heading_text).split()))
+            heading = " ".join(" ".join(self._heading_text).split())
+            self.main_headings.append(heading)
+            if tag == "h1":
+                self.main_titles.append(heading)
             self._heading = None
         if tag == "main" and self._main:
             self._main -= 1
@@ -381,6 +400,10 @@ class Page(HTMLParser):
             self.body_text.append(text)
         if text and not any(tag in HIDDEN for tag in self._open):
             self.text.append(text)
+            if self._main:
+                self.main_text.append(text)
+                if "p" in self._open:
+                    self.main_paragraphs.append(text)
             if not any(tag in HEADINGS for tag in self._open):
                 self.outline.append(("text",))
 
@@ -774,6 +797,57 @@ def check_support(pages, published):
     return problems
 
 
+def served_path(path):
+    """The path the page a link leads to is served at: /docs/guide/install, and its index.html, at
+    /docs/guide/install/."""
+    if path.endswith("/index.html"):
+        path = path[: -len("index.html")]
+    return path if path.endswith("/") else path + "/"
+
+
+def check_guide(pages):
+    """The guide's index leads to its four parts, in their order, by the links of its main, with other links allowed
+    between them; each part is a page whose main's h1 is the part's title, with a paragraph of text after it, and no
+    longer the stub. A tree with no guide index has none of this to check: the paths rule names its missing index."""
+    index = pages.get(GUIDE)
+    if index is None:
+        return []
+    problems = []
+    titles = OrderedDict(GUIDE_PARTS)
+    linked = []  # each part's path, in the order the index's main first links to it
+    for href in index.main_links:
+        target = resolve(index.url, href)
+        path = served_path(target[0]) if target is not None else None
+        if path in titles and path not in linked:
+            linked.append(path)
+    for path, title in GUIDE_PARTS:
+        if path not in linked:
+            problems.append("guide: %s: its main does not link to %s (%s)" % (GUIDE, path, title))
+    expected = [path for path in titles if path in linked]
+    for found, wanted in zip(linked, expected):
+        if found != wanted:
+            problems.append(
+                "guide: %s: its main links to %s (%s) before %s (%s), out of the parts' order"
+                % (GUIDE, found, titles[found], wanted, titles[wanted])
+            )
+            break
+    for path, title in GUIDE_PARTS:
+        rel = path.lstrip("/") + "index.html"
+        page = pages.get(rel)
+        if page is None:
+            problems.append("guide: %s (%s) has no page: %s is missing" % (path, title, rel))
+            continue
+        if not page.main_titles:
+            problems.append('guide: %s: its main has no h1; it is "%s"' % (rel, title))
+        elif page.main_titles[0] != title:
+            problems.append('guide: %s: its h1 is "%s", not "%s"' % (rel, page.main_titles[0], title))
+        if STUB in " ".join(page.main_text):
+            problems.append('guide: %s still reads "%s"' % (rel, STUB))
+        elif not page.main_paragraphs:
+            problems.append("guide: %s: its main has no paragraph of text beyond its heading" % rel)
+    return problems
+
+
 def check_not_found(root, pages):
     """A tree that holds pages has a 404.html at its root, whose main says in a heading that the page was not found
     and links to the landing page, and whose every link and asset is a path from the root, an absolute URL, or an
@@ -1072,6 +1146,7 @@ def main(argv):
     problems += check_landing(site)
     problems += check_privacy(site, published)
     problems += check_support(site, published)
+    problems += check_guide(site)
     problems += check_not_found(root, site)
     sheets = stylesheets(root)
     problems += check_font_faces(root, sheets)
