@@ -58,8 +58,8 @@
       <p>The second step lists what HarmFlow found on your Mac, one row each:</p>
       <ul>
         <li><strong>Claude Code</strong> and <strong>Codex</strong>, the AI tools. A tool HarmFlow found shows its
-          version and its path, and is marked with its readiness: <strong>Ready</strong> when a task can run on it,
-          or <strong>Not ready</strong> when something stops it, such as a sign-in it lacks. A tool it did not find
+          version and its path, and is marked with its readiness, such as <strong>Ready</strong> when a task can run
+          on it, or <strong>Not ready</strong> when something stops it, such as a sign-in it lacks. A tool it did not find
           reads <strong>Not detected</strong> and is marked <strong>Not installed</strong>. While a tool's first check
           runs, its row reads <strong>Checking…</strong>.</li>
         <li><strong>Git</strong> and <strong>GitHub CLI (gh)</strong>, the command-line tools. Each shows its version
@@ -67,7 +67,7 @@
           <code>gh</code>, when HarmFlow can tell whether it is signed in, <strong>Authenticated</strong> or
           <strong>Not authenticated</strong>.</li>
       </ul>
-      <p>You can change a tool's path later, in Settings. The list never shows a credential.</p>
+      <p>You can change an AI tool's path later, in Settings. The list never shows a credential.</p>
       <p>The list comes from the daemon, the background process that fires schedules and runs tasks. When the daemon
         is not running, the step says <strong>The daemon is not running yet.</strong> instead of the list, with a
         <strong>Start the daemon now</strong> button. Press it: once the daemon runs, the list fills in and the button
@@ -79,7 +79,7 @@
         while it does not. It runs schedules and tasks with or without the app's window open.</p>
       <p>The step also offers <strong>Start the daemon automatically with the system</strong>. The option is unchecked:
         the daemon starts with your Mac only if you check it, and you can change it later in Settings. Your choice is
-        saved when you finish first use, on its last step.</p>
+        saved when you finish first use on its last step, with the daemon running.</p>
 
       <h2 id="first-task">Step 4: Your first task</h2>
       <p>The fourth step offers two ways to a first task, while the daemon runs:</p>
@@ -98,11 +98,15 @@
 
       <h2 id="done">Step 5: All set</h2>
       <p>The last step says that live executions are the app's main screen: every running execution, its events, and
-        the queue. Its button, <strong>Go to live executions</strong>, ends first use and opens the Executions screen.
-        There, <a href="/docs/guide/executions/active-executions/">the active executions</a> are listed beside the
-        <strong>Execution queue</strong>, where a first task with a schedule is shown with its next run.</p>
-      <p>Only this button ends first use: picking a template or importing a task does not. Once it is pressed, first use
-        does not come back.</p>
+        the queue. Its button is <strong>Go to live executions</strong>.</p>
+      <p>With the daemon running, the button ends first use: HarmFlow records it as done, saves your choice of starting
+        the daemon with the system, and opens the Executions screen. There,
+        <a href="/docs/guide/executions/active-executions/">the active executions</a> are listed beside the
+        <strong>Execution queue</strong>, where a first task with a schedule is shown with its next run. First use does
+        not come back after that.</p>
+      <p>With the daemon not running, the button saves nothing. The app shows that the daemon is not running, with a
+        button to start it, and first use shows again the next time you open the app.</p>
+      <p>Picking a template or importing a task never ends first use: only this button does.</p>
     </article>
   </main>
   <footer class="site-footer">
