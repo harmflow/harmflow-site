@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>When a restriction is not enforced · HarmFlow</title>
+  <meta name="description" content="What HarmFlow's Restriction not enforced warning means: why the task still runs, where the warning shows, what lifts a restriction, and how to hide the warning on an execution.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/tasks/restriction-not-enforced/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="When a restriction is not enforced · HarmFlow">
+  <meta property="og:description" content="What HarmFlow's Restriction not enforced warning means: why the task still runs, where the warning shows, what lifts a restriction, and how to hide the warning on an execution.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/tasks/restriction-not-enforced/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>When a restriction is not enforced</h1>
+      <p>A task's permissions say what its session may touch: which tools it uses, where it writes and reads, whether
+        it reaches the network. HarmFlow applies them through the AI tool's own controls. When the AI tool or the
+        operating system cannot enforce one of these restrictions, HarmFlow warns you with <strong>Restriction not
+        enforced</strong>. This page says what the warning means, where it shows, what makes a restriction count as
+        not enforced, and how to hide it on an execution.</p>
+
+      <h2 id="meaning">What the warning means</h2>
+      <p>The task still runs. HarmFlow does not stop or refuse a task because a restriction it declares cannot be
+        enforced: it runs the task with the controls the AI tool has, and tells you which restriction those controls
+        do not hold. The warning names each restriction that is not enforced, and why, such as a shell command that
+        may read outside the workspace, or a settings file that allows more than the task's tool list.</p>
+      <p>Read it as a statement of fact about the run, not as an error: the session may do what that restriction
+        meant to prevent. Change the task's permissions, or the settings the warning names, if that matters to
+        you.</p>
+
+      <h2 id="where">Where the warning shows</h2>
+      <ul>
+        <li><strong>On the task's row</strong> in the Tasks screen, as its warnings chip, such as <strong>1
+          warning</strong>. The chip's tooltip names the warning and its message.</li>
+        <li><strong>In the task editor</strong>, among the <strong>Warnings</strong> of the task's validation, beside
+          its errors.</li>
+        <li><strong>On the execution</strong>: as a banner in its detail, and in the <strong>Warnings</strong> list of
+          its <strong>Results</strong> tab. <a href="/docs/guide/executions/">Reading executions</a> describes the
+          detail and its tabs.</li>
+      </ul>
+      <p>The execution's <strong>Events</strong> tab and its log also record each restriction that is not
+        enforced.</p>
+
+      <h2 id="lifted">What lifts a restriction</h2>
+      <p>A restriction counts as not enforced when another settings source the AI tool loads can lift it. For Claude
+        Code, these are the allow rules, and the additional directories, of its settings files:</p>
+      <ul>
+        <li>its <strong>user settings</strong>, <code>settings.json</code> in Claude Code's configuration
+          folder;</li>
+        <li>its <strong>project settings</strong>, <code>.claude/settings.json</code> in the task's workspace;</li>
+        <li>its <strong>local settings</strong>, <code>.claude/settings.local.json</code> in the task's
+          workspace.</li>
+      </ul>
+      <p>Claude Code adds what these files allow to what the task allows. When a file allows more than the task's
+        permissions, such as a tool the task's list leaves out, or edits or reads outside the workspace, the warning
+        names that file's source: "user settings", "project and local settings", and so on. Claude Code's managed
+        settings are not checked, and the warning says so.</p>
+      <ul>
+        <li><strong>A file HarmFlow cannot read</strong>, or one that exists but does not parse, counts as lifting the
+          restriction: HarmFlow cannot tell what it allows. The warning names it too.</li>
+        <li><strong>A missing file</strong> lifts nothing.</li>
+      </ul>
+      <p>HarmFlow checks these sources twice. When you save a task, it reads your user settings. When each execution
+        starts, it reads every source again, the workspace's own project and local settings included, so a warning
+        can appear on an execution that the task's row did not show.</p>
+      <p>Codex has controls of its own, and its own restrictions it cannot enforce. One of them comes from its
+        managed requirements, which have a page of their own:
+        <a href="/docs/guide/install/codex-managed-requirements/">Codex's managed requirements</a>.</p>
+
+      <h2 id="hide">Hiding the warning on an execution</h2>
+      <p>In Settings, under <strong>General</strong>, the <strong>Executions</strong> panel has the option
+        <strong>Show restriction warnings</strong>. It is on by default.</p>
+      <p>Turning it off hides the warning in an execution's detail: the banner, and its entry in the
+        <strong>Warnings</strong> of the Results tab. The change takes effect at once. While it is off:</p>
+      <ul>
+        <li>the execution's <strong>Events</strong> tab still lists each restriction that is not enforced;</li>
+        <li>the warning on the task's row, and in the task editor, still shows.</li>
+      </ul>
+      <p>The option hides the warning; it changes nothing about the run. The restriction is still not enforced.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
