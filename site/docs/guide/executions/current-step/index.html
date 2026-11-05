@@ -38,8 +38,8 @@
     <article class="prose">
       <h1>The current step of a running execution</h1>
       <p>While an execution runs, its card on the Executions screen tells you what it is doing right now. The card's
-        Step row names the execution's current step, and sits right under the Start field, which gives the elapsed
-        time: together they say what the execution is doing and how long it has been at it. The rest of the card is
+        Step row names the execution's current step beside the elapsed time: it sits right under the Start field,
+        which counts how long the execution has been running. Together they say what the execution is doing and how long it has been at it. The rest of the card is
         described in <a href="/docs/guide/executions/active-executions/">the list of active executions</a>.</p>
 
       <h2 id="source">Where the step comes from</h2>
@@ -47,8 +47,9 @@
         as a tool the AI tool started, with the command it runs or the file it reads or edits, the tests the execution
         is running, or a step the session reported. As each new event arrives, the step changes to follow it. The AI
         tool's raw output is not a step: it stays in the execution's output.</p>
-      <p>Before the dashboard has received any event of the execution, the card shows the step HarmFlow itself reports
-        for the execution instead, such as:</p>
+      <p>While the dashboard holds none of the execution's events — before the first one reaches it, or after you open
+        the dashboard on an execution already running, until it receives one — the card shows the step HarmFlow itself
+        reports for the execution instead, such as:</p>
       <ul>
         <li>Preparing the workspace</li>
         <li>Checking the AI tool</li>
@@ -73,7 +74,7 @@
         AI tool's session has no known length: how many steps it takes depends on what it finds along the way, so
         nothing could say honestly that it is halfway through. Rather than invent a number, the card shows what the
         execution is doing and how long it has been running.</p>
-      <p>The thin line under the step sweeps from side to side while the execution is active. It shows that the
+      <p>The thin line under the step sweeps across, again and again, while the execution is active. It shows that the
         execution is at work; it never fills up and measures nothing.</p>
     </article>
   </main>
