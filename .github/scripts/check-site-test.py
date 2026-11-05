@@ -8,6 +8,7 @@ Usage: check-site-test.py [unittest options]
 """
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -26,6 +27,10 @@ ALL_LANGUAGES = ["--languages", "en-US,pt-BR,es-ES"]
 SLUGS = (
     "index.html",
     "docs/guide/index.html",
+    "docs/guide/install/index.html",
+    "docs/guide/repository-access/index.html",
+    "docs/guide/tasks/index.html",
+    "docs/guide/executions/index.html",
     "docs/reference/index.html",
     "showroom/index.html",
     "privacy/index.html",
@@ -61,6 +66,20 @@ PRIVACY = """<h2 id="app">The HarmFlow app</h2>
   <h3 id="withdraw">Withdrawing your consent</h3>
   <p>The footer's link reopens the choice.</p>"""
 SUPPORT = '<p><a href="https://github.com/harmflow/harmflow-app/issues/new/choose">Open an issue</a></p>'
+
+# The user guide, which its check reads in en-US: the index's main leads to the four parts in their order, with a link
+# to another section between two of them, and each part's page has its title as its h1 and an introduction.
+GUIDE_PARTS = (
+    ("docs/guide/install/", "Installing HarmFlow"),
+    ("docs/guide/repository-access/", "Granting access to repositories"),
+    ("docs/guide/tasks/", "Creating tasks"),
+    ("docs/guide/executions/", "Reading executions"),
+)
+GUIDE_LINKS = tuple('<li><a href="/%s">%s</a></li>' % part for part in GUIDE_PARTS)
+GUIDE = "<ol>\n    %s\n  </ol>" % "\n    ".join(
+    GUIDE_LINKS[:2] + ('<li><a href="/docs/reference/">The reference</a></li>',) + GUIDE_LINKS[2:]
+)
+INTRODUCTION = "<p>What this part of the guide covers.</p>"
 
 
 def prefix_of(language):
@@ -98,12 +117,16 @@ LANDING = "\n  ".join((BADGE, CTA, COMMUNITY))
 
 
 def page(language, slug, header_html=None, footer_html=None, body="", landing=None):
-    """A page of the fixture. The privacy policy holds its parts and the support page its link to the issues, after
-    BODY; every page but the support page has a mailto: link, which only the support page may not."""
+    """A page of the fixture. The privacy policy holds its parts, the support page its link to the issues, the guide's
+    index its links to the parts, and each part its introduction, after BODY; a part's h1 is its title. Every page but
+    the support page has a mailto: link, which only the support page may not."""
     home = "./" if slug == "index.html" else "../" * slug.count("/")
     if landing is None:
         landing = LANDING if (language, slug) == ("en-US", "index.html") else ""
-    content = {"privacy/index.html": PRIVACY, "support/index.html": SUPPORT}.get(slug, "")
+    parts = dict((path + "index.html", title) for path, title in GUIDE_PARTS)
+    content = {"privacy/index.html": PRIVACY, "support/index.html": SUPPORT, "docs/guide/index.html": GUIDE}.get(
+        slug, INTRODUCTION if slug in parts else ""
+    )
     mail = "" if slug == "support/index.html" else ' <a href="mailto:support@example.com">Mail</a>'
     return """<!doctype html>
 <html lang="%(language)s">
@@ -123,7 +146,7 @@ def page(language, slug, header_html=None, footer_html=None, body="", landing=No
 <body>
 %(header)s
 <main>
-  <h1 id="title">A page</h1>
+  <h1 id="title">%(title)s</h1>
   <p><a href="#title">Title</a> <a href="#top">Top</a> <a href="%(home)s">Home</a></p>
   <p><a href="https://github.com/harmflow/harmflow-app">The app</a>%(mail)s</p>
   <img src="/showroom/poster.png" srcset="/showroom/poster.png 1x, https://harmflow.com/showroom/poster.png 2x" alt="">
@@ -140,6 +163,7 @@ def page(language, slug, header_html=None, footer_html=None, body="", landing=No
         "served": served(prefix_of(language), slug),
         "header": header_html if header_html is not None else header(language, slug),
         "home": home,
+        "title": parts.get(slug, "A page"),
         "landing": landing,
         "mail": mail,
         "body": body,
@@ -795,6 +819,73 @@ class CheckSiteTest(unittest.TestCase):
                 "check-site: paths: /support/ has no page: support/index.html is missing",
             ],
             lines,
+        )
+
+    # The user guide.
+
+    def assertGuideFails(self, text):
+        """The check fails with one guide problem, TEXT."""
+        lines = self.assertFails(text)
+        self.assertEqual([line for line in lines if "guide:" in line], ["check-site: " + text], lines)
+
+    def test_a_guide_index_missing_a_parts_link_fails_naming_it(self):
+        text = page("en-US", "docs/guide/index.html")
+        self.assertIn(GUIDE_LINKS[1], text)
+        self.write("docs/guide/index.html", text.replace(GUIDE_LINKS[1], ""))
+        self.assertGuideFails(
+            "guide: docs/guide/index.html: its main does not link to /docs/guide/repository-access/ "
+            "(Granting access to repositories)"
+        )
+
+    def test_a_guide_index_listing_the_parts_out_of_order_fails_naming_the_part(self):
+        text = page("en-US", "docs/guide/index.html")
+        swapped = text.replace(GUIDE_LINKS[1], "(moved)").replace(GUIDE_LINKS[2], GUIDE_LINKS[1])
+        self.write("docs/guide/index.html", swapped.replace("(moved)", GUIDE_LINKS[2]))
+        self.assertGuideFails(
+            "guide: docs/guide/index.html: its main links to /docs/guide/tasks/ (Creating tasks) before "
+            "/docs/guide/repository-access/ (Granting access to repositories), out of the parts' order"
+        )
+
+    # The links lead to the parts whatever form they take: relative, to the index.html, or at harmflow.com.
+    def test_links_to_the_parts_in_another_form_pass(self):
+        text = page("en-US", "docs/guide/index.html")
+        text = text.replace('href="/docs/guide/install/"', 'href="install/index.html"')
+        text = text.replace('href="/docs/guide/tasks/"', 'href="https://harmflow.com/docs/guide/tasks/"')
+        self.write("docs/guide/index.html", text.replace('href="/docs/guide/executions/"', 'href="executions"'))
+        self.assertPasses()
+
+    # Removed with its sitemap entry, in the site as it is published: the index's link to it fails too.
+    def test_a_guide_part_removed_fails_naming_its_path(self):
+        self.en_us_only()
+        os.remove(os.path.join(self.root, "docs/guide/tasks/index.html"))
+        self.write("sitemap.xml", sitemap(slug for slug in SLUGS if slug != "docs/guide/tasks/index.html"))
+        lines = self.assertFails(
+            "guide: /docs/guide/tasks/ (Creating tasks) has no page: docs/guide/tasks/index.html is missing",
+            languages=[],
+        )
+        self.assertEqual(len([line for line in lines if "guide:" in line]), 1, lines)
+
+    def test_a_guide_part_whose_heading_names_another_subject_fails_naming_it(self):
+        text = page("en-US", "docs/guide/tasks/index.html")
+        self.assertIn(">Creating tasks</h1>", text)
+        self.write("docs/guide/tasks/index.html", text.replace(">Creating tasks</h1>", ">Reading executions</h1>"))
+        self.assertGuideFails(
+            'guide: docs/guide/tasks/index.html: its h1 is "Reading executions", not "Creating tasks"'
+        )
+
+    def test_a_guide_part_that_is_still_a_stub_fails_naming_it(self):
+        text = page("en-US", "docs/guide/executions/index.html")
+        self.assertIn(INTRODUCTION, text)
+        stub = text.replace(INTRODUCTION, "<p>This page is being written.</p>")
+        self.write("docs/guide/executions/index.html", stub)
+        self.assertGuideFails('guide: docs/guide/executions/index.html still reads "This page is being written."')
+
+    def test_a_guide_part_with_no_paragraph_fails_naming_it(self):
+        text = re.sub(r"<p>.*?</p>", "", page("en-US", "docs/guide/install/index.html"))
+        self.assertNotIn("<p>", text)
+        self.write("docs/guide/install/index.html", text)
+        self.assertGuideFails(
+            "guide: docs/guide/install/index.html: its main has no paragraph of text beyond its heading"
         )
 
     # The root 404 page.
