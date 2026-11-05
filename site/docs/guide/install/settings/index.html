@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>The Settings screen · HarmFlow</title>
+  <meta name="description" content="What each section of the HarmFlow app's Settings screen holds: the menu bar and autostart options, the AI tools the app found, the folders it keeps its files in, and its access token.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/install/settings/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="The Settings screen · HarmFlow">
+  <meta property="og:description" content="What each section of the HarmFlow app's Settings screen holds: the menu bar and autostart options, the AI tools the app found, the folders it keeps its files in, and its access token.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/install/settings/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>The Settings screen</h1>
+      <p>Settings is where you set HarmFlow up on your Mac once it is installed: the daemon, the AI tools it found, the
+        folders it keeps its files in, and the token of its local API. Open it with Settings in the sidebar, with ⌘5, or
+        with ⌘,.</p>
+
+      <h2 id="sections">Its sections</h2>
+      <p>The screen lists its sections on the left and shows the open one beside them. The list has three groups, then
+        About on its own at the foot:</p>
+      <ul>
+        <li><strong>Interface</strong>: General, Notifications, and Shortcuts.</li>
+        <li><strong>Execution</strong>: AI tools and Paths.</li>
+        <li><strong>This computer</strong>: Daemon, Storage, and Security.</li>
+      </ul>
+      <p>What each section holds:</p>
+      <ul>
+        <li><strong>General</strong>: the interface's language (see
+          <a href="/docs/guide/install/languages/">The interface's languages</a>), the menu bar options, and whether an
+          execution's detail shows a banner for each restriction its AI tool does not enforce.</li>
+        <li><strong>Notifications</strong>: the notification level (see
+          <a href="/docs/guide/executions/notification-level/">the notification level</a>) and, in the desktop app, an
+          Allow notifications button that asks macOS for its permission.</li>
+        <li><strong>Shortcuts</strong>: HarmFlow's keyboard shortcuts, grouped by where they work.</li>
+        <li><strong>AI tools</strong>: the AI tools and the command-line tools the app found, and the share of each AI
+          tool's quota HarmFlow may spend (see <a href="/docs/guide/executions/quota-share/">the quota share</a>).</li>
+        <li><strong>Paths</strong>: the path variables a task's paths can use, and the folders, beside your home folder
+          and the mounted volumes, where a task's paths may lead.</li>
+        <li><strong>Daemon</strong>: whether the daemon is running, and the autostart option.</li>
+        <li><strong>Storage</strong>: the disk space HarmFlow uses and the folders it keeps its files in. It also holds
+          how long execution logs are kept and the clean-up of workspaces, which are topics of their own.</li>
+        <li><strong>Security</strong>: where the local API's access token is stored, and a button that replaces it.</li>
+        <li><strong>About</strong>: the versions of the desktop app and of the daemon.</li>
+      </ul>
+
+      <h2 id="menu-bar-and-autostart">The menu bar and autostart options</h2>
+      <p>The menu bar options are in General, in its Menu bar panel:</p>
+      <ul>
+        <li><strong>Show HarmFlow in the menu bar</strong>. With it on, closing the window only hides it.</li>
+        <li><strong>Keep HarmFlow in the menu bar when quitting with ⌘Q</strong>. With it on, ⌘Q only hides the window;
+          with it off, ⌘Q closes the dashboard and the menu bar. It can be turned on only while HarmFlow shows in the menu
+          bar.</li>
+      </ul>
+      <p>The autostart option is in Daemon, in its Startup panel: <strong>Start the daemon automatically with the
+        system</strong>. It is off by default. With it on, the daemon, and the menu bar if it is shown, start when you
+        sign in to your Mac.</p>
+      <p>The daemon keeps running whichever way these options are set: closing the window or quitting the dashboard does
+        not stop it. Daemon's Status panel says whether it is running, with its process ID and how long it has been up,
+        and has a Stop daemon button; while the daemon is not running, the desktop app shows a Start daemon button
+        instead.</p>
+
+      <h2 id="ai-tools">What AI tools shows</h2>
+      <p>AI tools has one card for each AI tool HarmFlow runs, Claude Code and Codex, and a Detect again button that
+        looks for them once more.</p>
+      <ul>
+        <li><strong>A detected tool</strong> shows its version and its path, and whether it is ready: Ready, or a status
+          such as Not ready, with a diagnostic that says why when there is one. Its card also says where the path came from, the installations found, whether
+          it is signed in, and when it was last checked. You can set its path by hand, or let the app detect it again.
+          Claude Code's card also has a field for a long-lived token.</li>
+        <li><strong>A tool that is not detected</strong> reads Not detected, with the status Not installed. The app
+          never installs or updates an AI tool: install it, then use Detect again, or set its path by hand.</li>
+      </ul>
+      <p>Below the AI tools, the Command-line tools panel shows the two tools HarmFlow uses for its GitHub work, Git and
+        the GitHub CLI (gh): each with its version and its path when detected, and Not detected otherwise. Credentials are
+        never shown.</p>
+
+      <h2 id="storage">The folders Storage shows</h2>
+      <p>Storage shows the disk space HarmFlow uses, and lists the folders it keeps its files in, each with its path:</p>
+      <ul>
+        <li>HarmFlow folder</li>
+        <li>Tasks</li>
+        <li>State</li>
+        <li>Logs</li>
+        <li>Workspaces</li>
+        <li>Execution directories</li>
+        <li>Runtime file</li>
+        <li>Built-in agents and skills</li>
+      </ul>
+      <p>In the desktop app, each folder has a Show in Finder button, which opens it in the Finder.</p>
+
+      <h2 id="security">The access token</h2>
+      <p>The dashboard talks to the daemon over a local API that asks for an access token. Security says where that
+        token is stored: in the <strong>macOS Keychain</strong>, or in a <strong>file readable only by you</strong>.</p>
+      <p>The <strong>Replace API token</strong> button replaces it, after asking you to confirm. The daemon then refuses
+        the old token, and the dashboard picks up the new one at once.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
