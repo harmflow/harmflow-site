@@ -109,11 +109,13 @@ def footer(language, sections=SECTIONS):
 
 
 # What the landing page, the en-US index.html, must hold: the badge that says HarmFlow is coming to the Mac App Store,
-# a primary call to action to the app on GitHub, and after it the community edition's link to the build instructions.
+# the lead that says whom it is for, a primary call to action to the app on GitHub, and after it the community
+# edition's link to the build instructions.
 BADGE = '<p class="badge">Coming to the Mac App Store</p>'
+AUDIENCE = '<p class="lead">For developers on the Mac: HarmFlow runs Claude Code and Codex on a schedule.</p>'
 CTA = '<a class="cta" href="https://github.com/harmflow/harmflow-app">Follow HarmFlow on GitHub</a>'
 COMMUNITY = '<p>The community edition <a href="https://github.com/harmflow/harmflow-app#quick-start">builds</a>.</p>'
-LANDING = "\n  ".join((BADGE, CTA, COMMUNITY))
+LANDING = "\n  ".join((BADGE, AUDIENCE, CTA, COMMUNITY))
 
 
 def page(language, slug, header_html=None, footer_html=None, body="", landing=None):
@@ -668,25 +670,25 @@ class CheckSiteTest(unittest.TestCase):
         self.assertLandingFails(
             "landing: index.html has no link to the community edition's build instructions, "
             "https://github.com/harmflow/harmflow-app#quick-start",
-            landing="\n".join((BADGE, CTA)),
+            landing="\n".join((BADGE, AUDIENCE, CTA)),
         )
 
     def test_a_community_edition_link_before_the_call_to_action_fails(self):
         self.assertLandingFails(
             "the community edition's link comes before the first primary call to action",
-            landing="\n".join((BADGE, COMMUNITY, CTA)),
+            landing="\n".join((BADGE, AUDIENCE, COMMUNITY, CTA)),
         )
 
     def test_a_community_edition_link_that_is_a_call_to_action_fails(self):
         community = COMMUNITY.replace("<a href", '<a class="cta" href')
-        self.write("index.html", page("en-US", "index.html", landing="\n".join((BADGE, CTA, community))))
+        self.write("index.html", page("en-US", "index.html", landing="\n".join((BADGE, AUDIENCE, CTA, community))))
         self.assertFails("landing: index.html:", "the community edition's link is itself a primary call to action")
 
     # header-cta, the header's link, holds cta only as part of a token, so it is no primary call to action.
     def test_a_landing_page_with_no_call_to_action_fails(self):
         self.assertLandingFails(
             "landing: index.html has no primary call to action (an a.cta)",
-            landing="\n".join((BADGE, CTA.replace('class="cta"', 'class="header-cta"'), COMMUNITY)),
+            landing="\n".join((BADGE, AUDIENCE, CTA.replace('class="cta"', 'class="header-cta"'), COMMUNITY)),
         )
 
     def test_a_call_to_action_that_leads_elsewhere_fails(self):
@@ -694,19 +696,19 @@ class CheckSiteTest(unittest.TestCase):
         self.assertLandingFails(
             "its primary call to action leads to https://example.com/harmflow, "
             "not https://github.com/harmflow/harmflow-app",
-            landing="\n".join((BADGE, CTA, COMMUNITY, elsewhere)),
+            landing="\n".join((BADGE, AUDIENCE, CTA, COMMUNITY, elsewhere)),
         )
 
     # The description and Open Graph tags say it, but the visitor reads only the body.
     def test_a_landing_page_that_does_not_say_it_is_coming_to_the_store_fails(self):
-        text = page("en-US", "index.html", landing="\n".join((CTA, COMMUNITY)))
+        text = page("en-US", "index.html", landing="\n".join((AUDIENCE, CTA, COMMUNITY)))
         self.write("index.html", text.replace("A page of the fixture.", "Coming to the Mac App Store."))
         lines = self.assertFails("landing: index.html does not say that HarmFlow is coming to the Mac App Store")
         self.assertEqual(len([line for line in lines if "landing:" in line]), 1, lines)
 
     def test_the_store_in_any_case_and_across_elements_passes(self):
         badge = '<p class="badge">COMING to the <em>Mac</em>\n  App Store</p>'
-        self.write("index.html", page("en-US", "index.html", landing="\n".join((badge, CTA, COMMUNITY))))
+        self.write("index.html", page("en-US", "index.html", landing="\n".join((badge, AUDIENCE, CTA, COMMUNITY))))
         self.assertPasses()
 
     # The footer is read too, which also makes it differ from the other pages'.
@@ -717,6 +719,92 @@ class CheckSiteTest(unittest.TestCase):
             "landing: index.html:", "https://apps.apple.com/app/harmflow/id1 leads to the Mac App Store"
         )
         self.assertEqual(len([line for line in lines if "landing:" in line]), 1, lines)
+
+    # Whom the landing page is for: developers, on the Mac, who use Claude Code or Codex.
+
+    def test_a_landing_page_that_does_not_say_it_is_for_developers_fails(self):
+        lead = AUDIENCE.replace("For developers on the Mac", "On the Mac")
+        self.assertLandingFails(
+            "landing: index.html does not say that HarmFlow is for developers",
+            landing="\n".join((BADGE, lead, CTA, COMMUNITY)),
+        )
+
+    # The badge still names the Mac App Store, which is not the visitor's computer.
+    def test_a_landing_page_that_names_the_mac_only_in_the_store_fails(self):
+        lead = AUDIENCE.replace("developers on the Mac", "developers")
+        self.assertLandingFails(
+            "landing: index.html does not name the Mac, other than in the Mac App Store's name",
+            landing="\n".join((BADGE, lead, CTA, COMMUNITY)),
+        )
+
+    # macOS holds mac only as part of a word, so it does not name the Mac.
+    def test_a_landing_page_that_names_macos_and_not_the_mac_fails(self):
+        lead = AUDIENCE.replace("on the Mac", "on macOS")
+        self.assertLandingFails(
+            "landing: index.html does not name the Mac, other than in the Mac App Store's name",
+            landing="\n".join((BADGE, lead, CTA, COMMUNITY)),
+        )
+
+    def test_a_landing_page_that_does_not_name_the_mac_at_all_fails(self):
+        lead = AUDIENCE.replace("developers on the Mac", "developers")
+        self.write("index.html", page("en-US", "index.html", landing="\n".join((lead, CTA, COMMUNITY))))
+        lines = self.assertFails(
+            "landing: index.html does not name the Mac, other than in the Mac App Store's name",
+            "landing: index.html does not say that HarmFlow is coming to the Mac App Store",
+        )
+        self.assertEqual(len([line for line in lines if "landing:" in line]), 2, lines)
+
+    def test_a_landing_page_that_does_not_name_a_harness_fails_naming_it(self):
+        for name, lead in (
+            ("Claude Code", AUDIENCE.replace("Claude Code and Codex", "Codex")),
+            ("Codex", AUDIENCE.replace("Claude Code and Codex", "Claude Code")),
+        ):
+            with self.subTest(name=name):
+                self.assertLandingFails(
+                    "landing: index.html does not name %s" % name,
+                    landing="\n".join((BADGE, lead, CTA, COMMUNITY)),
+                )
+
+    def test_a_landing_page_that_names_its_audience_in_any_case_and_across_elements_passes(self):
+        lead = '<p>FOR <strong>Developers</strong> on the <em>mac</em>: <code>claude</code>\n  CODE and CODEX.</p>'
+        self.write("index.html", page("en-US", "index.html", landing="\n".join((BADGE, lead, CTA, COMMUNITY))))
+        self.assertPasses()
+
+    # The footer every page shares names Claude Code, Codex, and the Mac, in its sentence and its trademark notes, but
+    # it is not the landing page's own text.
+    def test_a_landing_page_whose_main_drops_them_while_its_footer_names_them_fails(self):
+        shared = footer("en-US").replace(
+            "</footer>",
+            "  <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>\n"
+            "  <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store "
+            "are trademarks of Apple Inc.</p>\n</footer>",
+        )
+        lead = '<p class="lead">For developers: HarmFlow runs your automations on a schedule.</p>'
+        for slug in SLUGS:
+            landing = "\n".join((BADGE, lead, CTA, COMMUNITY)) if slug == "index.html" else None
+            self.write(slug, page("en-US", slug, footer_html=shared, landing=landing))
+        lines = self.assertFails(
+            "landing: index.html does not name the Mac, other than in the Mac App Store's name",
+            "landing: index.html does not name Claude Code",
+            "landing: index.html does not name Codex",
+        )
+        self.assertEqual(len([line for line in lines if "landing:" in line]), 3, lines)
+
+    # The title, the description, the Open Graph tags, an alt text, and an aria-label name them, but no visitor reads
+    # them on the page.
+    def test_a_landing_page_that_names_them_only_in_its_head_and_attributes_fails(self):
+        names = "For developers on the Mac who use Claude Code or Codex"
+        lead = '<div class="feature-art" role="img" aria-label="%s"></div>' % names
+        text = page("en-US", "index.html", landing="\n".join((BADGE, lead, CTA, COMMUNITY)))
+        text = text.replace("A page of the fixture.", names + ".").replace("<title>A page", "<title>" + names)
+        self.write("index.html", text.replace('alt=""', 'alt="%s"' % names))
+        lines = self.assertFails(
+            "landing: index.html does not say that HarmFlow is for developers",
+            "landing: index.html does not name the Mac, other than in the Mac App Store's name",
+            "landing: index.html does not name Claude Code",
+            "landing: index.html does not name Codex",
+        )
+        self.assertEqual(len([line for line in lines if "landing:" in line]), 4, lines)
 
     # The privacy policy.
 
