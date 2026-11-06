@@ -2,7 +2,9 @@
 """Checks the site's files as committed, with no build step: that no page sits under a language the site does not
 publish, that the home page and each of its five sections has its own page at its English path, that each page declares
 the language of the prefix it sits under on its root element and marks no element with a language the site does not
-publish, the parity of the languages it does, the header and footer every page of one language shares, the internal
+publish, the parity of the languages it does, that each page that declares en-US reads as English, no paragraph or
+list item of its main nor its main as a whole reading as Portuguese or Spanish by their function words (a block of
+fewer than MIN_WORDS, 8 words, is never judged), the header and footer every page of one language shares, the internal
 links and #anchors, the media budget, the poster image of every recording, the metadata search engines and link previews
 read: each page's canonical address, description, and Open Graph tags, the sitemap that lists the pages, and the
 robots.txt that points to it; the landing page: its primary call to action leads to harmflow-app on GitHub and comes
@@ -33,6 +35,7 @@ import os
 import posixpath
 import re
 import sys
+import unicodedata
 from collections import OrderedDict
 from html.parser import HTMLParser
 from urllib.parse import unquote, urljoin, urlsplit
@@ -138,6 +141,41 @@ VOID = (
     "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr",
 )
 HIDDEN = ("head", "script", "style", "template")
+
+# The language of a page's text, read from its function words. A block of text is the text of a p or li element inside
+# the main, or the whole main; the text of the elements of UNJUDGED is in none, since code, its output, and keys are in
+# no human language. A block of fewer than MIN_WORDS words is never judged: too short to read a language from. One of
+# at least that many reads as Portuguese, or Spanish, when it holds at least MIN_FOREIGN of that language's words and
+# more of them than of the English ones.
+UNJUDGED = ("code", "pre", "kbd")
+TEXT_BLOCKS = ("p", "li")
+MIN_WORDS = 8
+MIN_FOREIGN = 2
+# Words are letters only, compared lowercased with their accents: "don't" is "don" and "t", "en-US" is "en" and "us".
+WORD = re.compile(r"[^\W\d_]+")
+# Each list holds only words of its own language: the Portuguese and Spanish ones no word that is also English. A word
+# common to two of the languages — "a", "no", "do", "me", "come", "as", "para", "que", "está" — is in none, nor is one
+# that is an English word too ("el", "la", "lo", "sin", "con", "hay", "um", "num"), a language's tag ("en", "es"), or a
+# piece a name, an address, or an abbreviation often splits into ("com", "os", "e", "al"): no such word tips a block.
+# A word in more than one list would count for none of them.
+ENGLISH_WORDS = """
+    the and of to in is are was were be been being it its that this these those with on at by from or but not an
+    which what when where who whom whose why how you your yours we our ours us they them their theirs his her him she
+    there here have had does did will would can could should must if then than so all each every any into onto about
+    after before over under between through without only also more most just very i my mine
+""".split()
+PORTUGUESE_WORDS = """
+    não você vocês também uma umas isso isto essa esse essas esses aquele aquela dele dela deles delas nós eles
+    elas ao aos às à pelo pela pelos pelas numa dos das seu sua seus suas meu minha então quando onde muito muita
+    muitos muitas ainda já até após sem é são estão foi tem têm há pode podem mais nem ou na lhe lhes aqui agora
+    depois sempre qual quais seja sejam fazer
+""".split()
+SPANISH_WORDS = """
+    usted ustedes también los las del pero una unos unas muy más le les y su sus están esto eso ese esa esos
+    esas aquel nosotros ellos ellas puede pueden cuando donde hacer tiene tienen mucha muchos muchas
+    todavía ahora después aquí siempre cual cuál fue gracias
+""".split()
+FUNCTION_WORDS = (("English", ENGLISH_WORDS), ("Portuguese", PORTUGUESE_WORDS), ("Spanish", SPANISH_WORDS))
 
 # The site's typefaces, each with the custom property of its stack and the generic family that ends it.
 FONT_STACKS = (("Inter", "--font-text", "sans-serif"), ("JetBrains Mono", "--font-mono", "monospace"))
@@ -260,7 +298,7 @@ def references(name, value):
 class Page(HTMLParser):
     """One HTML file: the ids its #anchors may name, the references it makes, its recordings, its header's and footer's
     tokens, its visible text, the outline its headings give that text, and the headings' text, the h1s' text, the links,
-    the visible text, and the paragraphs' text inside its main."""
+    the visible text, the paragraphs' text, and the text whose language is judged, by block, inside its main."""
 
     def __init__(self, rel):
         super().__init__(convert_charrefs=True)
@@ -292,6 +330,9 @@ class Page(HTMLParser):
         self.main_links = []  # each a's or area's href, inside main
         self.main_text = []  # the text inside main
         self.main_paragraphs = []  # the text inside main's p elements
+        self.judged_main = []  # the text inside main, but for the UNJUDGED elements'
+        self.text_blocks = []  # (line, [text]) of each p and li inside main: its own text, but a nested one's
+        self._blocks = []  # (the open elements' count with it, its index in text_blocks) of each open p and li
         self._in_style = False
         self._sectioning = 0
         self._capture = None
@@ -332,6 +373,9 @@ class Page(HTMLParser):
             self._main += 1
         if self._main and tag in HEADINGS and self._heading is None:
             self._heading, self._heading_text = tag, []
+        if self._main and tag in TEXT_BLOCKS:
+            self._blocks.append((len(self._open), len(self.text_blocks)))
+            self.text_blocks.append((line, []))
         if self._main and tag in ("a", "area") and named.get("href") is not None:
             self.main_links.append(named["href"].strip())
         if tag == "video":
@@ -366,6 +410,8 @@ class Page(HTMLParser):
             while self._open.pop() != tag:
                 pass
             self.outline.append(("end", len(self._open)))
+            while self._blocks and self._blocks[-1][0] > len(self._open):
+                self._blocks.pop()
         if tag == "video":
             self._video = None
         if tag == "style":
@@ -404,6 +450,10 @@ class Page(HTMLParser):
                 self.main_text.append(text)
                 if "p" in self._open:
                     self.main_paragraphs.append(text)
+                if not any(tag in UNJUDGED for tag in self._open):
+                    self.judged_main.append(text)
+                    if self._blocks:
+                        self.text_blocks[self._blocks[-1][1]][1].append(text)
             if not any(tag in HEADINGS for tag in self._open):
                 self.outline.append(("text",))
 
@@ -460,6 +510,51 @@ def check_declared_languages(pages, published):
                     "languages: %s:%d: an element is marked %s, a language the site does not publish"
                     % (rel, line, lang)
                 )
+    return problems
+
+
+def counted_words():
+    """Each language's function words that are no other language's: a word in two lists counts for none."""
+    counted = OrderedDict()
+    for language, words in FUNCTION_WORDS:
+        others = set(word for other, more in FUNCTION_WORDS if other != language for word in more)
+        counted[language] = set(words) - others
+    return counted
+
+
+def reads_as(texts, counted):
+    """The language TEXTS read as when it is not English — Portuguese or Spanish — or None: when they hold fewer than
+    MIN_WORDS words, or no other language's words number MIN_FOREIGN and outnumber the English ones."""
+    words = WORD.findall(unicodedata.normalize("NFC", " ".join(texts)).lower())
+    if len(words) < MIN_WORDS:
+        return None
+    counts = OrderedDict((language, sum(word in known for word in words)) for language, known in counted.items())
+    english = counts.pop("English")
+    found = [(count, language) for language, count in counts.items() if count >= MIN_FOREIGN and count > english]
+    # The language with the most words; Portuguese, the first, on a tie.
+    return max(found, key=lambda f: f[0])[1] if found else None
+
+
+def check_text_languages(pages):
+    """The text of every page that declares en-US reads as English. Each paragraph and list item of its main — a p or
+    li element, its own text without that of a p or li inside it — and its main as a whole are judged, the text of
+    code, pre, and kbd elements left out. A block of fewer than MIN_WORDS (8) words is never judged; one of at least
+    that many fails when its Portuguese words, or its Spanish words, number at least MIN_FOREIGN (2) and outnumber its
+    English function words. The words of each language are short lists of function words, ENGLISH_WORDS,
+    PORTUGUESE_WORDS, and SPANISH_WORDS, compared lowercased after splitting on anything that is not a letter, accents
+    kept; a word in more than one list counts for none, so a name or a borrowed word tips no block."""
+    problems = []
+    counted = counted_words()
+    for rel, page in pages.items():
+        if (page.declared or "").lower() != "en-us":
+            continue
+        for line, texts in page.text_blocks:
+            language = reads_as(texts, counted)
+            if language:
+                problems.append("text language: %s:%d: a paragraph reads as %s" % (rel, line, language))
+        language = reads_as(page.judged_main, counted)
+        if language:
+            problems.append("text language: %s: its main reads as %s" % (rel, language))
     return problems
 
 
@@ -1138,6 +1233,7 @@ def main(argv):
     problems += check_parity(pages, published)
     problems += check_shared_blocks(root, pages, published)
     site = OrderedDict((rel, pages[rel]) for rel in site_pages)
+    problems += check_text_languages(site)
     problems += check_links(root, pages)
     media_problems, media_count, media_total = check_media(root)
     problems += media_problems
