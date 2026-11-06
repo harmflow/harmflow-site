@@ -6,8 +6,9 @@ publish, the parity of the languages it does, the header and footer every page o
 links and #anchors, the media budget, the poster image of every recording, the metadata search engines and link previews
 read: each page's canonical address, description, and Open Graph tags, the sitemap that lists the pages, and the
 robots.txt that points to it; the landing page: its primary call to action leads to harmflow-app on GitHub and comes
-before the community edition's link to the build instructions, and the page says that HarmFlow is coming to the Mac App
-Store and links to no store page yet; what two pages of each published language must say: the privacy policy's five
+before the community edition's link to the build instructions, the page says that HarmFlow is coming to the Mac App
+Store and links to no store page yet, and the text of its main names its audience: developers, on the Mac, who use
+Claude Code or Codex; what two pages of each published language must say: the privacy policy's five
 parts, each with a heading and text, and its naming of Google Analytics, and the support page's link to harmflow-app's
 issues, and no e-mail address on it; the user guide: that its index leads to its four parts in their order, and that
 each part is a page with its title and a paragraph of text, no longer a stub; the root 404 page: that the tree has one,
@@ -99,6 +100,14 @@ LANDING_CTA = "https://github.com/harmflow/harmflow-app"
 COMMUNITY_EDITION = "https://github.com/harmflow/harmflow-app#quick-start"
 COMING_TO_THE_STORE = "coming to the mac app store"
 STORE_HOST = "apps.apple.com"
+
+# Whom the landing page's own text, the visible text of its main, says HarmFlow is for: developers, on the Mac, who use
+# Claude Code or Codex, so it names both. The shared header and footer name them on every page, and the store's name
+# holds "Mac" without naming the visitor's computer, so neither stands for it: the store's name is taken out first.
+STORE_NAME = "mac app store"
+DEVELOPERS = re.compile(r"\bdevelopers?\b")
+THE_MAC = re.compile(r"\bmac\b")
+HARNESSES = (("Claude Code", re.compile(r"\bclaude code\b")), ("Codex", re.compile(r"\bcodex\b")))
 
 # The privacy policy's parts, by the id of each one's heading, and the support page, in every published language.
 PRIVACY = "privacy/index.html"
@@ -692,12 +701,22 @@ def check_metadata(root, pages):
 def check_landing(pages):
     """The landing page leads with the full edition: it has a primary call to action, and each one leads to the app on
     GitHub; the community edition's link to the build instructions is there, after the first of them and none of them;
-    the page's body says HarmFlow is coming to the Mac App Store; and no href, the header's and footer's included, leads
-    to the Mac App Store, where HarmFlow has no page yet. A tree with no landing page has none of this to check."""
+    the page's body says HarmFlow is coming to the Mac App Store; no href, the header's and footer's included, leads
+    to the Mac App Store, where HarmFlow has no page yet; and the page names its audience: the text of its main alone
+    says it is for developers, names the Mac outside the Mac App Store's name, and names Claude Code and Codex, in any
+    case and across elements. A tree with no landing page has none of this to check."""
     page = pages.get(LANDING)
     if page is None:
         return []
     problems = []
+    own_text = " ".join(page.main_text).lower()
+    if not DEVELOPERS.search(own_text):
+        problems.append("landing: %s does not say that HarmFlow is for developers" % LANDING)
+    if not THE_MAC.search(own_text.replace(STORE_NAME, " ")):
+        problems.append("landing: %s does not name the Mac, other than in the Mac App Store's name" % LANDING)
+    for name, pattern in HARNESSES:
+        if not pattern.search(own_text):
+            problems.append("landing: %s does not name %s" % (LANDING, name))
     ctas = [(line, href) for line, href, cta in page.anchors if cta]
     if not ctas:
         problems.append("landing: %s has no primary call to action (an a.cta)" % LANDING)
