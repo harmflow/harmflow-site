@@ -10,17 +10,20 @@ read: each page's canonical address, description, and Open Graph tags, the sitem
 robots.txt that points to it; the landing page: its primary call to action leads to harmflow-app on GitHub and comes
 before the community edition's link to the build instructions, the page says that HarmFlow is coming to the Mac App
 Store and links to no store page yet, and the text of its main names its audience: developers, on the Mac, who use
-Claude Code or Codex; what two pages of each published language must say: the privacy policy's five
-parts, each with a heading and text, and its naming of Google Analytics, and the support page's link to harmflow-app's
-issues, and no e-mail address on it; the user guide: that its index leads to its four parts in their order, and that
-each part is a page with its title and a paragraph of text, no longer a stub; the root 404 page: that the tree has one,
-that its main says the page was not found in a heading and links to the landing page, and that each of its links and
-assets is a path from the root, which holds at any depth; the typefaces: that every @font-face rule takes its fonts only
-from WOFF2 files of the site under /fonts/, that each font's folder holds its SIL Open Font License 1.1, and that the
-text and monospace stacks keep the system's fonts as fallbacks; and the colors of the styles: each is one of the logo's
-fixed colors or a placeholder until the palette is approved. It names each problem it finds on stderr, one per line, and
-exits 1 when it finds any. The Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and
-check-site-test.py proves each check on a tree of its own that breaks it.
+Claude Code or Codex; what two pages of each published language must say: the privacy policy's six parts, each with a
+heading and text, its naming of Google Analytics, and what three of its parts say — that the app sends nothing to
+HarmFlow and that what it keeps stays on the Mac, how long Google Analytics keeps the detailed data and that a return
+visit does not extend that period, and that consent is withdrawn through the footer's link, by the label the page's own
+footer gives it — and the support page's link to harmflow-app's issues, its saying that the issues are not support, and
+no e-mail address on it; the user guide: that its index leads to its four parts in their order, and that each part is a
+page with its title and a paragraph of text, no longer a stub; the root 404 page: that the tree has one, that its main
+says the page was not found in a heading and links to the landing page, and that each of its links and assets is a path
+from the root, which holds at any depth; the typefaces: that every @font-face rule takes its fonts only from WOFF2 files
+of the site under /fonts/, that each font's folder holds its SIL Open Font License 1.1, and that the text and monospace
+stacks keep the system's fonts as fallbacks; and the colors of the styles: each is one of the logo's fixed colors or a
+placeholder until the palette is approved. It names each problem it finds on stderr, one per line, and exits 1 when it
+finds any. The Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves
+each check on a tree of its own that breaks it.
 
 Usage: check-site.py [--languages en-US,pt-BR,es-ES] [ROOT]
 
@@ -119,9 +122,29 @@ PRIVACY_PARTS = (
     ("website", "this website"),
     ("analytics", "analytics"),
     ("google", "how Google processes the data"),
+    ("retention", "how long the data is kept"),
     ("withdraw", "withdrawing consent"),
 )
 SUPPORT = "support/index.html"
+
+# What the privacy policy's parts and the support page's main must say, matched lowercased on their text joined across
+# elements, as COMING_TO_THE_STORE is. Only en-US is published, so the words are en-US: another language gives its own
+# with the work that publishes it. Each part's words: (the part's id, the problem when it lacks them, the words).
+PRIVACY_SAYS = (
+    ("app", "does not say that the app sends nothing to HarmFlow", "sends nothing to harmflow"),
+    ("app", "does not say that what the app keeps stays on the Mac", "what it keeps stays on your mac"),
+    ("retention", "does not give the period Google Analytics keeps the detailed data, two months", "two months"),
+    (
+        "retention",
+        "does not say that a return visit does not extend that period",
+        "does not extend that period when you come back",
+    ),
+    ("withdraw", "does not say that the link that reopens the choice is in the footer", "in the footer"),
+)
+NOT_SUPPORT = "the issues are not a support channel"
+
+# The attribute of the footer's link that reopens the analytics choice, whose label the part on withdrawing names.
+CONSENT_CHOICE = "data-consent-choice"
 
 # Where the support page leads for defects and requests: this address, or one under it.
 ISSUES = "https://github.com/harmflow/harmflow-app/issues"
@@ -331,7 +354,7 @@ class Page(HTMLParser):
         self.marked = []  # (line, lang) of every other element with a lang
         self.text = []  # the visible text, a run of words per piece
         # In document order: ("heading", level, id, depth) where depth is the open elements' count around it,
-        # ("text",) for visible text outside any heading, and ("end", depth) when an element closes, depth after.
+        # ("text", text) for visible text outside any heading, and ("end", depth) when an element closes, depth after.
         self.outline = []
         self._open = []  # the open elements, outermost first
         self.main_headings = []  # each heading's text, inside main
@@ -464,7 +487,7 @@ class Page(HTMLParser):
                     if self._blocks:
                         self.text_blocks[self._blocks[-1][1]][1].append(text)
             if not any(tag in HEADINGS for tag in self._open):
-                self.outline.append(("text",))
+                self.outline.append(("text", text))
 
 
 def read_page(root, rel):
@@ -866,17 +889,60 @@ def part_has_text(page, part_id):
     return None
 
 
+def part_text(page, part_id):
+    """A part's visible text outside any heading, joined with spaces and lowercased, between its heading and the next
+    heading of the same or a higher level, or the end of the element that holds its heading: unlike part_has_text, a
+    lower heading's text is this part's too. None when no heading has the part's id."""
+    for i, event in enumerate(page.outline):
+        if event[0] == "heading" and event[2] == part_id:
+            level, depth = event[1], event[3]
+            texts = []
+            for later in page.outline[i + 1 :]:
+                if later[0] == "text":
+                    texts.append(later[1])
+                elif later[0] == "heading" and later[1] <= level:
+                    break
+                elif later[0] == "end" and later[1] < depth:
+                    break
+            return " ".join(texts).lower()
+    return None
+
+
+def consent_label(page):
+    """The label of the link in the page's own footer that reopens the analytics choice, the a with
+    data-consent-choice, its text joined across elements; None when the footer has no such link."""
+    tokens = page.raw_blocks.get("footer") or []
+    for i, (kind, tag, attrs) in enumerate(tokens):
+        # A bare attribute has no value: data-consent-choice is found by its name.
+        if kind == "start" and tag == "a" and any(name == CONSENT_CHOICE for name, _ in attrs):
+            label = []
+            for later_kind, text, _ in tokens[i + 1 :]:
+                if later_kind == "end" and text == "a":
+                    break
+                if later_kind == "text":
+                    label.append(text)
+            return " ".join(label)
+    return None
+
+
 def published_pages(pages, published, slug):
     """The page at SLUG in each published language the tree holds."""
     return [rel for rel in pages if language_of(rel)[1] == slug and language_of(rel)[0] in published]
 
 
 def check_privacy(pages, published):
-    """Each published language's privacy policy has a heading for each of its five parts, by the part's id, with text
-    after it, and names Google Analytics. A tree with no privacy policy has nothing to check."""
+    """Each published language's privacy policy has a heading for each of its six parts, by the part's id, with text
+    after it, and names Google Analytics. Each part with a heading and text says what PRIVACY_SAYS gives it: the part
+    on the app, that the app sends nothing to HarmFlow and that what it keeps stays on the Mac; the part on retention,
+    the two months Google Analytics keeps the detailed data and that a return visit does not extend them; and the part
+    on withdrawing consent, that the link that reopens the choice is in the footer, by the label the page's own footer
+    gives the a with data-consent-choice, which fails when the footer has no such link. A part's text runs to the next
+    heading of the same or a higher level (part_text). A tree with no privacy policy has nothing to check."""
     problems = []
+    names = dict(PRIVACY_PARTS)
     for rel in published_pages(pages, published, PRIVACY):
         page = pages[rel]
+        said = {}  # each part's text, for the parts with a heading and text after it
         for part_id, part in PRIVACY_PARTS:
             has_text = part_has_text(page, part_id)
             if has_text is None:
@@ -885,14 +951,32 @@ def check_privacy(pages, published):
                 problems.append(
                     "privacy: %s: its part on %s (#%s) has no text after its heading" % (rel, part, part_id)
                 )
+            else:
+                said[part_id] = part_text(page, part_id)
         if "Google Analytics" not in " ".join(page.text):
             problems.append("privacy: %s does not name Google Analytics" % rel)
+        for part_id, missing, words in PRIVACY_SAYS:
+            if part_id in said and words not in said[part_id]:
+                problems.append("privacy: %s: its part on %s (#%s) %s" % (rel, names[part_id], part_id, missing))
+        if "withdraw" in said:
+            label = consent_label(page)
+            if not label:
+                problems.append(
+                    "privacy: %s: its footer has no labeled link with %s that reopens the choice, so its part on "
+                    "withdrawing consent (#withdraw) names no control the visitor can find" % (rel, CONSENT_CHOICE)
+                )
+            elif label.lower() not in said["withdraw"]:
+                problems.append(
+                    'privacy: %s: its part on withdrawing consent (#withdraw) does not name "%s", the label of the '
+                    "footer's link that reopens the choice" % (rel, label)
+                )
     return problems
 
 
 def check_support(pages, published):
-    """Each published language's support page links to harmflow-app's issues, or to an address under them, and gives no
-    e-mail address, by a mailto: link or in its text. Only the support page is read for an address; a tree with no
+    """Each published language's support page links to harmflow-app's issues, or to an address under them, says in the
+    visible text of its main that the issues are not support (NOT_SUPPORT, in any case and across elements), and gives
+    no e-mail address, by a mailto: link or in its text. Only the support page is read for an address; a tree with no
     support page has nothing to check."""
     problems = []
     for rel in published_pages(pages, published, SUPPORT):
@@ -900,6 +984,8 @@ def check_support(pages, published):
         hrefs = [href for _, href, _ in page.anchors]
         if not any(href == ISSUES or href.startswith((ISSUES + "/", ISSUES + "?", ISSUES + "#")) for href in hrefs):
             problems.append("support: %s has no link to %s" % (rel, ISSUES))
+        if NOT_SUPPORT not in " ".join(page.main_text).lower():
+            problems.append("support: %s does not say that the issues are not support" % rel)
         addresses = OrderedDict()
         for href in hrefs:
             if href.lower().startswith("mailto:"):
