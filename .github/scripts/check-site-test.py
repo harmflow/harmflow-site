@@ -46,26 +46,45 @@ SECTIONS = (
 )
 MB = 1000 * 1000
 
-# What the privacy policy and the support page of every language say, which their checks read: the policy's five parts,
-# each a heading by its id with text after it, and the support page's link to an address under harmflow-app's issues.
+# What the privacy policy and the support page of every language say, which their checks read: the policy's six parts,
+# each a heading by its id with text after it, the app's part saying it sends nothing and keeps what it keeps on the
+# Mac, the retention part its period and that a return visit does not extend it, and the withdrawal part the footer's
+# link by its label; and the support page's link to an address under harmflow-app's issues, and that they are not
+# support.
 PRIVACY_PARTS = (
     ("app", "the HarmFlow app"),
     ("website", "this website"),
     ("analytics", "analytics"),
     ("google", "how Google processes the data"),
+    ("retention", "how long the data is kept"),
     ("withdraw", "withdrawing consent"),
 )
-PRIVACY = """<h2 id="app">The HarmFlow app</h2>
-  <p>It sends nothing anywhere.</p>
-  <h2 id="website">This website</h2>
+APP_PART = "  <p>It sends nothing to HarmFlow, and what it keeps stays on your Mac.</p>\n"
+RETENTION_PART = (
+    "  <p>Google Analytics keeps the detailed data for two months, and does not extend that period when you come"
+    " back.</p>\n"
+)
+WITHDRAW_PART = "  <p>Use the Analytics choice link in the footer of every page, which reopens the choice.</p>"
+PRIVACY = (
+    """<h2 id="app">The HarmFlow app</h2>
+%s  <h2 id="website">This website</h2>
   <p>It sets no cookie of its own.</p>
   <h2 id="analytics">Analytics</h2>
   <p>It measures its visits with Google Analytics, once you accept.</p>
   <h3 id="google">How Google processes the data</h3>
   <p>Google receives each measured event.</p>
-  <h3 id="withdraw">Withdrawing your consent</h3>
-  <p>The footer's link reopens the choice.</p>"""
-SUPPORT = '<p><a href="https://github.com/harmflow/harmflow-app/issues/new/choose">Open an issue</a></p>'
+  <h3 id="retention">How long it is kept</h3>
+%s  <h3 id="withdraw">Withdrawing your consent</h3>
+%s"""
+    % (APP_PART, RETENTION_PART, WITHDRAW_PART)
+)
+NOT_SUPPORT = "<p>The issues are not a support channel.</p>"
+SUPPORT = (
+    '<p><a href="https://github.com/harmflow/harmflow-app/issues/new/choose">Open an issue</a></p>\n  ' + NOT_SUPPORT
+)
+
+# The footer's link that reopens the analytics choice, which the policy's part on withdrawing names by its label.
+CONSENT_LINK = '  <a href="/%sprivacy/#withdraw" data-consent-choice>Analytics choice</a>\n'
 
 # The user guide, which its check reads in en-US: the index's main leads to the four parts in their order, with a link
 # to another section between two of them, and each part's page has its title as its h1 and an introduction.
@@ -105,7 +124,7 @@ def header(language, slug):
 def footer(language, sections=SECTIONS):
     prefix = prefix_of(language)
     links = "".join('  <a href="/%s%s">%s</a>\n' % (prefix, path, text) for path, text in sections)
-    return "<footer>\n%s</footer>" % links
+    return "<footer>\n%s%s</footer>" % (links, CONSENT_LINK % prefix)
 
 
 # What the landing page, the en-US index.html, must hold: the badge that says HarmFlow is coming to the Mac App Store,
@@ -737,14 +756,15 @@ class CheckSiteTest(unittest.TestCase):
     def test_a_privacy_policy_part_with_no_text_fails_naming_it(self):
         analytics = "  <p>It measures its visits with Google Analytics, once you accept.</p>\n"
         cases = (
-            ("app", "the HarmFlow app", (("  <p>It sends nothing anywhere.</p>\n", ""),)),
+            ("app", "the HarmFlow app", ((APP_PART, ""),)),
             # The page still names Google Analytics, in the google part, so only the empty part fails.
             (
                 "analytics",
                 "analytics",
                 ((analytics, ""), ("Google receives each", "Google Analytics sends Google each")),
             ),
-            ("withdraw", "withdrawing consent", (("  <p>The footer's link reopens the choice.</p>", ""),)),
+            ("retention", "how long the data is kept", ((RETENTION_PART, ""),)),
+            ("withdraw", "withdrawing consent", ((WITHDRAW_PART, ""),)),
         )
         for part_id, part, edits in cases:
             with self.subTest(part=part_id):
@@ -763,6 +783,148 @@ class CheckSiteTest(unittest.TestCase):
         text = page("es-ES", "privacy/index.html").replace("Google Analytics", "a measurement service")
         self.write("es-es/privacy/index.html", text)
         self.assertFails("privacy: es-es/privacy/index.html does not name Google Analytics")
+
+    # What the policy's parts say.
+
+    def assertSaysFails(self, rel, text, problem):
+        """The page REL, written as TEXT, fails with PROBLEM, the one problem of its kind (privacy: or support:)."""
+        self.write(rel, text)
+        kind = problem.split(":")[0] + ":"
+        lines = self.assertFails(problem)
+        self.assertEqual([line for line in lines if kind in line], ["check-site: " + problem], lines)
+
+    def edited(self, language, slug, *edits):
+        """The fixture's page with each (OLD, NEW) of EDITS made; OLD must be in it, so a case cannot pass unbroken."""
+        text = page(language, slug)
+        for old, new in edits:
+            self.assertIn(old, text)
+            text = text.replace(old, new)
+        return text
+
+    def test_a_privacy_policy_whose_app_part_does_not_say_it_sends_nothing_fails(self):
+        self.assertSaysFails(
+            "privacy/index.html",
+            self.edited("en-US", "privacy/index.html", ("sends nothing to HarmFlow", "sends little to HarmFlow")),
+            "privacy: privacy/index.html: its part on the HarmFlow app (#app) does not say that the app sends nothing "
+            "to HarmFlow",
+        )
+
+    # Another part's text is not the app's.
+    def test_a_privacy_policy_that_says_the_app_sends_nothing_only_in_another_part_fails(self):
+        self.assertSaysFails(
+            "pt-br/privacy/index.html",
+            self.edited(
+                "pt-BR",
+                "privacy/index.html",
+                (APP_PART, "  <p>What it keeps stays on your Mac.</p>\n"),
+                ("no cookie of its own.", "no cookie of its own, and the app sends nothing to HarmFlow."),
+            ),
+            "privacy: pt-br/privacy/index.html: its part on the HarmFlow app (#app) does not say that the app sends "
+            "nothing to HarmFlow",
+        )
+
+    def test_a_privacy_policy_whose_app_part_does_not_say_what_it_keeps_stays_on_the_mac_fails(self):
+        self.assertSaysFails(
+            "privacy/index.html",
+            self.edited("en-US", "privacy/index.html", ("what it keeps stays on your Mac", "what it keeps is yours")),
+            "privacy: privacy/index.html: its part on the HarmFlow app (#app) does not say that what the app keeps "
+            "stays on the Mac",
+        )
+
+    def test_a_privacy_policy_that_does_not_give_the_retention_period_fails(self):
+        self.assertSaysFails(
+            "privacy/index.html",
+            self.edited("en-US", "privacy/index.html", ("for two months", "for a while")),
+            "privacy: privacy/index.html: its part on how long the data is kept (#retention) does not give the period "
+            "Google Analytics keeps the detailed data, two months",
+        )
+
+    def test_a_privacy_policy_that_does_not_say_a_return_visit_keeps_the_period_fails(self):
+        self.assertSaysFails(
+            "es-es/privacy/index.html",
+            self.edited(
+                "es-ES",
+                "privacy/index.html",
+                ("does not extend that period when you come back", "starts it again when you come back"),
+            ),
+            "privacy: es-es/privacy/index.html: its part on how long the data is kept (#retention) does not say that "
+            "a return visit does not extend that period",
+        )
+
+    def test_a_withdrawal_part_that_does_not_say_the_link_is_in_the_footer_fails(self):
+        self.assertSaysFails(
+            "privacy/index.html",
+            self.edited("en-US", "privacy/index.html", ("in the footer of every page", "on every page")),
+            "privacy: privacy/index.html: its part on withdrawing consent (#withdraw) does not say that the link that "
+            "reopens the choice is in the footer",
+        )
+
+    # The footer holds the label, but only the part's own text is read.
+    def test_a_withdrawal_part_that_does_not_name_the_footer_link_fails_naming_its_label(self):
+        self.assertSaysFails(
+            "privacy/index.html",
+            self.edited("en-US", "privacy/index.html", ("Use the Analytics choice link", "Use the link")),
+            "privacy: privacy/index.html: its part on withdrawing consent (#withdraw) does not name \"Analytics "
+            "choice\", the label of the footer's link that reopens the choice",
+        )
+
+    # The footer every page shares renames its link, and the policy still names the old label: each published
+    # language's policy fails, naming the label it no longer finds, and nothing else does.
+    def test_a_footer_link_renamed_under_the_policy_fails_naming_the_new_label(self):
+        for language, prefix in PREFIXES:
+            renamed = footer(language).replace(">Analytics choice<", ">Cookie settings<")
+            for slug in SLUGS:
+                self.write(prefix + slug, page(language, slug, footer_html=renamed))
+        problem = (
+            "privacy: %sprivacy/index.html: its part on withdrawing consent (#withdraw) does not name \"Cookie "
+            "settings\", the label of the footer's link that reopens the choice"
+        )
+        lines = self.assertFails(problem % "")
+        self.assertEqual(sorted(lines), sorted("check-site: " + problem % prefix for _, prefix in PREFIXES), lines)
+
+    def test_a_footer_with_no_link_that_reopens_the_choice_fails_naming_the_page(self):
+        for language, prefix in PREFIXES:
+            plain = footer(language).replace(" data-consent-choice", "")
+            for slug in SLUGS:
+                self.write(prefix + slug, page(language, slug, footer_html=plain))
+        problem = (
+            "privacy: %sprivacy/index.html: its footer has no labeled link with data-consent-choice that reopens the "
+            "choice, so its part on withdrawing consent (#withdraw) names no control the visitor can find"
+        )
+        lines = self.assertFails(problem % "")
+        self.assertEqual(sorted(lines), sorted("check-site: " + problem % prefix for _, prefix in PREFIXES), lines)
+
+    # A part runs to the next heading of its own level or a higher one, so a subheading's text is its part's.
+    def test_a_part_whose_words_are_under_its_subheading_passes(self):
+        subheading = (
+            "  <p>It runs on your Mac.</p>\n  <h3 id=\"keeps\">What it keeps</h3>\n%s  <h4>Its data</h4>\n"
+            "  <p>Your tasks are files.</p>\n" % APP_PART
+        )
+        self.write("privacy/index.html", self.edited("en-US", "privacy/index.html", (APP_PART, subheading)))
+        self.assertPasses()
+
+    def test_what_the_pages_say_in_any_case_and_across_elements_passes(self):
+        self.write(
+            "privacy/index.html",
+            self.edited(
+                "en-US",
+                "privacy/index.html",
+                ("It sends nothing to HarmFlow", "It <em>SENDS nothing</em>\n  to HarmFlow"),
+                ("what it keeps stays on your Mac", "What it keeps <strong>stays on your MAC</strong>"),
+                ("for two months", "for Two <b>Months</b>"),
+                ("does not extend that period when", "Does Not extend that period <em>when</em>\n "),
+                ("Use the Analytics choice link in the footer", "Use the analytics CHOICE link <em>in the</em> Footer"),
+            ),
+        )
+        self.write(
+            "support/index.html",
+            self.edited(
+                "en-US",
+                "support/index.html",
+                ("The issues are not a support channel.", "<strong>THE issues</strong> are not a\n  support channel."),
+            ),
+        )
+        self.assertPasses()
 
     # The support page.
 
@@ -800,6 +962,50 @@ class CheckSiteTest(unittest.TestCase):
         self.write("privacy/index.html", page("en-US", "privacy/index.html", body=body))
         self.write("index.html", page("en-US", "index.html", body=body))
         self.assertPasses()
+
+    def test_a_support_page_that_does_not_say_the_issues_are_not_support_fails(self):
+        self.assertSaysFails(
+            "support/index.html",
+            self.edited("en-US", "support/index.html", (NOT_SUPPORT, "<p>The issues are read every day.</p>")),
+            "support: support/index.html does not say that the issues are not support",
+        )
+
+    # The page's own text is its main's, or its part's: the shared header and footer, the title, the description, the
+    # Open Graph tags, alt text, and aria-label attributes say it to no visitor reading the page.
+    def test_what_the_pages_say_only_outside_their_text_fails(self):
+        cases = (
+            (
+                "support/index.html",
+                "The issues are not a support channel",
+                (NOT_SUPPORT, ""),
+                "support: support/index.html does not say that the issues are not support",
+            ),
+            (
+                "privacy/index.html",
+                "The app sends nothing to HarmFlow",
+                ("It sends nothing to HarmFlow", "It sends little to HarmFlow"),
+                "privacy: privacy/index.html: its part on the HarmFlow app (#app) does not say that the app sends "
+                "nothing to HarmFlow",
+            ),
+        )
+        for slug, words, edit, problem in cases:
+            with self.subTest(page=slug):
+                self.setUp()
+                blocks = (
+                    ("</header>", "  <p>%s.</p>\n</header>" % words),
+                    ("</footer>", "  <p>%s.</p>\n</footer>" % words),
+                )
+                head_and_attributes = (
+                    ("<title>A page</title>", "<title>%s</title>" % words),
+                    ('content="A page of the fixture."', 'content="%s."' % words),
+                    ('alt=""', 'alt="%s"' % words),
+                    ('<a href="#top">Top</a>', '<a href="#top" aria-label="%s">Top</a>' % words),
+                )
+                # Every en-US page shares the header and footer, so only the rule this case breaks fails.
+                for other in SLUGS:
+                    if other != slug:
+                        self.write(other, self.edited("en-US", other, *blocks))
+                self.assertSaysFails(slug, self.edited("en-US", slug, *(blocks + head_and_attributes + (edit,))), problem)
 
     # With no privacy policy or support page, the footer's links to them fail, and so do their two required paths;
     # nothing else does.
