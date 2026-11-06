@@ -194,6 +194,11 @@ EN_US_HEADER = '<header>\n  <a href="/">HarmFlow</a>\n</header>'
 NOT_FOUND_EN_US = NOT_FOUND[: NOT_FOUND.index('  <p lang="pt-BR">')] + NOT_FOUND[NOT_FOUND.index("</main>") :]
 
 
+# A paragraph of English beside a case's paragraph in another language, so that only that paragraph fails, not the
+# whole main.
+ENGLISH = "<p>This page tells you where to ask for help with the app, and how to report what you find in it.</p>"
+
+
 def line_of(text, fragment):
     """The line of TEXT that holds FRAGMENT, counted from 1."""
     return text[: text.index(fragment)].count("\n") + 1
@@ -427,6 +432,65 @@ class CheckSiteTest(unittest.TestCase):
         body = '<p lang="en">Support</p> <span lang="fr-FR">Assistance</span> <span lang="">?</span>'
         self.write("support/index.html", page("en-US", "support/index.html", header_html=EN_US_HEADER, body=body))
         self.assertPasses(languages=[])
+
+    # Text languages.
+
+    def test_a_paragraph_in_portuguese_fails_naming_its_line(self):
+        self.en_us_only()
+        body = "<p>Esta tarefa não roda quando você fecha o app, e também não guarda o seu histórico.</p>"
+        text = page("en-US", "support/index.html", header_html=EN_US_HEADER, body=ENGLISH + "\n  " + body)
+        self.write("support/index.html", text)
+        lines = self.assertFails(
+            "text language: support/index.html:%d: a paragraph reads as Portuguese" % line_of(text, body),
+            languages=[],
+        )
+        self.assertEqual(lines, [lines[0]], lines)
+
+    def test_a_paragraph_in_spanish_fails_naming_its_line(self):
+        self.en_us_only()
+        body = "<ul>\n  <li>La tarea se guarda en el archivo y usted puede editarla después.</li>\n</ul>"
+        text = page("en-US", "docs/reference/index.html", header_html=EN_US_HEADER, body=body + "\n  " + ENGLISH)
+        self.write("docs/reference/index.html", text)
+        lines = self.assertFails(
+            "text language: docs/reference/index.html:%d: a paragraph reads as Spanish" % line_of(text, "<li>La"),
+            languages=[],
+        )
+        self.assertEqual(lines, [lines[0]], lines)
+
+    # Each paragraph is too short to judge, so only the main as a whole reads as Portuguese, the page's shared English
+    # header and footer kept around it.
+    def test_a_main_wholly_in_portuguese_fails_naming_the_page(self):
+        self.en_us_only()
+        main = """<main>
+  <h1>Vitrine</h1>
+  <p>Você encontra aqui as gravações.</p>
+  <p>Também pode abrir uma delas inteira.</p>
+  <p>Isso leva só um minuto.</p>
+</main>"""
+        text = page("en-US", "showroom/index.html", header_html=EN_US_HEADER)
+        text = text[: text.index("<main>")] + main + text[text.index("</main>") + len("</main>") :]
+        self.write("showroom/index.html", text)
+        lines = self.assertFails("text language: showroom/index.html: its main reads as Portuguese", languages=[])
+        self.assertEqual(lines, [lines[0]], lines)
+
+    # Code, product names, a language named in its own words, a borrowed word, and a short body pass.
+    def test_an_english_page_with_code_names_and_a_short_body_passes(self):
+        self.en_us_only()
+        body = """<p>Run <code>harmflow task add --name "não use isso, pero también"</code> in the terminal.</p>
+  <pre>echo "Esta tarefa não roda quando você fecha o app, e também não guarda o seu histórico."</pre>
+  <p>Press <kbd>Cmd</kbd>, then type <kbd>los ángeles con las otras</kbd> to search.</p>
+  <p>The site is in English; Português and Español come back later, as pt-BR and es-ES, under their own paths.</p>
+  <p>Claude Code and Codex run your tasks on the Mac, with a fiesta of logs if you ask for them.</p>
+  <p>Não, também.</p>"""
+        self.write("support/index.html", page("en-US", "support/index.html", header_html=EN_US_HEADER, body=body))
+        self.write("docs/reference/index.html", page("en-US", "docs/reference/index.html", header_html=EN_US_HEADER))
+        self.assertPasses(languages=[])
+
+    # A page that declares Portuguese or Spanish is its own language's: only an en-US page is judged.
+    def test_a_page_that_declares_another_language_in_that_language_passes(self):
+        body = "<p>Esta tarefa não roda quando você fecha o app, e também não guarda o seu histórico.</p>"
+        self.write("pt-br/support/index.html", page("pt-BR", "support/index.html", body=body))
+        self.assertPasses()
 
     def test_an_unknown_language_is_a_usage_error(self):
         rc, _, err = self.check(languages=["--languages", "en-US,fr-FR"])
