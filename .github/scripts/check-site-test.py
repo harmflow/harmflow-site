@@ -100,6 +100,12 @@ GUIDE = "<ol>\n    %s\n  </ol>" % "\n    ".join(
 )
 INTRODUCTION = "<p>What this part of the guide covers.</p>"
 
+# A section of the guide, one folder below the tasks part, which the guide's section cases add to the site as it is
+# published: its page, the part's link to it, and the paragraph of text after its h1.
+GUIDE_SECTION = "docs/guide/tasks/yaml-tab/index.html"
+GUIDE_SECTION_LINK = '<ul><li><a href="/docs/guide/tasks/yaml-tab/">Editing a task as YAML</a></li></ul>'
+GUIDE_SECTION_TEXT = "<p>What this section of the guide says.</p>"
+
 
 def prefix_of(language):
     return dict(PREFIXES)[language]
@@ -1244,6 +1250,66 @@ class CheckSiteTest(unittest.TestCase):
         self.write("docs/guide/install/index.html", text)
         self.assertGuideFails(
             "guide: docs/guide/install/index.html: its main has no paragraph of text beyond its heading"
+        )
+
+    def add_guide_section(self, section=None, part_link=GUIDE_SECTION_LINK):
+        """The site as it is published, in en-US only, with one section under the tasks part: SECTION as its page, a
+        well-formed one by default, listed in the sitemap, and the part's page holding PART_LINK in its main. The other
+        three parts have no section."""
+        self.en_us_only()
+        if section is None:
+            section = page("en-US", GUIDE_SECTION, header_html=EN_US_HEADER, body=GUIDE_SECTION_TEXT)
+        self.write(GUIDE_SECTION, section)
+        part = page("en-US", "docs/guide/tasks/index.html", header_html=EN_US_HEADER, body=part_link)
+        self.write("docs/guide/tasks/index.html", part)
+        self.write("sitemap.xml", sitemap(SLUGS + (GUIDE_SECTION,)))
+
+    def assertGuideSectionFails(self, text):
+        """The site as it is published fails with one guide problem, TEXT."""
+        lines = self.assertFails(text, languages=[])
+        self.assertEqual([line for line in lines if "guide:" in line], ["check-site: " + text], lines)
+
+    # A section listed by its part passes, while the other parts, as repository-access/ is today, have none.
+    def test_a_guide_section_linked_from_its_part_passes(self):
+        self.add_guide_section()
+        self.assertPasses(languages=[])
+
+    # The part's link leads to its section whatever form it takes: relative, to the index.html, or at harmflow.com.
+    def test_links_to_a_guide_section_in_another_form_pass(self):
+        self.add_guide_section()
+        for href in ("yaml-tab", "yaml-tab/index.html", "https://harmflow.com/docs/guide/tasks/yaml-tab/"):
+            with self.subTest(href=href):
+                link = '<p><a href="%s">Editing a task as YAML</a></p>' % href
+                part = page("en-US", "docs/guide/tasks/index.html", header_html=EN_US_HEADER, body=link)
+                self.write("docs/guide/tasks/index.html", part)
+                self.assertPasses(languages=[])
+
+    def test_a_guide_section_its_part_does_not_link_to_fails_naming_it(self):
+        self.add_guide_section(part_link="")
+        self.assertGuideSectionFails(
+            "guide: docs/guide/tasks/yaml-tab/index.html: its part's page docs/guide/tasks/index.html "
+            "does not link to it"
+        )
+
+    def test_a_guide_section_with_no_h1_fails_naming_it(self):
+        text = page("en-US", GUIDE_SECTION, header_html=EN_US_HEADER, body=GUIDE_SECTION_TEXT)
+        self.assertIn('<h1 id="title">A page</h1>', text)
+        self.add_guide_section(section=text.replace('<h1 id="title">A page</h1>', '<h2 id="title">A page</h2>'))
+        self.assertGuideSectionFails("guide: docs/guide/tasks/yaml-tab/index.html: its main has no h1")
+
+    def test_a_guide_section_that_is_still_a_stub_fails_naming_it(self):
+        stub = page("en-US", GUIDE_SECTION, header_html=EN_US_HEADER, body="<p>This page is being written.</p>")
+        self.add_guide_section(section=stub)
+        self.assertGuideSectionFails(
+            'guide: docs/guide/tasks/yaml-tab/index.html still reads "This page is being written."'
+        )
+
+    def test_a_guide_section_with_no_paragraph_fails_naming_it(self):
+        text = re.sub(r"<p>.*?</p>", "", page("en-US", GUIDE_SECTION, header_html=EN_US_HEADER))
+        self.assertNotIn("<p>", text)
+        self.add_guide_section(section=text)
+        self.assertGuideSectionFails(
+            "guide: docs/guide/tasks/yaml-tab/index.html: its main has no paragraph of text beyond its heading"
         )
 
     # The root 404 page.

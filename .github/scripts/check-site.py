@@ -15,15 +15,16 @@ heading and text, its naming of Google Analytics, and what three of its parts sa
 HarmFlow and that what it keeps stays on the Mac, how long Google Analytics keeps the detailed data and that a return
 visit does not extend that period, and that consent is withdrawn through the footer's link, by the label the page's own
 footer gives it — and the support page's link to harmflow-app's issues, its saying that the issues are not support, and
-no e-mail address on it; the user guide: that its index leads to its four parts in their order, and that each part is a
-page with its title and a paragraph of text, no longer a stub; the root 404 page: that the tree has one, that its main
-says the page was not found in a heading and links to the landing page, and that each of its links and assets is a path
-from the root, which holds at any depth; the typefaces: that every @font-face rule takes its fonts only from WOFF2 files
-of the site under /fonts/, that each font's folder holds its SIL Open Font License 1.1, and that the text and monospace
-stacks keep the system's fonts as fallbacks; and the colors of the styles: each is one of the logo's fixed colors or a
-placeholder until the palette is approved. It names each problem it finds on stderr, one per line, and exits 1 when it
-finds any. The Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves
-each check on a tree of its own that breaks it.
+no e-mail address on it; the user guide: that its index leads to its four parts in their order, that each part is a page
+with its title and a paragraph of text, no longer a stub, and that each section under a part, a page one folder below
+the part's, is linked from its part's page and has an h1 and a paragraph of text, no longer a stub; the root 404 page:
+that the tree has one, that its main says the page was not found in a heading and links to the landing page, and that
+each of its links and assets is a path from the root, which holds at any depth; the typefaces: that every @font-face
+rule takes its fonts only from WOFF2 files of the site under /fonts/, that each font's folder holds its SIL Open Font
+License 1.1, and that the text and monospace stacks keep the system's fonts as fallbacks; and the colors of the styles:
+each is one of the logo's fixed colors or a placeholder until the palette is approved. It names each problem it finds on
+stderr, one per line, and exits 1 when it finds any. The Checks workflow (.github/workflows/checks.yml) runs it on the
+checkout, and check-site-test.py proves each check on a tree of its own that breaks it.
 
 Usage: check-site.py [--languages en-US,pt-BR,es-ES] [ROOT]
 
@@ -150,8 +151,8 @@ CONSENT_CHOICE = "data-consent-choice"
 ISSUES = "https://github.com/harmflow/harmflow-app/issues"
 
 # The user guide, in en-US at the root: its index, and its four parts, each a page of its own whose h1 is the part's
-# title, in the order the index leads to them. Only the main of each page is read: the header and footer every page
-# shares link to the guide and hold text of their own.
+# title, in the order the index leads to them, and the sections under a part, each a page one folder below it. Only the
+# main of each page is read: the header and footer every page shares link to the guide and hold text of their own.
 GUIDE = "docs/guide/index.html"
 GUIDE_PARTS = (
     ("/docs/guide/install/", "Installing HarmFlow"),
@@ -1048,6 +1049,39 @@ def check_guide(pages):
     return problems
 
 
+def check_guide_sections(pages):
+    """Each section of the guide, a page one folder below a part's, docs/guide/<part>/<slug>/index.html, is linked to
+    by its part's main, in any form that leads to it, and has an h1 in its main and a paragraph of text after it, no
+    longer the stub. The sections are found by the shape of their path, so a section added later is checked as it is;
+    a part with none has none to check, and a tree with no guide index has nothing. A part with no page is
+    check_guide's to name, and adds no section problem."""
+    if GUIDE not in pages:
+        return []
+    problems = []
+    parts = [path.lstrip("/") for path, _ in GUIDE_PARTS]
+    for rel, page in pages.items():
+        part = next((path for path in parts if rel.startswith(path)), None)
+        if part is None or not rel.endswith("/index.html") or rel[len(part) :].count("/") != 1:
+            continue
+        part_rel = part + "index.html"
+        part_page = pages.get(part_rel)
+        if part_page is not None:
+            linked = set()
+            for href in part_page.main_links:
+                target = resolve(part_page.url, href)
+                if target is not None:
+                    linked.add(served_path(target[0]))
+            if page.url not in linked:
+                problems.append("guide: %s: its part's page %s does not link to it" % (rel, part_rel))
+        if not page.main_titles:
+            problems.append("guide: %s: its main has no h1" % rel)
+        if STUB in " ".join(page.main_text):
+            problems.append('guide: %s still reads "%s"' % (rel, STUB))
+        elif not page.main_paragraphs:
+            problems.append("guide: %s: its main has no paragraph of text beyond its heading" % rel)
+    return problems
+
+
 def check_not_found(root, pages):
     """A tree that holds pages has a 404.html at its root, whose main says in a heading that the page was not found
     and links to the landing page, and whose every link and asset is a path from the root, an absolute URL, or an
@@ -1348,6 +1382,7 @@ def main(argv):
     problems += check_privacy(site, published)
     problems += check_support(site, published)
     problems += check_guide(site)
+    problems += check_guide_sections(site)
     problems += check_not_found(root, site)
     sheets = stylesheets(root)
     problems += check_font_faces(root, sheets)
