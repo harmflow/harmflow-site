@@ -10,14 +10,16 @@ before the community edition's link to the build instructions, and the page says
 Store and links to no store page yet; what two pages of each published language must say: the privacy policy's five
 parts, each with a heading and text, and its naming of Google Analytics, and the support page's link to harmflow-app's
 issues, and no e-mail address on it; the user guide: that its index leads to its four parts in their order, and that
-each part is a page with its title and a paragraph of text, no longer a stub; the root 404 page: that the tree has one,
-that its main says the page was not found in a heading and links to the landing page, and that each of its links and
-assets is a path from the root, which holds at any depth; the typefaces: that every @font-face rule takes its fonts only
-from WOFF2 files of the site under /fonts/, that each font's folder holds its SIL Open Font License 1.1, and that the
-text and monospace stacks keep the system's fonts as fallbacks; and the colors of the styles: each is one of the logo's
-fixed colors or a placeholder until the palette is approved. It names each problem it finds on stderr, one per line, and
-exits 1 when it finds any. The Checks workflow (.github/workflows/checks.yml) runs it on the checkout, and
-check-site-test.py proves each check on a tree of its own that breaks it.
+each part is a page with its title and a paragraph of text, no longer a stub; the technical reference, the same way:
+that its index leads to its three parts in their order, and that each part is a page with its title and a paragraph of
+text, no longer a stub; the root 404 page: that the tree has one, that its main says the page was not found in a
+heading and links to the landing page, and that each of its links and assets is a path from the root, which holds at
+any depth; the typefaces: that every @font-face rule takes its fonts only from WOFF2 files of the site under /fonts/,
+that each font's folder holds its SIL Open Font License 1.1, and that the text and monospace stacks keep the system's
+fonts as fallbacks; and the colors of the styles: each is one of the logo's fixed colors or a placeholder until the
+palette is approved. It names each problem it finds on stderr, one per line, and exits 1 when it finds any. The Checks
+workflow (.github/workflows/checks.yml) runs it on the checkout, and check-site-test.py proves each check on a tree of
+its own that breaks it.
 
 Usage: check-site.py [--languages en-US,pt-BR,es-ES] [ROOT]
 
@@ -125,6 +127,15 @@ GUIDE_PARTS = (
     ("/docs/guide/executions/", "Reading executions"),
 )
 STUB = "This page is being written."
+
+# The technical reference, in en-US at the root, read as the guide is: its index, and its three parts, each a page of
+# its own whose h1 is the part's title, in the order the index leads to them.
+REFERENCE = "docs/reference/index.html"
+REFERENCE_PARTS = (
+    ("/docs/reference/task-file/", "The task file"),
+    ("/docs/reference/local-api/", "The local API"),
+    ("/docs/reference/harnesses/", "The harnesses"),
+)
 
 # A plain e-mail address, name@domain.tld, in a page's visible text.
 EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")
@@ -805,47 +816,63 @@ def served_path(path):
     return path if path.endswith("/") else path + "/"
 
 
-def check_guide(pages):
-    """The guide's index leads to its four parts, in their order, by the links of its main, with other links allowed
-    between them; each part is a page whose main's h1 is the part's title, with a paragraph of text after it, and no
-    longer the stub. A tree with no guide index has none of this to check: the paths rule names its missing index."""
-    index = pages.get(GUIDE)
+def check_parts(pages, rule, index_rel, parts):
+    """The index INDEX_REL leads to PARTS, in their order, by the links of its main, with other links allowed between
+    them; each part is a page whose main's h1 is the part's title, with a paragraph of text after it, and no longer the
+    stub. Each problem is named under RULE. A tree with no such index has none of this to check: the paths rule names
+    its missing index."""
+    index = pages.get(index_rel)
     if index is None:
         return []
     problems = []
-    titles = OrderedDict(GUIDE_PARTS)
+    titles = OrderedDict(parts)
     linked = []  # each part's path, in the order the index's main first links to it
     for href in index.main_links:
         target = resolve(index.url, href)
         path = served_path(target[0]) if target is not None else None
         if path in titles and path not in linked:
             linked.append(path)
-    for path, title in GUIDE_PARTS:
+    for path, title in parts:
         if path not in linked:
-            problems.append("guide: %s: its main does not link to %s (%s)" % (GUIDE, path, title))
+            problems.append("%s: %s: its main does not link to %s (%s)" % (rule, index_rel, path, title))
     expected = [path for path in titles if path in linked]
     for found, wanted in zip(linked, expected):
         if found != wanted:
             problems.append(
-                "guide: %s: its main links to %s (%s) before %s (%s), out of the parts' order"
-                % (GUIDE, found, titles[found], wanted, titles[wanted])
+                "%s: %s: its main links to %s (%s) before %s (%s), out of the parts' order"
+                % (rule, index_rel, found, titles[found], wanted, titles[wanted])
             )
             break
-    for path, title in GUIDE_PARTS:
+    for path, title in parts:
         rel = path.lstrip("/") + "index.html"
         page = pages.get(rel)
         if page is None:
-            problems.append("guide: %s (%s) has no page: %s is missing" % (path, title, rel))
+            problems.append("%s: %s (%s) has no page: %s is missing" % (rule, path, title, rel))
             continue
         if not page.main_titles:
-            problems.append('guide: %s: its main has no h1; it is "%s"' % (rel, title))
+            problems.append('%s: %s: its main has no h1; it is "%s"' % (rule, rel, title))
         elif page.main_titles[0] != title:
-            problems.append('guide: %s: its h1 is "%s", not "%s"' % (rel, page.main_titles[0], title))
+            problems.append('%s: %s: its h1 is "%s", not "%s"' % (rule, rel, page.main_titles[0], title))
         if STUB in " ".join(page.main_text):
-            problems.append('guide: %s still reads "%s"' % (rel, STUB))
+            problems.append('%s: %s still reads "%s"' % (rule, rel, STUB))
         elif not page.main_paragraphs:
-            problems.append("guide: %s: its main has no paragraph of text beyond its heading" % rel)
+            problems.append("%s: %s: its main has no paragraph of text beyond its heading" % (rule, rel))
     return problems
+
+
+def check_guide(pages):
+    """The guide's index leads to its four parts, in their order, and each part is a page with its title and a
+    paragraph of text, no longer the stub (check_parts)."""
+    return check_parts(pages, "guide", GUIDE, GUIDE_PARTS)
+
+
+def check_reference(pages):
+    """The technical reference's index leads to its three parts — the task file, the local API, and the harnesses — in
+    their order, by the links of its main in any form that leads to them, with other links allowed between them; each
+    part is a page whose main's h1 is the part's title, with a paragraph of text after it, and no longer the stub. Only
+    the main of each page is read: the header and footer every page shares link to the reference and hold text of their
+    own. A tree with no reference index has none of this to check (check_parts)."""
+    return check_parts(pages, "reference", REFERENCE, REFERENCE_PARTS)
 
 
 def check_not_found(root, pages):
@@ -1147,6 +1174,7 @@ def main(argv):
     problems += check_privacy(site, published)
     problems += check_support(site, published)
     problems += check_guide(site)
+    problems += check_reference(site)
     problems += check_not_found(root, site)
     sheets = stylesheets(root)
     problems += check_font_faces(root, sheets)
