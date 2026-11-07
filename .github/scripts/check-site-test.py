@@ -32,6 +32,9 @@ SLUGS = (
     "docs/guide/tasks/index.html",
     "docs/guide/executions/index.html",
     "docs/reference/index.html",
+    "docs/reference/task-file/index.html",
+    "docs/reference/local-api/index.html",
+    "docs/reference/harnesses/index.html",
     "showroom/index.html",
     "privacy/index.html",
     "support/index.html",
@@ -106,6 +109,19 @@ GUIDE_SECTION = "docs/guide/tasks/yaml-tab/index.html"
 GUIDE_SECTION_LINK = '<ul><li><a href="/docs/guide/tasks/yaml-tab/">Editing a task as YAML</a></li></ul>'
 GUIDE_SECTION_TEXT = "<p>What this section of the guide says.</p>"
 
+# The technical reference, which its check reads in en-US as it reads the guide: the index's main leads to the three
+# parts in their order, with a link to another section between two of them, and each part's page has its title as its
+# h1 and an introduction.
+REFERENCE_PARTS = (
+    ("docs/reference/task-file/", "The task file"),
+    ("docs/reference/local-api/", "The local API"),
+    ("docs/reference/harnesses/", "The harnesses"),
+)
+REFERENCE_LINKS = tuple('<li><a href="/%s">%s</a></li>' % part for part in REFERENCE_PARTS)
+REFERENCE = "<ul>\n    %s\n  </ul>" % "\n    ".join(
+    REFERENCE_LINKS[:1] + ('<li><a href="/">The home page</a></li>',) + REFERENCE_LINKS[1:]
+)
+
 
 def prefix_of(language):
     return dict(PREFIXES)[language]
@@ -145,15 +161,18 @@ LANDING = "\n  ".join((BADGE, AUDIENCE, CTA, COMMUNITY))
 
 def page(language, slug, header_html=None, footer_html=None, body="", landing=None):
     """A page of the fixture. The privacy policy holds its parts, the support page its link to the issues, the guide's
-    index its links to the parts, and each part its introduction, after BODY; a part's h1 is its title. Every page but
-    the support page has a mailto: link, which only the support page may not."""
+    and the reference's indexes their links to their parts, and each part its introduction, after BODY; a part's h1 is
+    its title. Every page but the support page has a mailto: link, which only the support page may not."""
     home = "./" if slug == "index.html" else "../" * slug.count("/")
     if landing is None:
         landing = LANDING if (language, slug) == ("en-US", "index.html") else ""
-    parts = dict((path + "index.html", title) for path, title in GUIDE_PARTS)
-    content = {"privacy/index.html": PRIVACY, "support/index.html": SUPPORT, "docs/guide/index.html": GUIDE}.get(
-        slug, INTRODUCTION if slug in parts else ""
-    )
+    parts = dict((path + "index.html", title) for path, title in GUIDE_PARTS + REFERENCE_PARTS)
+    content = {
+        "privacy/index.html": PRIVACY,
+        "support/index.html": SUPPORT,
+        "docs/guide/index.html": GUIDE,
+        "docs/reference/index.html": REFERENCE,
+    }.get(slug, INTRODUCTION if slug in parts else "")
     mail = "" if slug == "support/index.html" else ' <a href="mailto:support@example.com">Mail</a>'
     return """<!doctype html>
 <html lang="%(language)s">
@@ -636,8 +655,12 @@ class CheckSiteTest(unittest.TestCase):
         self.assertFails("shared blocks: es-es/privacy/index.html: its header differs")
 
     def test_two_versions_with_no_majority_name_every_page(self):
-        for slug in SLUGS[len(SLUGS) // 2 :]:
+        # Two halves of the same size; with an odd count, the page left over takes a third footer.
+        half = len(SLUGS) // 2
+        for slug in SLUGS[half : 2 * half]:
             self.write(slug, page("en-US", slug, footer_html="<footer>Another footer</footer>"))
+        for slug in SLUGS[2 * half :]:
+            self.write(slug, page("en-US", slug, footer_html="<footer>A third footer</footer>"))
         lines = self.assertFails("no version is shared by most")
         named = sorted(line.split(": ")[2] for line in lines if "shared blocks:" in line)
         self.assertEqual(named, sorted(SLUGS))
@@ -1311,6 +1334,109 @@ class CheckSiteTest(unittest.TestCase):
         self.assertGuideSectionFails(
             "guide: docs/guide/tasks/yaml-tab/index.html: its main has no paragraph of text beyond its heading"
         )
+
+    # The technical reference.
+
+    def assertReferenceFails(self, text, languages=ALL_LANGUAGES):
+        """The check fails with one reference problem, TEXT. It returns the output's problem lines."""
+        lines = self.assertFails(text, languages=languages)
+        self.assertEqual([line for line in lines if "reference:" in line], ["check-site: " + text], lines)
+        return lines
+
+    def test_a_reference_index_missing_a_parts_link_fails_naming_it(self):
+        text = page("en-US", "docs/reference/index.html")
+        self.assertIn(REFERENCE_LINKS[1], text)
+        self.write("docs/reference/index.html", text.replace(REFERENCE_LINKS[1], ""))
+        self.assertReferenceFails(
+            "reference: docs/reference/index.html: its main does not link to /docs/reference/local-api/ "
+            "(The local API)"
+        )
+
+    def test_a_reference_index_listing_the_parts_out_of_order_fails_naming_the_part(self):
+        text = page("en-US", "docs/reference/index.html")
+        swapped = text.replace(REFERENCE_LINKS[1], "(moved)").replace(REFERENCE_LINKS[2], REFERENCE_LINKS[1])
+        self.write("docs/reference/index.html", swapped.replace("(moved)", REFERENCE_LINKS[2]))
+        self.assertReferenceFails(
+            "reference: docs/reference/index.html: its main links to /docs/reference/harnesses/ (The harnesses) "
+            "before /docs/reference/local-api/ (The local API), out of the parts' order"
+        )
+
+    # The links lead to the parts whatever form they take: relative, to the index.html, or at harmflow.com.
+    def test_links_to_the_reference_parts_in_another_form_pass(self):
+        text = page("en-US", "docs/reference/index.html")
+        text = text.replace('href="/docs/reference/task-file/"', 'href="task-file/index.html"')
+        text = text.replace(
+            'href="/docs/reference/local-api/"', 'href="https://harmflow.com/docs/reference/local-api/"'
+        )
+        self.write("docs/reference/index.html", text.replace('href="/docs/reference/harnesses/"', 'href="harnesses"'))
+        self.assertPasses()
+
+    # Only the main is read: a link to a part in the header or the footer, which every page shares, stands for none.
+    def test_a_reference_parts_link_outside_the_main_does_not_count(self):
+        text = page("en-US", "docs/reference/index.html")
+        self.assertIn(REFERENCE_LINKS[0], text)
+        moved = text.replace(REFERENCE_LINKS[0], "").replace("</footer>", REFERENCE_LINKS[0] + "\n</footer>")
+        self.write("docs/reference/index.html", moved)
+        lines = self.assertFails(
+            "reference: docs/reference/index.html: its main does not link to /docs/reference/task-file/ "
+            "(The task file)"
+        )
+        self.assertEqual(len([line for line in lines if "reference:" in line]), 1, lines)
+
+    # Removed with its sitemap entry, in the site as it is published: the index's link to it fails too.
+    def test_a_reference_part_removed_fails_naming_its_path(self):
+        self.en_us_only()
+        os.remove(os.path.join(self.root, "docs/reference/harnesses/index.html"))
+        self.write("sitemap.xml", sitemap(slug for slug in SLUGS if slug != "docs/reference/harnesses/index.html"))
+        lines = self.assertReferenceFails(
+            "reference: /docs/reference/harnesses/ (The harnesses) has no page: "
+            "docs/reference/harnesses/index.html is missing",
+            languages=[],
+        )
+        self.assertIn("check-site: links: docs/reference/index.html:", "\n".join(lines))
+
+    def test_a_reference_part_with_no_h1_fails_naming_it(self):
+        text = page("en-US", "docs/reference/local-api/index.html")
+        self.assertIn('<h1 id="title">The local API</h1>', text)
+        self.write(
+            "docs/reference/local-api/index.html",
+            text.replace('<h1 id="title">The local API</h1>', '<h2 id="title">The local API</h2>'),
+        )
+        self.assertReferenceFails(
+            'reference: docs/reference/local-api/index.html: its main has no h1; it is "The local API"'
+        )
+
+    def test_a_reference_part_whose_heading_names_another_subject_fails_naming_it(self):
+        text = page("en-US", "docs/reference/task-file/index.html")
+        self.assertIn(">The task file</h1>", text)
+        self.write("docs/reference/task-file/index.html", text.replace(">The task file</h1>", ">The harnesses</h1>"))
+        self.assertReferenceFails(
+            'reference: docs/reference/task-file/index.html: its h1 is "The harnesses", not "The task file"'
+        )
+
+    def test_a_reference_part_that_is_still_a_stub_fails_naming_it(self):
+        text = page("en-US", "docs/reference/harnesses/index.html")
+        self.assertIn(INTRODUCTION, text)
+        stub = text.replace(INTRODUCTION, "<p>This page is being written.</p>")
+        self.write("docs/reference/harnesses/index.html", stub)
+        self.assertReferenceFails(
+            'reference: docs/reference/harnesses/index.html still reads "This page is being written."'
+        )
+
+    def test_a_reference_part_with_no_paragraph_fails_naming_it(self):
+        text = re.sub(r"<p>.*?</p>", "", page("en-US", "docs/reference/local-api/index.html"))
+        self.assertNotIn("<p>", text)
+        self.write("docs/reference/local-api/index.html", text)
+        self.assertReferenceFails(
+            "reference: docs/reference/local-api/index.html: its main has no paragraph of text beyond its heading"
+        )
+
+    # With no reference index, the reference has nothing to check: the paths rule alone names the missing index.
+    def test_a_tree_with_no_reference_index_has_no_reference_problem(self):
+        for _, prefix in PREFIXES:
+            os.remove(os.path.join(self.root, prefix + "docs/reference/index.html"))
+        lines = self.assertFails("paths: /docs/reference/ has no page: docs/reference/index.html is missing")
+        self.assertEqual([line for line in lines if "reference:" in line], [], lines)
 
     # The root 404 page.
 
