@@ -1,0 +1,66 @@
+# Checks that nothing this public repository publishes references a private record, names a repository of the
+# organization that is not public, or carries a personal identifier: on a pull request, every tracked file, every
+# commit message from its base to its head, and its title and body; on a push to main, the tree. A check runs after the
+# push, so it cannot keep a slip from being public, but it keeps it off main and off harmflow.com, and flags it while it
+# is still one pull request to fix. .github/scripts/check-references.py holds the rules, and its test runs first.
+#
+# A workflow of its own, not a job of Checks: it runs again when a pull request's title or body is edited, and an edit
+# must not cancel or rerun the site's checks.
+name: References
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+# A newer run of a pull request, after a push or an edit, cancels the one still going. A run on main, or a dispatch, is
+# the record for its own commit, so it is keyed on the commit and never cancelled.
+concurrency:
+  group: references-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  references:
+    name: Private references and personal identifiers
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the repository and its history
+    steps:
+      # The whole history, so the commit messages from the pull request's base to its head are there to read.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      # With none of the check's variables set: the test sets its own.
+      - name: The check fails on repositories that break it
+        run: python3 .github/scripts/check-references-test.py -v
+      # The private rules come from the repository's secret, one regular expression per line; the check never prints
+      # one, nor what one matched. A pull request from a fork, or one Dependabot opens, cannot read the secret by
+      # design: that run applies the public rules alone and says so in the job's summary. Any other run that cannot
+      # read it fails, so a deleted secret cannot turn the private rules off in silence. The title and the body reach
+      # the script through env:, never inside it: a pull request controls them.
+      - name: Check the references
+        if: ${{ !cancelled() }}
+        env:
+          PRIVATE_REFERENCE_PATTERNS: ${{ secrets.PRIVATE_REFERENCE_PATTERNS }}
+          EVENT: ${{ github.event_name }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != pull_request ]; then
+            PRIVATE_RULES=required python3 .github/scripts/check-references.py
+          elif [ "$HEAD_REPOSITORY" != "$REPOSITORY" ] || [ "$AUTHOR" = "dependabot[bot]" ]; then
+            PRIVATE_RULES=optional python3 .github/scripts/check-references.py --base "$BASE_SHA" --head "$HEAD_SHA"
+          else
+            PRIVATE_RULES=required python3 .github/scripts/check-references.py --base "$BASE_SHA" --head "$HEAD_SHA"
+          fi

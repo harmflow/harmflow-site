@@ -179,7 +179,7 @@ def page(language, slug, header_html=None, footer_html=None, body="", landing=No
         "docs/guide/index.html": GUIDE,
         "docs/reference/index.html": REFERENCE,
     }.get(slug, INTRODUCTION if slug in parts else "")
-    mail = "" if slug == "support/index.html" else ' <a href="mailto:support@example.com">Mail</a>'
+    mail = "" if slug == "support/index.html" else ' <a href="mailto:support@harmflow.com">Mail</a>'
     return """<!doctype html>
 <html lang="%(language)s">
 <head>
@@ -1185,19 +1185,19 @@ class CheckSiteTest(unittest.TestCase):
         self.assertFails("support: support/index.html has no link to " + issues)
 
     def test_a_support_page_with_a_mailto_link_fails_naming_the_address(self):
-        body = '<p><a href="mailto:help@example.com?subject=HarmFlow">Write to us</a></p>'
+        body = '<p><a href="mailto:help@harmflow.com?subject=HarmFlow">Write to us</a></p>'
         self.write("support/index.html", page("en-US", "support/index.html", body=body))
         self.assertFails(
-            "support: support/index.html gives the e-mail address help@example.com; the support page gives none"
+            "support: support/index.html gives the e-mail address help@harmflow.com; the support page gives none"
         )
 
     def test_a_support_page_with_an_e_mail_address_in_its_text_fails_naming_it(self):
-        body = "<p>Or write to help@example.com.</p>"
+        body = "<p>Or write to help@harmflow.com.</p>"
         self.write("pt-br/support/index.html", page("pt-BR", "support/index.html", body=body))
-        self.assertFails("support: pt-br/support/index.html gives the e-mail address help@example.com")
+        self.assertFails("support: pt-br/support/index.html gives the e-mail address help@harmflow.com")
 
     def test_an_e_mail_address_on_another_page_passes(self):
-        body = "<p>Or write to help@example.com.</p>"
+        body = "<p>Or write to help@harmflow.com.</p>"
         self.write("privacy/index.html", page("en-US", "privacy/index.html", body=body))
         self.write("index.html", page("en-US", "index.html", body=body))
         self.assertPasses()
@@ -1547,7 +1547,7 @@ class CheckSiteTest(unittest.TestCase):
     def test_root_paths_absolute_urls_and_anchors_in_the_404_page_pass(self):
         links = (
             '<p><a href="#top">Top</a> <a href="https://github.com/harmflow/harmflow-app">The app</a> '
-            '<a href="mailto:support@example.com">Mail</a> <a href="/privacy/">Privacy</a></p>'
+            '<a href="mailto:support@harmflow.com">Mail</a> <a href="/privacy/">Privacy</a></p>'
         )
         self.write("404.html", NOT_FOUND.replace("</main>", links + "\n</main>"))
         self.assertPasses()
