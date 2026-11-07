@@ -48,6 +48,10 @@ when:
 - **Shared blocks.** A page's header or footer differs from the other pages of its language. Whitespace does not
   count, and once the site is translated, neither do a language selector's links to the same page in the other
   languages, which differ on every page by design; every other part of the markup must be the same.
+- **Lockup.** A page's header, the 404 page's included, has no `<img>` of `/lockup.svg`, the wordmark's lockup, or
+  its `alt` is not `HarmFlow`; or a copy of the wordmark under `site/` (`lockup.svg`, `wordmark*.svg`) holds a
+  `<text>` element, a `font-family`, or an `@font-face`, where its master in harmflow-app draws the name as outlines.
+  The copy is the master byte for byte, as committed in harmflow-app's `desktop/src-tauri/icons/source/`.
 - **Links.** A link, image, or other reference into the site leads to no file, or its `#anchor` to no `id` of its
   page. A reference to `harmflow.com` is one into the site; one to another host is not checked.
 - **Media budget.** A media file is over 10 MB, or all of them together are over 300 MB (1 MB is 1,000,000 bytes).

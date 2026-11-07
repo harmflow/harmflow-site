@@ -123,6 +123,12 @@ REFERENCE = "<ul>\n    %s\n  </ul>" % "\n    ".join(
 )
 
 
+# The home link of every header, the 404 page's included: the wordmark's lockup as an image of the site's copy, whose
+# alt is the name. LOCKUP_SVG stands in for the copy: outlines, no live text.
+BRAND = '<img src="/lockup.svg" alt="HarmFlow">'
+LOCKUP_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2152.75 512"><path d="M0 0h512v512H0z"/></svg>\n'
+
+
 def prefix_of(language):
     return dict(PREFIXES)[language]
 
@@ -140,7 +146,7 @@ def header(language, slug):
         for other, prefix in PREFIXES
         if other != language
     )
-    return '<header>\n  <a href="/%s">HarmFlow</a>\n  <nav>\n%s  </nav>\n</header>' % (prefix_of(language), selector)
+    return '<header>\n  <a href="/%s">%s</a>\n  <nav>\n%s  </nav>\n</header>' % (prefix_of(language), BRAND, selector)
 
 
 def footer(language, sections=SECTIONS):
@@ -222,7 +228,7 @@ NOT_FOUND = """<!doctype html>
 <html lang="en-US">
 <head><meta charset="utf-8"></head>
 <body>
-<header><a href="/">HarmFlow</a></header>
+<header><a href="/">%s</a></header>
 <main>
   <h1>Page not found</h1>
   <p><a href="/">Home</a></p>
@@ -231,10 +237,10 @@ NOT_FOUND = """<!doctype html>
 </main>
 </body>
 </html>
-"""
+""" % BRAND
 
 # The header of a page of the site in en-US only: no selector, since there is no other language to lead to.
-EN_US_HEADER = '<header>\n  <a href="/">HarmFlow</a>\n</header>'
+EN_US_HEADER = '<header>\n  <a href="/">%s</a>\n</header>' % BRAND
 
 # The 404 page as the site publishes it in en-US only: its pt-BR and es-ES paragraphs taken out.
 NOT_FOUND_EN_US = NOT_FOUND[: NOT_FOUND.index('  <p lang="pt-BR">')] + NOT_FOUND[NOT_FOUND.index("</main>") :]
@@ -310,6 +316,7 @@ class CheckSiteTest(unittest.TestCase):
         self.write("sitemap.xml", sitemap(prefix + slug for _, prefix in PREFIXES for slug in SLUGS))
         self.write("robots.txt", ROBOTS)
         self.write("og-image.png", "not really a png\n")
+        self.write("lockup.svg", LOCKUP_SVG)
         self.write("styles/site.css", STYLESHEET)
         for family in ("inter", "jetbrains-mono"):
             self.write("fonts/%s/%s.woff2" % (family, family), WOFF2)
@@ -621,10 +628,10 @@ class CheckSiteTest(unittest.TestCase):
         self.assertEqual([line for line in lines if "shared blocks:" in line], [lines[0]], lines)
 
     def test_one_en_us_header_that_differs_fails_naming_its_page(self):
-        changed = header("en-US", "privacy/index.html").replace("HarmFlow", "Harmflow")
+        changed = header("en-US", "privacy/index.html").replace("<nav>", "<nav>Languages")
         self.write("privacy/index.html", page("en-US", "privacy/index.html", header_html=changed))
         self.assertFails(
-            "shared blocks: privacy/index.html: its header differs", "Harmflow where the others have HarmFlow"
+            "shared blocks: privacy/index.html: its header differs", "Languages where the others have <a"
         )
 
     def test_a_page_with_no_footer_fails(self):
@@ -668,6 +675,57 @@ class CheckSiteTest(unittest.TestCase):
     def test_the_same_markup_with_other_whitespace_passes(self):
         reflowed = " ".join(header("pt-BR", "privacy/index.html").split())
         self.write("pt-br/privacy/index.html", page("pt-BR", "privacy/index.html", header_html=reflowed))
+        self.assertPasses()
+
+    # The wordmark's lockup.
+
+    def test_a_header_with_the_plain_text_name_and_no_lockup_fails_naming_its_page(self):
+        self.en_us_only()
+        self.write("privacy/index.html", page("en-US", "privacy/index.html", EN_US_HEADER.replace(BRAND, "HarmFlow")))
+        lines = self.assertFails(
+            "lockup: privacy/index.html: its header has no <img> of /lockup.svg, the wordmark's lockup", languages=[]
+        )
+        self.assertEqual(len([line for line in lines if "lockup:" in line]), 1, lines)
+
+    def test_a_404_page_with_no_lockup_fails_naming_it(self):
+        self.write("404.html", NOT_FOUND.replace(BRAND, "HarmFlow"))
+        self.assertFails("lockup: 404.html: its header has no <img> of /lockup.svg")
+
+    def test_a_page_with_no_header_fails_naming_it(self):
+        self.write("404.html", NOT_FOUND.replace('<header><a href="/">%s</a></header>' % BRAND, ""))
+        self.assertFails("lockup: 404.html: its header has no <img> of /lockup.svg")
+
+    def test_a_lockup_with_an_empty_alt_fails_naming_its_page(self):
+        self.en_us_only()
+        empty = EN_US_HEADER.replace('alt="HarmFlow"', 'alt=""')
+        self.write("support/index.html", page("en-US", "support/index.html", empty))
+        self.assertFails(
+            'lockup: support/index.html: its header\'s <img> of /lockup.svg has alt="", not alt="HarmFlow"',
+            languages=[],
+        )
+
+    def test_a_lockup_from_harmflow_com_or_a_relative_path_passes(self):
+        self.en_us_only()
+        sources = (("privacy/index.html", "https://harmflow.com/lockup.svg"), ("support/index.html", "../lockup.svg"))
+        for slug, src in sources:
+            self.write(slug, page("en-US", slug, EN_US_HEADER.replace("/lockup.svg", src)))
+        self.assertPasses(languages=[])
+
+    def test_a_lockup_copy_holding_a_text_element_fails_naming_it(self):
+        self.write("lockup.svg", LOCKUP_SVG.replace("</svg>", '<text x="0" y="400">HarmFlow</text></svg>'))
+        lines = self.assertFails("lockup: lockup.svg: a copy of the wordmark holds a <text> element")
+        self.assertEqual(len([line for line in lines if "lockup:" in line]), 1, lines)
+
+    def test_a_wordmark_copy_with_a_font_family_or_font_face_fails_naming_each(self):
+        live = '<style>@font-face { font-family: "Inter"; src: url(/fonts/inter/inter.woff2); }</style></svg>'
+        self.write("brand/wordmark-one-color.svg", LOCKUP_SVG.replace("</svg>", live))
+        self.assertFails(
+            "lockup: brand/wordmark-one-color.svg: a copy of the wordmark holds a font-family",
+            "lockup: brand/wordmark-one-color.svg: a copy of the wordmark holds an @font-face",
+        )
+
+    def test_another_svg_with_text_passes(self):
+        self.write("showroom/diagram.svg", LOCKUP_SVG.replace("</svg>", "<text>A label</text></svg>"))
         self.assertPasses()
 
     # Links.

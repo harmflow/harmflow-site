@@ -4,8 +4,9 @@ publish, that the home page and each of its five sections has its own page at it
 the language of the prefix it sits under on its root element and marks no element with a language the site does not
 publish, the parity of the languages it does, that each page that declares en-US reads as English, no paragraph or
 list item of its main nor its main as a whole reading as Portuguese or Spanish by their function words (a block of
-fewer than MIN_WORDS, 8 words, is never judged), the header and footer every page of one language shares, the internal
-links and #anchors, the media budget, the poster image of every recording, the metadata search engines and link previews
+fewer than MIN_WORDS, 8 words, is never judged), the header and footer every page of one language shares, the
+wordmark's lockup in every page's header, from a copy that draws the name as outlines, the internal links and
+#anchors, the media budget, the poster image of every recording, the metadata search engines and link previews
 read: each page's canonical address, description, and Open Graph tags, the sitemap that lists the pages, and the
 robots.txt that points to it; the landing page: its primary call to action leads to harmflow-app on GitHub and comes
 before the community edition's link to the build instructions, the page says that HarmFlow is coming to the Mac App
@@ -237,6 +238,20 @@ OFL = "sil open font license version 1.1"
 LOGO_COLORS = ("#22d3ee", "#8b5cf6", "#e040fb")
 PLACEHOLDERS = "styles/site.css"
 STYLES = "styles"
+
+# The wordmark's lockup, the mark on the left and the name beside it, is the name's brand placement: every page's header
+# shows it from the site's copy of its master, as an image whose alt is the name, so the link to / keeps its name. A
+# copy of the wordmark under the tree is named as its master is (lockup.svg, wordmark.svg, wordmark-one-color.svg) and,
+# like the master, draws the name as outlines: a <text> element, a font-family, or an @font-face would set it as live
+# text in whatever font the reader has.
+LOCKUP = "/lockup.svg"
+LOCKUP_ALT = "HarmFlow"
+WORDMARK_COPY = re.compile(r"(?:lockup|wordmark)(?:-[a-z0-9]+)*\.svg")
+LIVE_TEXT = (
+    ("a <text> element", re.compile(r"<text[\s/>]", re.I)),
+    ("a font-family", re.compile(r"font-family", re.I)),
+    ("an @font-face", re.compile(r"@font-face", re.I)),
+)
 
 # CSS's named colors, which a value may write in place of a hex color. transparent, currentColor, and inherit are no
 # color of their own, so the rule reads none of them.
@@ -521,6 +536,40 @@ def site_files(root, skip_hidden):
                 continue
             found.append(os.path.relpath(os.path.join(directory, name), root).replace(os.sep, "/"))
     return sorted(found)
+
+
+def check_lockup(root, pages):
+    """Every page's header, the 404 page's included, shows the wordmark's lockup through an <img> of LOCKUP whose alt
+    is the name; and no copy of the wordmark under the tree sets the name as live text."""
+    problems = []
+    for rel, page in pages.items():
+        lockups = []  # the attributes of each <img> of the header whose src leads to LOCKUP
+        for kind, tag, attrs in page.raw_blocks.get("header") or []:
+            if kind != "start" or tag != "img":
+                continue
+            named = dict(attrs)
+            target = resolve(page.url, named.get("src") or "")
+            if target is not None and target[0] == LOCKUP:
+                lockups.append(named)
+        if not lockups:
+            problems.append("lockup: %s: its header has no <img> of %s, the wordmark's lockup" % (rel, LOCKUP))
+        elif not any((named.get("alt") or "").strip() == LOCKUP_ALT for named in lockups):
+            problems.append(
+                'lockup: %s: its header\'s <img> of %s has alt="%s", not alt="%s"'
+                % (rel, LOCKUP, (lockups[0].get("alt") or "").strip(), LOCKUP_ALT)
+            )
+    for rel in site_files(root, skip_hidden=True):
+        if not WORDMARK_COPY.fullmatch(posixpath.basename(rel)):
+            continue
+        with open(os.path.join(root, rel), encoding="utf-8", errors="replace") as f:
+            svg = f.read()
+        for what, pattern in LIVE_TEXT:
+            if pattern.search(svg):
+                problems.append(
+                    "lockup: %s: a copy of the wordmark holds %s, which sets the name as live text; the master draws "
+                    "it as outlines" % (rel, what)
+                )
+    return problems
 
 
 def check_unpublished(pages, published):
@@ -1400,6 +1449,7 @@ def main(argv):
     problems += check_shared_blocks(root, pages, published)
     site = OrderedDict((rel, pages[rel]) for rel in site_pages)
     problems += check_text_languages(site)
+    problems += check_lockup(root, site)
     problems += check_links(root, pages)
     media_problems, media_count, media_total = check_media(root)
     problems += media_problems
