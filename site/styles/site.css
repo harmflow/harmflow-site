@@ -123,13 +123,10 @@ a:hover, a:focus-visible { color: var(--accent); }
   list-style: none;
 }
 
+/* The brand is the wordmark's lockup alone, an image of lockup.svg: the name is drawn in it, not set as text */
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.625rem;
-  font-size: 1.125rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
   text-decoration: none;
 }
 
