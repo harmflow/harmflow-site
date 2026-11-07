@@ -88,6 +88,12 @@ when:
   Reject; or, with JavaScript disabled, a page cannot be reached from every page, the 404 page included, by following
   the site's links. Google's tag is answered with a stand-in, so no request leaves the machine and no Analytics
   property is needed.
+- **Task file samples.** A sample of the technical reference is not YAML, or the app's task schema rejects it. A
+  sample is a `<pre><code>` block of a page under `docs/reference/` whose text starts with
+  `apiVersion: harmflow/v1alpha1`, found by its text, so a new one is checked too. Each is validated against
+  `contracts/schemas/task.schema.json` at the commit of harmflow-app that the page's link to the schema pins, fetched by
+  its full SHA; a page with samples whose link pins no full SHA fails as well. A failure names the page, the sample by
+  its order and the heading above it, and the schema's first error with its path in the document.
 - **Secrets.** [gitleaks](https://github.com/gitleaks/gitleaks) finds a secret or a credential in the tree.
 
 Each check has its tests, which build a tree that breaks it and expect it to fail. Run them with the standard
@@ -108,6 +114,17 @@ python3 -m venv ~/.venvs/harmflow-site && ~/.venvs/harmflow-site/bin/pip install
 ~/.venvs/harmflow-site/bin/python -m playwright install chromium
 ~/.venvs/harmflow-site/bin/python .github/scripts/check-consent.py site    # the consent check
 ~/.venvs/harmflow-site/bin/python .github/scripts/check-consent-test.py    # its tests, skipped without Playwright
+```
+
+The samples check needs [PyYAML](https://pypi.org/project/PyYAML/) and
+[jsonschema](https://pypi.org/project/jsonschema/), which CI installs in a virtual environment of its own as well, at
+the versions below. jsonschema 4.25.1 is its last release that runs on Python 3.9. The check fetches the schema from
+GitHub; its tests supply their own and need no network:
+
+```bash
+~/.venvs/harmflow-site/bin/pip install PyYAML==6.0.3 jsonschema==4.25.1
+~/.venvs/harmflow-site/bin/python .github/scripts/check-samples.py site    # the samples check
+~/.venvs/harmflow-site/bin/python .github/scripts/check-samples-test.py    # its tests, skipped without the packages
 ```
 
 ## Where the work is tracked

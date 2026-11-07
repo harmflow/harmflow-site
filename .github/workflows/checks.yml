@@ -63,6 +63,35 @@ jobs:
         if: ${{ !cancelled() }}
         run: python3 .github/scripts/check-consent.py site
 
+  samples:
+    name: Task file samples
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the site
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # PyYAML and jsonschema, in a virtual environment of the job's own, since the runner's Python is managed by the
+      # system. Dependabot cannot see these pins: refresh the versions by hand. jsonschema 4.25.1 is its last release
+      # that runs on a Mac's Python 3.9, which the README's local commands use.
+      - name: Install PyYAML and jsonschema
+        env:
+          PYYAML_VERSION: 6.0.3
+          JSONSCHEMA_VERSION: 4.25.1
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet "PyYAML==$PYYAML_VERSION" "jsonschema==$JSONSCHEMA_VERSION"
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+      - name: The samples check fails on pages that break it
+        run: python3 .github/scripts/check-samples-test.py -v
+      # After a failing test too, so a run names everything it found. It fetches the task schema from harmflow-app at
+      # the commit the reference's link pins, by its full SHA.
+      - name: Check the task file samples
+        if: ${{ !cancelled() }}
+        run: python3 .github/scripts/check-samples.py site
+
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest
