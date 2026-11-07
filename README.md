@@ -106,6 +106,16 @@ when:
   `<type>[(<scope>)][!]: <subject>`, with `<type>` one of `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `ci`,
   `chore`, an optional scope in lower-case kebab-case, at most 72 characters, and no trailing period. A pull request
   Dependabot opens is checked for the format but not the length. Editing the title runs the check again.
+- **References.** A tracked file, and on a pull request a commit message from its base to its head, its title, or its
+  body, names a repository of the `harmflow` organization other than `harmflow-app`, `harmflow-site`, and `.github`
+  (as `github.com/harmflow/<name>`, `harmflow/<name>`, or a bare `harmflow-<name>`); holds an e-mail address outside
+  `harmflow.com` and GitHub's own domains; or matches a private rule. The private rules describe the private
+  documentation's record identifiers and personal identifiers, so they are never committed: CI reads them from the
+  `PRIVATE_REFERENCE_PATTERNS` secret, one regular expression per line. A finding names its place and its rule, never
+  the text it matched. A pull request from a fork, or one Dependabot opens, cannot read the secret: it runs the public
+  rules alone and says so in the job's summary. Any other run without the secret fails. The References workflow runs
+  it on every pull request, again when its title or body is edited, and on every push to `main`, where it reads the
+  tree.
 
 Every workflow sets `permissions: {}` at its top and grants each job only what it uses, checks out with
 `persist-credentials: false`, pins every action to a full commit SHA with its release in a comment, passes what a
@@ -124,9 +134,14 @@ python3 .github/scripts/scan-secrets-test.py     # its test, skipped without git
 uvx zizmor@1.32.0 .                              # the workflows' audit, the version CI pins, with uv installed
 .github/scripts/check-pr-title.sh "ci: run zizmor over the workflows"   # a title, as the title check reads it
 .github/scripts/check-pr-title-test.sh           # its test
+python3 .github/scripts/check-references.py --patterns ~/private-patterns.txt   # the references check
+python3 .github/scripts/check-references-test.py                                # its tests
 ```
 
 Without a token, zizmor skips its online audits; `GH_TOKEN=$(gh auth token) uvx zizmor@1.32.0 .` runs them as CI does.
+
+The references check reads its private rules from a file outside the clone, one regular expression per line, the
+same list as the secret; without `--patterns` it runs the public rules alone and says so.
 
 The consent check needs [Playwright](https://playwright.dev/python/) for Python and its Chromium, which CI installs in
 a virtual environment of its own. Keep yours outside the clone, where the secret scan does not read it:

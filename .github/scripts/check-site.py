@@ -174,7 +174,7 @@ REFERENCE_PARTS = (
     ("/docs/reference/harnesses/", "The harnesses"),
 )
 
-# A plain e-mail address, name@domain.tld, in a page's visible text.
+# A plain e-mail address, a name, an at sign, and a domain, in a page's visible text.
 EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")
 
 # The headings, and the addresses of the landing page the 404 page's main may link to.
