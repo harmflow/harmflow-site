@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Live details and replay of an execution · HarmFlow</title>
+  <meta name="description" content="What selecting an execution opens, how its new events arrive while it runs with no refresh, and what opening it again after it ended shows.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/executions/live-details/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="Live details and replay of an execution · HarmFlow">
+  <meta property="og:description" content="What selecting an execution opens, how its new events arrive while it runs with no refresh, and what opening it again after it ended shows.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/executions/live-details/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>Live details and replay of an execution</h1>
+      <p>Selecting an execution opens its details: what it is, and the history of its events. While the execution runs,
+        the details follow it as it happens. Once it has ended, you can open it again and read the same history.</p>
+
+      <h2 id="opening">Opening an execution</h2>
+      <p>On the Executions screen, select the card of a running execution, or an execution in the Recent history panel
+        beside the cards. Opening an execution from another screen, such as the Overview, brings you to the Executions
+        screen with that execution selected. When you have selected none, the screen shows the first running execution,
+        or else the latest one that ended.</p>
+      <p>The details open below the cards, with the task's name, the execution's status, and its elapsed time. They
+        include:</p>
+      <ul>
+        <li><strong>Events</strong>, the history of the execution's events as a timeline, with the details of the event
+          you choose beside it.</li>
+        <li><strong>Raw output</strong>, what the session or the program printed.</li>
+        <li><strong>Results</strong>, the work item and its pull request, when the execution has one.</li>
+      </ul>
+      <p>The history is complete from the start: the events the execution emitted before you selected it are listed
+        along with the ones that come after.</p>
+
+      <h2 id="while-it-runs">While it runs</h2>
+      <p>New events of a running execution arrive in the details as they happen, with no refresh needed. Each one is
+        added to the timeline in its place, and the counts on the views grow with it. When you have chosen no event,
+        the details beside the timeline follow the latest step.</p>
+      <p>An event is never listed twice, even when it reaches the dashboard by two routes. If the connection to HarmFlow
+        drops, the dashboard reads again what it may have missed as soon as it reconnects.</p>
+
+      <h2 id="after-it-ended">After it ended</h2>
+      <p>Opening an execution that has ended reads its events again from its log. You see the same events, in the same
+        order, each once, and so the same timeline you could follow while it ran.</p>
+
+      <h2 id="related">Related pages</h2>
+      <p>To move through the timeline without the mouse, and for how assistive technology reads it, see
+        <a href="/docs/guide/executions/events-timeline-keyboard/">The events timeline and the keyboard</a>. An
+        execution's log is kept only for the retention period; what its details show once the log is gone is in
+        <a href="/docs/guide/executions/expired-log/">An execution whose log has expired</a>.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
