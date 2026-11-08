@@ -44,13 +44,15 @@
 
       <h2 id="status">Failed or Needs attention</h2>
       <ul>
-        <li><strong>Every work item opened no pull request.</strong> The execution ends as <strong>Failed</strong>,
-          whatever outcome its report states. A report of one work item reads the same way: when that one item opened
-          no pull request, the execution failed.</li>
-        <li><strong>Only some of several work items opened no pull request.</strong> Part of the work was delivered, so
-          the execution ends as <strong>Needs attention</strong>, not Completed. It ends as <strong>Failed</strong>
-          only when the session's own report says the execution failed.</li>
+        <li><strong>Every work item of the report failed with no pull request.</strong> The execution ends as
+          <strong>Failed</strong>, whatever outcome its report states. A report of one work item reads the same way:
+          when that one item failed with no pull request, the execution failed.</li>
+        <li><strong>Only some of several work items failed with no pull request.</strong> The execution ends as
+          <strong>Needs attention</strong>, not Completed. It ends as <strong>Failed</strong> only when the session's
+          own report says the execution failed.</li>
       </ul>
+      <p>Only a work item the report gives as failed counts here. An item it gives as skipped, as handed to you, or as
+        closed is not one of the items that opened no pull request, even though it has none.</p>
       <p>A draft pull request whose tests fail still counts as an opened pull request: its work item delivered a draft
         that documents the failing tests, so it is not one of the items that opened no pull request.</p>
       <p>An execution can also read Needs attention when HarmFlow could not use its report at all:
@@ -58,15 +60,14 @@
         case.</p>
 
       <h2 id="reason">Reading the reason</h2>
-      <p>The execution's reason names each work item that opened no pull request, by its repository and its number,
+      <p>The execution's reason names each work item that failed with no pull request, by its repository and its number,
         in the order of the report. For a report of one work item, it reads, for example, <em>the pull request of
         owner/repo#12 was not opened</em>. For a report of several, it lists every such item, separated by commas:
         <em>no pull request was opened for owner/repo#12, owner/repo#15</em>.</p>
       <p>The reason is shown in the app's language: English, Portuguese, or Spanish.</p>
 
       <h2 id="kept">What is kept for each item</h2>
-      <p>Each work item that opened no pull request counts as failed, with one failure toward the task's limit of
-        retries. It keeps its branch and its worktree, the folder in the task's workspace where its work was done, so
+      <p>Each work item that failed with no pull request counts one failure toward the task's limit of retries. It keeps its branch and its worktree, the folder in the task's workspace where its work was done, so
         you can see what the session left there.</p>
       <p>The clean-up keeps that worktree until the item ends, such as when its issue is closed, or until the
         execution's log expires: after a failed execution, the worktree goes once its log expires, and after one that
