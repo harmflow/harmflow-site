@@ -1,0 +1,12 @@
+# zizmor's configuration, which it finds here on its own. The Zizmor workflow (.github/workflows/zizmor.yml) runs it
+# over the workflows and the Dependabot configuration, with the regular persona.
+#
+# A finding left as it is is ignored by its audit's name, inline on its line (# zizmor: ignore[<audit>]) or in a rule
+# below, with a comment that gives the reason. Never a blanket suppression.
+rules:
+  # Every action is pinned to a full commit SHA, its own included, so a moved tag cannot change what CI runs. Without
+  # this policy, zizmor accepts a tag for an action of GitHub's own organizations.
+  unpinned-uses:
+    config:
+      policies:
+        "*": hash-pin

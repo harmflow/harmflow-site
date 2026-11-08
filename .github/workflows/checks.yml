@@ -13,8 +13,7 @@ on:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 # A newer push to a pull request cancels that pull request's run still going. A run on main, or a dispatch, is the
 # record for its own commit, so it is keyed on the commit and never cancelled.
@@ -26,6 +25,8 @@ jobs:
   site:
     name: Parity, shared blocks, links, and media
     runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the site
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -41,6 +42,8 @@ jobs:
   consent:
     name: Consent and analytics in a browser
     runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the site
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -95,6 +98,8 @@ jobs:
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the site
     steps:
       # No credential persisted, so .git, which the scan of the tree reads too, holds none.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
