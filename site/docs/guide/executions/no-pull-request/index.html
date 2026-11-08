@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>An execution where a work item opened no pull request · HarmFlow</title>
+  <meta name="description" content="When an execution whose work items opened no pull request ends as failed or as needing attention, what its reason names, and what is kept for each of those items.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/executions/no-pull-request/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="An execution where a work item opened no pull request · HarmFlow">
+  <meta property="og:description" content="When an execution whose work items opened no pull request ends as failed or as needing attention, what its reason names, and what is kept for each of those items.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/executions/no-pull-request/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>An execution where a work item opened no pull request</h1>
+      <p>A task that works items such as issues delivers each one as a pull request. When the session ends, its report
+        gives the result of each work item it worked. A work item that failed before its pull request was opened
+        delivered nothing, so HarmFlow reads the execution by what happened to each item's pull request, not only by
+        the outcome the report states.</p>
+
+      <h2 id="status">Failed or Needs attention</h2>
+      <ul>
+        <li><strong>Every work item opened no pull request.</strong> The execution ends as <strong>Failed</strong>,
+          whatever outcome its report states. A report of one work item reads the same way: when that one item opened
+          no pull request, the execution failed.</li>
+        <li><strong>Only some of several work items opened no pull request.</strong> Part of the work was delivered, so
+          the execution ends as <strong>Needs attention</strong>, not Completed. It ends as <strong>Failed</strong>
+          only when the session's own report says the execution failed.</li>
+      </ul>
+      <p>A draft pull request whose tests fail still counts as an opened pull request: its work item delivered a draft
+        that documents the failing tests, so it is not one of the items that opened no pull request.</p>
+      <p>An execution can also read Needs attention when HarmFlow could not use its report at all:
+        <a href="/docs/guide/executions/ignored-report/">An execution whose report was ignored</a> explains that
+        case.</p>
+
+      <h2 id="reason">Reading the reason</h2>
+      <p>The execution's reason names each work item that opened no pull request, by its repository and its number,
+        in the order of the report. For a report of one work item, it reads, for example, <em>the pull request of
+        owner/repo#12 was not opened</em>. For a report of several, it lists every such item, separated by commas:
+        <em>no pull request was opened for owner/repo#12, owner/repo#15</em>.</p>
+      <p>The reason is shown in the app's language: English, Portuguese, or Spanish.</p>
+
+      <h2 id="kept">What is kept for each item</h2>
+      <p>Each work item that opened no pull request counts as failed, with one failure toward the task's limit of
+        retries. It keeps its branch and its worktree, the folder in the task's workspace where its work was done, so
+        you can see what the session left there.</p>
+      <p>The clean-up keeps that worktree until the item ends, such as when its issue is closed, or until the
+        execution's log expires: after a failed execution, the worktree goes once its log expires, and after one that
+        needs attention, it stays until the item ends.
+        <a href="/docs/guide/executions/expired-log/">An execution whose log has expired</a> explains what the log's
+        expiry leaves behind.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
