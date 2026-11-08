@@ -1,0 +1,36 @@
+# Checks that a pull request's title is a valid subject under the organization's commit convention: pull requests merge
+# with Rebase and merge, and the title is what the convention reads. .github/scripts/check-pr-title.sh holds the rule,
+# and its test runs first, so a rule that passes everything fails the job. It runs again when the title is edited, so
+# fixing it clears the check.
+name: Pull request title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions: {}
+
+# A newer run of the same pull request, after a push or an edit, cancels the one still going.
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  title:
+    name: Conventional Commits title
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the scripts
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The title check fails on titles that break it
+        run: .github/scripts/check-pr-title-test.sh
+      # The title and its author reach the script through env:, never inside it: a pull request controls its title.
+      - name: Check the title
+        if: ${{ !cancelled() }}
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: .github/scripts/check-pr-title.sh "$TITLE" "$AUTHOR"

@@ -95,6 +95,23 @@ when:
   its full SHA; a page with samples whose link pins no full SHA fails as well. A failure names the page, the sample by
   its order and the heading above it, and the schema's first error with its path in the document.
 - **Secrets.** [gitleaks](https://github.com/gitleaks/gitleaks) finds a secret or a credential in the tree.
+- **Workflows.** [zizmor](https://docs.zizmor.sh/), with its regular persona, finds a weakness in a workflow or in
+  the Dependabot configuration: an action not pinned to a full commit SHA, a checkout that keeps the token in
+  `.git/config`, permissions broader than a job uses, a value a pull request controls expanded inside a `run:`
+  script, a Dependabot update with no cooldown of at least 7 days, and the rest of its audits. `.github/zizmor.yml`
+  configures it. A finding left as it is is ignored by its audit's name, inline (`# zizmor: ignore[<audit>]`) or in
+  that file, with a comment that gives the reason.
+- **Pull request title.** A pull request's title is not a valid subject under the organization's
+  [commit convention](https://github.com/harmflow/.github/blob/main/COMMIT_CONVENTION.md):
+  `<type>[(<scope>)][!]: <subject>`, with `<type>` one of `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `ci`,
+  `chore`, an optional scope in lower-case kebab-case, at most 72 characters, and no trailing period. A pull request
+  Dependabot opens is checked for the format but not the length. Editing the title runs the check again.
+
+Every workflow sets `permissions: {}` at its top and grants each job only what it uses, checks out with
+`persist-credentials: false`, pins every action to a full commit SHA with its release in a comment, passes what a
+pull request controls (its title, branch, or body) to a `run:` step through `env:`, and lets a new push cancel only a
+pull request's superseded run, never one on `main`. Dependabot proposes an update of the pinned actions every month,
+in one pull request.
 
 Each check has its tests, which build a tree that breaks it and expect it to fail. Run them with the standard
 library's Python 3.9 or later, which a Mac has:
@@ -104,7 +121,12 @@ python3 .github/scripts/check-site.py site       # the checks, on site/, the fol
 python3 .github/scripts/check-site-test.py       # their tests
 gitleaks dir . --redact --no-banner              # the secret scan, with gitleaks installed
 python3 .github/scripts/scan-secrets-test.py     # its test, skipped without gitleaks
+uvx zizmor@1.32.0 .                              # the workflows' audit, the version CI pins, with uv installed
+.github/scripts/check-pr-title.sh "ci: run zizmor over the workflows"   # a title, as the title check reads it
+.github/scripts/check-pr-title-test.sh           # its test
 ```
+
+Without a token, zizmor skips its online audits; `GH_TOKEN=$(gh auth token) uvx zizmor@1.32.0 .` runs them as CI does.
 
 The consent check needs [Playwright](https://playwright.dev/python/) for Python and its Chromium, which CI installs in
 a virtual environment of its own. Keep yours outside the clone, where the secret scan does not read it:

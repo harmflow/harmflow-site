@@ -1,0 +1,24 @@
+# Dependabot proposes an update of the actions the workflows pin, once a month, every action in one pull request. An
+# action pinned to a commit SHA never moves on its own, so without it a pin would miss its security fixes until someone
+# bumped it by hand. Each pin keeps its release in a comment, which Dependabot updates with the SHA.
+#
+# The versions the workflows install by hand (Playwright, gitleaks, zizmor) are no action: Dependabot cannot see them,
+# and each one's comment says so.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    # A release is proposed once it is a week old, so a bad release has time to be pulled first. zizmor's
+    # dependabot-cooldown audit fails a configuration with no cooldown or a shorter one.
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]
+    # chore(deps): …, a valid title under the commit convention. Dependabot's grouped titles can run past 72
+    # characters, so the title check reads its pull requests for the format only.
+    commit-message:
+      prefix: chore
+      include: scope

@@ -1,0 +1,41 @@
+# Runs zizmor (https://docs.zizmor.sh/) over the workflows and the Dependabot configuration, on every pull request and
+# every push to main, and fails on any finding of its regular persona: an action pinned to a tag that can move, a
+# checkout that leaves the token in .git/config, permissions broader than a job uses, a value a pull request controls
+# expanded inside a run: script, and the rest of its audits. .github/zizmor.yml configures it.
+#
+# The findings fail the job and show inline on the pull request's files. In the action's default SARIF mode zizmor
+# exits 0 on findings and only uploads them to the Security tab, so a pull request with a finding would pass.
+name: Zizmor
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+# A newer push to a pull request cancels that pull request's run still going. A run on main, or a dispatch, is the
+# record for its own commit, so it is keyed on the commit and never cancelled.
+concurrency:
+  group: zizmor-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  zizmor:
+    name: Workflow weaknesses
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the workflows, and for the online audits to read the actions they use
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # zizmor's own version is pinned, never latest; Dependabot updates the action, not this version: refresh it by
+      # hand, with the README's local command.
+      - uses: zizmorcore/zizmor-action@45d7276c9ca790aabd705e31ca99c6185c3e76dd # v0.8.1
+        with:
+          version: 1.32.0
+          persona: regular
+          advanced-security: false
+          annotations: true
