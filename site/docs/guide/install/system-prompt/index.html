@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>The general system prompt · HarmFlow</title>
+  <meta name="description" content="The general system prompt in HarmFlow's Settings: instructions you write once, which every session of a GitHub task or a general task receives, before HarmFlow's own.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/install/system-prompt/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="The general system prompt · HarmFlow">
+  <meta property="og:description" content="The general system prompt in HarmFlow's Settings: instructions you write once, which every session of a GitHub task or a general task receives, before HarmFlow's own.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/install/system-prompt/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/app-icon-small.svg" alt="" width="28" height="28">HarmFlow</a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>The general system prompt</h1>
+      <p>The general system prompt is a set of instructions you write once, in Settings, and that every session of a
+        GitHub task or a general task receives. Use it for what you want every session to know, whatever the task: how
+        you like commit messages written, say, or a convention your repositories share.</p>
+
+      <h2 id="where">Where the field is</h2>
+      <p>The field is in Settings, in the AI tools section, in its General system prompt panel, under the quota shares.
+        It is labeled Instructions for every session. <a href="/docs/guide/install/settings/">The Settings screen</a>
+        says what the rest of that section holds.</p>
+      <ul>
+        <li>It is <strong>empty by default</strong>. While it is empty, sessions receive nothing from it.</li>
+        <li>It takes <strong>at most 20,000 characters</strong>. A longer text is refused: the field shows the error,
+          and the text saved before stays as it was.</li>
+      </ul>
+
+      <h2 id="save">A draft until you save it</h2>
+      <p>What you type in the field is a draft until you press <strong>Save</strong>. Until then, no session receives
+        it. If you leave the section with a draft not saved, the app asks first whether to discard it.</p>
+      <p>To stop sending instructions, empty the field and save.</p>
+
+      <h2 id="who-receives-it">Which sessions receive it</h2>
+      <ul>
+        <li><strong>Every session of a GitHub task or a general task</strong> receives the text, on Claude Code and on
+          Codex alike.</li>
+        <li><strong>A session that starts after a failover</strong> receives it too, as the session before it did. What
+          else the next harness is given is on <a href="/docs/guide/executions/failover/">Failover when a quota runs
+          out</a>.</li>
+        <li><strong>A change reaches the next attempt with no restart</strong> of the daemon or the app. HarmFlow reads
+          the saved text each time it starts an attempt, so an attempt already running keeps the text it started with,
+          and the next one gets the new text.</li>
+        <li><strong>A script task never receives it.</strong> A script task runs your command and no harness, so there
+          is no session to give it to.</li>
+      </ul>
+
+      <h2 id="order">Where the text goes</h2>
+      <p>The text comes first, under its own heading, as your general instructions. HarmFlow's own instructions for the
+        session follow it, whole, under a heading of their own: where the task's parameters and history are, and where
+        to leave its progress and its report. Your text adds to them; it cannot remove or replace them.</p>
+      <p>The task's own prompt is still the task: the general system prompt goes beside it, never in its place.</p>
+
+      <h2 id="per-task">One text for every task</h2>
+      <p>The text is the same for every task. There is no option to leave a task out of it, and no field for a prompt of
+        this kind per task: what one task alone needs goes in that task's prompt.</p>
+      <p>The text belongs to Settings, not to a task, so an exported task does not carry it.
+        <a href="/docs/guide/tasks/export-import/">Exporting and importing a task</a> says what the file holds.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
