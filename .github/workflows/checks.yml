@@ -112,6 +112,33 @@ jobs:
         if: ${{ !cancelled() }}
         run: python3 .github/scripts/check-schema-coverage.py site
 
+  api-coverage:
+    name: Local API operations in the reference
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the site
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # PyYAML, in a virtual environment of the job's own, since the runner's Python is managed by the system.
+      # Dependabot cannot see this pin: refresh the version by hand.
+      - name: Install PyYAML
+        env:
+          PYYAML_VERSION: 6.0.3
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet "PyYAML==$PYYAML_VERSION"
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+      - name: The API coverage check fails on pages that break it
+        run: python3 .github/scripts/check-api-coverage-test.py -v
+      # After a failing test too, so a run names everything it found. It fetches the API description from harmflow-app
+      # at the commit the local API page's link pins, by its full SHA.
+      - name: Check that the reference names every operation of the local API
+        if: ${{ !cancelled() }}
+        run: python3 .github/scripts/check-api-coverage.py site
+
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest
