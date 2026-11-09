@@ -50,12 +50,13 @@
           the <strong>From</strong> and <strong>To</strong> dates.</li>
       </ul>
       <p>When you leave History and come back, it shows all of them again at once, with no empty list while it loads.
-        Closing the window while HarmFlow shows in the menu bar only hides it, so History keeps them then too; the
+        Closing the window while HarmFlow shows in the menu bar only hides it, and so does ⌘Q while
+        <strong>Keep HarmFlow in the menu bar when quitting with ⌘Q</strong> is on, so History keeps them then too; the
         menu bar options are in <a href="/docs/guide/install/settings/#menu-bar-and-autostart">The Settings screen</a>.</p>
 
       <h2 id="coming-back">Coming back to History</h2>
-      <p>On coming back, History checks whether anything happened since it last fetched its rows. If an execution
-        changed meanwhile, History fetches its rows again in the background, under the same filters, while it shows the
+      <p>On coming back, History checks whether anything happened in HarmFlow since it last fetched its rows. If so,
+        History fetches its rows again in the background, under the same filters, while it shows the
         ones it kept. An execution that ended while you were away then shows its new state, new executions come in at
         the top, and the rows you added with <strong>Load older executions</strong> stay. If nothing changed, History
         shows what it kept and asks the daemon for nothing.</p>
@@ -69,8 +70,9 @@
         the next time you open History it fetches its rows again, even if no new event arrived.</p>
 
       <h2 id="new-launch">After you quit the app</h2>
-      <p>Quitting the app drops all of it. So does closing its window while HarmFlow does not show in the menu bar,
-        which ends the app as quitting does; the daemon and its executions run on either way. A new launch opens History
+      <p>Quitting the app drops all of it: <strong>Quit interface</strong> in the menu bar, ⌘Q while the app is not kept
+        in the menu bar on quitting, or closing the window while HarmFlow does not show in the menu bar. The daemon and
+        its executions run on either way. A new launch opens History
         with no filter set and its first page of executions, as on a first visit. History keeps its rows and filters in memory only: nothing of it is saved to
         disk.</p>
 
