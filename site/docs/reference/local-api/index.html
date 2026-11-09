@@ -101,7 +101,9 @@ curl -H "Authorization: Bearer $token" \
         <li><code>GET /tasks/{taskId}/export</code> — its portable YAML, with no secrets, logs, or state.</li>
         <li><code>POST /schedules/preview</code> — the next occurrences of a schedule, in its time zone.</li>
         <li><code>GET /templates</code> and <code>POST /templates/{templateId}/draft</code> — the task templates, and
-          a new task&#x27;s document built from one.</li>
+          a new task&#x27;s document built from one; <code>PUT</code> and <code>DELETE /templates/{templateId}</code>
+          — change and delete a template. The built-in templates are read-only: a change to an identifier with the
+          <code>hf-</code> prefix, or the deletion of a built-in template, is refused, and nothing is written.</li>
         <li><code>GET /catalog</code> — the agents and skills a task can cite.</li>
       </ul>
 
@@ -125,12 +127,16 @@ curl -H "Authorization: Bearer $token" \
       <ul>
         <li><code>GET /health</code> — its state and version; <code>GET /diagnostics</code> — its folders, address, and
           token store; <code>POST /daemon/stop</code> — stop it.</li>
+        <li><code>GET /system</code> — the last reading of each gauge of the Mac and of HarmFlow&#x27;s data folder: the
+          processor, the memory, the disk, and the folder&#x27;s size, leaving out a gauge not read yet.</li>
         <li><code>GET /harnesses</code> and <code>POST /harnesses/refresh</code> — Claude Code and Codex as the daemon
           found them, and a new search for them. <a href="/docs/reference/harnesses/">The harnesses</a> says
           how.</li>
         <li><code>GET /tools</code> — Git and the GitHub CLI as found on the Mac.</li>
         <li><code>GET</code> and <code>PATCH /settings</code>, <code>GET /notifications</code>, and
           <code>POST /notifications/read</code>.</li>
+        <li><code>POST /workspaces/clean</code> — remove the worktrees no longer needed, answering with the ones it
+          removed and the ones it kept, each with the reason.</li>
       </ul>
 
       <h2 id="example">An example</h2>

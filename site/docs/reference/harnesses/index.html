@@ -64,7 +64,8 @@
           out is not ready: run <code>claude</code> in a terminal and sign in, or start its sign-in from HarmFlow
           (<code>POST /harnesses/claude-code/sign-in</code>). A long-lived token saved through HarmFlow
           (<code>PUT /harnesses/claude-code/token</code>) reaches every check and session as
-          <code>CLAUDE_CODE_OAUTH_TOKEN</code>.</li>
+          <code>CLAUDE_CODE_OAUTH_TOKEN</code>. Removing it (<code>DELETE /harnesses/claude-code/token</code>) returns
+          them to Claude Code&#x27;s own sign-in.</li>
       </ul>
 
       <h3 id="finding-codex">Codex</h3>
