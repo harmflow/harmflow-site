@@ -100,6 +100,15 @@ when:
   element or a heading of its main (`<code>native.enabled</code>` names `native` and `enabled`); or the harnesses page
   has no `<code>` whose whole text is a value of the schema's `harnessProvider` enum, such as `codex`. A failure names
   the page and each field or harness it does not name.
+- **Local API coverage.** An operation of the local API — a path of `contracts/api/openapi.yaml` with one of its
+  methods, at the commit of harmflow-app that the local API page's link to it pins, fetched by its full SHA — is named
+  nowhere in the main of the local API page or of the harnesses page. An operation is named by a `<code>` that reads
+  its method and path as the description writes them (`<code>GET /tasks</code>`), or with a path parameter given a
+  value its enum allows (`<code>POST /harnesses/claude-code/sign-in</code>`); by methods in `<code>` elements of their
+  own before such a `<code>` in the same list item or paragraph
+  (`<code>GET</code> and <code>PUT /tasks/{taskId}</code>`); or by a single path segment after one, which replaces its
+  path's last segment (`<code>/enable</code>` after `<code>POST /tasks/{taskId}/run</code>`). A failure names each
+  operation by its method and path.
 - **Secrets.** [gitleaks](https://github.com/gitleaks/gitleaks) finds a secret or a credential in the tree.
 - **Workflows.** [zizmor](https://docs.zizmor.sh/), with its regular persona, finds a weakness in a workflow or in
   the Dependabot configuration: an action not pinned to a full commit SHA, a checkout that keeps the token in
@@ -170,6 +179,15 @@ GitHub; its tests supply their own and need no network:
 ~/.venvs/harmflow-site/bin/pip install PyYAML==6.0.3 jsonschema==4.25.1
 ~/.venvs/harmflow-site/bin/python .github/scripts/check-samples.py site    # the samples check
 ~/.venvs/harmflow-site/bin/python .github/scripts/check-samples-test.py    # its tests, skipped without the packages
+```
+
+The local API coverage check needs PyYAML alone, at the same version, in the same virtual environment. It fetches the
+API description from GitHub; its tests supply their own and need no network:
+
+```bash
+~/.venvs/harmflow-site/bin/pip install PyYAML==6.0.3
+~/.venvs/harmflow-site/bin/python .github/scripts/check-api-coverage.py site    # the local API coverage check
+~/.venvs/harmflow-site/bin/python .github/scripts/check-api-coverage-test.py    # its tests, skipped without PyYAML
 ```
 
 ## Where the work is tracked
