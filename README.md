@@ -94,6 +94,12 @@ when:
   `contracts/schemas/task.schema.json` at the commit of harmflow-app that the page's link to the schema pins, fetched by
   its full SHA; a page with samples whose link pins no full SHA fails as well. A failure names the page, the sample by
   its order and the heading above it, and the schema's first error with its path in the document.
+- **Task schema coverage.** The technical reference leaves out part of the task schema, read as
+  `contracts/schemas/task.schema.json` at the commit of harmflow-app that the task file page's link to it pins, fetched
+  by its full SHA: the task file page does not name a property the schema defines, at any depth, as a token of a code
+  element or a heading of its main (`<code>native.enabled</code>` names `native` and `enabled`); or the harnesses page
+  has no `<code>` whose whole text is a value of the schema's `harnessProvider` enum, such as `codex`. A failure names
+  the page and each field or harness it does not name.
 - **Secrets.** [gitleaks](https://github.com/gitleaks/gitleaks) finds a secret or a credential in the tree.
 - **Workflows.** [zizmor](https://docs.zizmor.sh/), with its regular persona, finds a weakness in a workflow or in
   the Dependabot configuration: an action not pinned to a full commit SHA, a checkout that keeps the token in
@@ -129,6 +135,8 @@ library's Python 3.9 or later, which a Mac has:
 ```bash
 python3 .github/scripts/check-site.py site       # the checks, on site/, the folder GitHub Pages serves
 python3 .github/scripts/check-site-test.py       # their tests
+python3 .github/scripts/check-schema-coverage.py site     # the task schema coverage, fetched from GitHub
+python3 .github/scripts/check-schema-coverage-test.py     # its tests, with a schema of their own and no network
 gitleaks dir . --redact --no-banner              # the secret scan, with gitleaks installed
 python3 .github/scripts/scan-secrets-test.py     # its test, skipped without gitleaks
 uvx zizmor@1.32.0 .                              # the workflows' audit, the version CI pins, with uv installed
