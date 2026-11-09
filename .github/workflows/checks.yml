@@ -95,6 +95,23 @@ jobs:
         if: ${{ !cancelled() }}
         run: python3 .github/scripts/check-samples.py site
 
+  schema-coverage:
+    name: Task schema fields and harnesses in the reference
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the site
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The schema coverage check fails on pages that break it
+        run: python3 .github/scripts/check-schema-coverage-test.py -v
+      # After a failing test too, so a run names everything it found. It fetches the task schema from harmflow-app at
+      # the commit the task file page's link pins, by its full SHA.
+      - name: Check that the reference names the task schema's fields and harnesses
+        if: ${{ !cancelled() }}
+        run: python3 .github/scripts/check-schema-coverage.py site
+
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest
