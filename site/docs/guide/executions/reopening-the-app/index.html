@@ -37,16 +37,17 @@
   <main id="content">
     <article class="prose">
       <h1>Closing and reopening the app</h1>
-      <p>You can close the app while your tasks run and open it again later. Nothing you do to the app's window stops
-        an execution, and when the app opens again it shows what ran while it was closed. This page says what happens
+      <p>You can close the app while your tasks run and open it again later. Closing it stops no execution, and when
+        the app opens again it shows what ran while it was closed. This page says what happens
         to an execution meanwhile, and what you find on opening the app.</p>
 
       <h2 id="while-closed">While the app is closed</h2>
       <p>Closing the app and opening it again interrupts no execution. Executions are run by HarmFlow's daemon, which
         keeps running in the background whether you close the window, quit the interface from the menu bar, or press
         ⌘Q. An execution that is running goes on to its end, and a task whose schedule comes due starts its execution
-        as usual. Only <strong>Stop daemon</strong> ends the executions that are running, and it asks you to confirm
-        first. The menu bar options are in
+        as usual. Closing or quitting the app is not stopping the daemon: <strong>Stop daemon…</strong> in the menu
+        bar stops it, and asks first. While executions run, it lets you wait for them to finish, and the daemon stops
+        then, or cancel them now, and they are recorded as interrupted. The menu bar options are in
         <a href="/docs/guide/install/settings/#menu-bar-and-autostart">The Settings screen</a>.</p>
 
       <h2 id="on-opening">What the Executions screen shows</h2>
