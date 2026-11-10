@@ -50,18 +50,14 @@
         <li><strong>Connecting to the daemon</strong>: the dashboard has just opened and is connecting for the first
           time.</li>
         <li><strong>Daemon connected</strong>: the connection is open, and events arrive as they happen.</li>
-        <li><strong>Reconnecting to the daemon</strong>: the connection dropped, and the dashboard is opening it
+        <li><strong>Reconnecting to the daemon</strong>: the connection dropped, and the dashboard keeps opening it
           again.</li>
-        <li><strong>Connection to the daemon lost</strong>: the connection ended, and the dashboard tries again in a
-          few seconds.</li>
         <li><strong>Not answering</strong>: the daemon is running, but has not answered the dashboard's check in
           time.</li>
-        <li><strong>Daemon not running</strong>: the daemon itself is stopped.</li>
       </ul>
 
       <h2 id="banner">The connection-lost banner</h2>
-      <p>While the pill reads <strong>Reconnecting to the daemon</strong> or <strong>Connection to the daemon
-        lost</strong>, a banner below the top bar says: "The connection to the daemon was lost. Executions keep running
+      <p>While the pill reads <strong>Reconnecting to the daemon</strong>, a banner below the top bar says: "The connection to the daemon was lost. Executions keep running
         in the daemon; the dashboard reconnects and replays the events it missed." You have nothing to do: the dashboard
         keeps trying on its own, and the banner goes once the connection is back.</p>
       <p>While the pill reads <strong>Not answering</strong>, a banner says instead that the daemon is running but not
@@ -74,8 +70,8 @@
         reads as running, as it did when the last event arrived, and none reads Failed, Interrupted, or Cancelled
         because of it. Its card stays in <a href="/docs/guide/executions/active-executions/">the list of active
         executions</a>.</p>
-      <p>A stopped daemon is a different case: the pill reads <strong>Daemon not running</strong>, and no task runs
-        until the daemon starts again. How to start it is in
+      <p>A stopped daemon is a different case: no task runs until it starts again, and the dashboard shows its
+        not-running screen in place of the top bar and the screens. How to start it is in
         <a href="/docs/guide/install/start-daemon/">Starting the daemon by hand</a>.</p>
 
       <h2 id="reconnected">Once the connection returns</h2>
