@@ -9,6 +9,7 @@ The References workflow (.github/workflows/references.yml) runs it before the ch
 Usage: check-references-test.py [unittest options]
 """
 
+import importlib.util
 import os
 import shutil
 import subprocess
@@ -31,6 +32,31 @@ BARE_NAME = ORGANIZATION + "-" + UNKNOWN
 SLASHED_NAME = ORGANIZATION + "/" + BARE_NAME
 ADDRESS = "https://github.com/" + ORGANIZATION + "/" + UNKNOWN
 E_MAIL = "jane.doe" + "@" + "example.org"
+
+
+def load_check():
+    spec = importlib.util.spec_from_file_location("check_references", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+# The site's measurement ID, the one identifier of Google's tags the check allows, read from the check itself; and
+# made-up identifiers of each form it does not, put together here so that this file holds none of them.
+(MEASUREMENT_ID,) = load_check().ALLOWED_IDENTIFIERS
+OTHER_MEASUREMENT_ID = "G" + "-" + "Q1W2E3R4T5"
+TAG_ID = "GT" + "-" + "K7L8M9N0"
+ADS_ID = "AW" + "-" + "123456789"
+FLOODLIGHT_ID = "DC" + "-" + "7654321"
+UNIVERSAL_ANALYTICS_ID = "UA" + "-" + "12345678" + "-" + "1"
+CONTAINER_ID = "GTM" + "-" + "ABC1234"
+PUBLISHER_ID = "ca" + "-pub-" + "1234567890123456"
+
+# Prose with words that only resemble a prefix: lower case after it, too short, or inside a longer word.
+LOOKALIKES = """A G-rated film, a DC-area office, and a GT-class car.
+The UA-style team flew a DC-3 to the G-7 and back.
+A ca-pub-crawl, the GTM-like setup, BIG-ABCDEF12, and SG-12345678.
+"""
 
 # Made-up private patterns, which resemble no real identifier. The second line is blank, so the third pattern is
 # "private pattern 3".
@@ -148,6 +174,40 @@ class CheckReferencesTest(unittest.TestCase):
         self.write("notes.md", "Text.\nWrite to %s.\n" % E_MAIL)
         self.assertFails("notes.md:2: e-mail", [E_MAIL, "jane.doe"])
 
+    def test_the_site_measurement_id_alone_passes(self):
+        self.write("site/scripts/consent.js", '(function () {\n  var MEASUREMENT_ID = "%s";\n})();\n' % MEASUREMENT_ID)
+        self.write("notes.md", LOOKALIKES)
+        self.assertPasses()
+
+    def test_a_second_measurement_id_in_a_page_fails(self):
+        self.write("site/scripts/consent.js", 'var MEASUREMENT_ID = "%s";\n' % MEASUREMENT_ID)
+        self.write("site/index.html", "<p>One</p>\n<p data-id=\"%s\">Two</p>\n" % OTHER_MEASUREMENT_ID)
+        out = self.assertFails("site/index.html:2: account identifier", [OTHER_MEASUREMENT_ID])
+        self.assertNotIn("consent.js", out)
+
+    def test_a_tag_manager_container_in_a_script_fails(self):
+        self.write("site/scripts/tags.js", "// Tags.\nvar id = '%s';\n" % CONTAINER_ID)
+        self.assertFails("site/scripts/tags.js:2: account identifier", [CONTAINER_ID])
+
+    def test_each_form_of_identifier_fails(self):
+        for identifier in (TAG_ID, ADS_ID, FLOODLIGHT_ID, UNIVERSAL_ANALYTICS_ID, PUBLISHER_ID):
+            with self.subTest(identifier=identifier):
+                self.write("notes.md", "Text.\nThe tag (%s) here.\n" % identifier)
+                self.assertFails("notes.md:2: account identifier", [identifier])
+
+    def test_an_ads_id_in_a_commit_message_fails(self):
+        self.write("a.md", "One.\n")
+        head = self.commit("feat: add a\n\nConverts with %s." % ADS_ID)
+        self.assertFails(
+            "commit %s, line 3: account identifier" % head[:12], [ADS_ID], "--base", self.base, "--head", head
+        )
+
+    def test_an_ads_id_in_the_pull_request_body_fails(self):
+        body = "## Summary\nOne.\nConverts with %s.\n" % ADS_ID
+        self.assertFails(
+            "pull request body, line 3: account identifier", [ADS_ID], PR_TITLE="feat: a title", PR_BODY=body
+        )
+
     def test_a_private_pattern_fails_by_its_line_in_the_list(self):
         self.write("site/page.html", "<p>The %s.</p>\n" % THIRD_MATCH)
         out = self.assertFails("site/page.html:1: private pattern 3", [THIRD_MATCH, "quokka", "burrow"])
@@ -229,6 +289,10 @@ class CheckReferencesTest(unittest.TestCase):
         self.assertEqual(rc, 2, out)
         self.assertIn("private pattern 2 is not a valid regular expression", out)
         self.assertNotIn("quokka", out)
+
+    def test_the_measurement_id_allowed_is_the_one_the_consent_carries(self):
+        with open(os.path.join(REPOSITORY_ROOT, "site", "scripts", "consent.js"), encoding="utf-8") as f:
+            self.assertIn('MEASUREMENT_ID = "%s"' % MEASUREMENT_ID, f.read())
 
     def test_this_repository_passes_the_public_rules(self):
         env = dict((k, v) for k, v in os.environ.items() if k not in CHECK_VARIABLES)

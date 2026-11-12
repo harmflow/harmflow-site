@@ -20,7 +20,8 @@
   the 404 page. Google's tag adds what Google Analytics records on every site and no setting turns off — the first
   visit, the start of each visit, and the time a page is in focus — and the property's own settings keep anything
   else out. The footer's analytics link reopens the choice, and Reject then removes the analytics cookies. The
-  property's measurement ID sits only in `site/scripts/consent.js`.
+  property's measurement ID sits in `site/scripts/consent.js`, and the references check allows it and no other
+  identifier of Google's tags or ads.
 - **Pages.** The landing page at `/`, the privacy policy at `/privacy/`, and the support page at `/support/`. The
   guide, the reference, and the showroom are being written, each an
   [issue](https://github.com/harmflow/harmflow-site/issues) in this repository.
