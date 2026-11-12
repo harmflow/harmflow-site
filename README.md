@@ -136,7 +136,10 @@ A workflow run by hand from the Actions tab runs all of its checks. A check fail
 - **References.** A tracked file, and on a pull request a commit message from its base to its head, its title, or its
   body, names a repository of the `harmflow` organization other than `harmflow-app`, `harmflow-site`, and `.github`
   (as `github.com/harmflow/<name>`, `harmflow/<name>`, or a bare `harmflow-<name>`); holds an e-mail address outside
-  `harmflow.com` and GitHub's own domains; or matches a private rule. The private rules describe the private
+  `harmflow.com` and GitHub's own domains; holds an account identifier of Google's tags or ads other than the site's
+  measurement ID in `site/scripts/consent.js`, the one account-linked identifier the repository holds — a tag ID
+  (`G-`, `GT-`, `AW-`, or `DC-` and its letters and digits), a Universal Analytics property (`UA-`), a Tag Manager
+  container (`GTM-`), or an AdSense publisher ID (`ca-pub-`); or matches a private rule. The private rules describe the private
   documentation's record identifiers and personal identifiers, so they are never committed: CI reads them from the
   `PRIVATE_REFERENCE_PATTERNS` secret, one regular expression per line. A finding names its place and its rule, never
   the text it matched. A pull request from a fork, or one Dependabot opens, cannot read the secret: it runs the public
