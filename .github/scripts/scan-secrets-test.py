@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests of the secret scan the Checks workflow (.github/workflows/checks.yml) runs over the tree,
+"""Tests of the secret scan the Secret scan workflow (.github/workflows/secrets.yml) runs over the tree,
 `gitleaks dir ROOT --redact --no-banner`, which installs gitleaks before it runs this test: a tree with no secret
 passes, and the same tree with a private key in one of its pages fails, without printing the key. The key is made
 here, in a temporary directory, and never committed: a committed one would fail the scan of the repository itself.

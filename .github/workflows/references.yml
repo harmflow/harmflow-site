@@ -5,7 +5,9 @@
 # is still one pull request to fix. .github/scripts/check-references.py holds the rules, and its test runs first.
 #
 # A workflow of its own, not a job of Checks: it runs again when a pull request's title or body is edited, and an edit
-# must not cancel or rerun the site's checks.
+# must not cancel or rerun the site's checks. It has no paths filter: a private reference can land in any file, and in
+# a commit message, title, or body that changes none. The job names its runner image rather than ubuntu-latest;
+# checks.yml says why.
 name: References
 
 on:
@@ -26,7 +28,8 @@ concurrency:
 jobs:
   references:
     name: Private references and personal identifiers
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
     permissions:
       contents: read # to check out the repository and its history
     steps:

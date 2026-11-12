@@ -1,16 +1,39 @@
-# The site's checks, on every pull request and on every push to main. The site has no build step: the checks read the
-# files as committed. Each job first proves its checks on trees of its own that break them, which its test builds, so a
-# check that passes on everything fails its job; then it runs them on the checkout. README.md gives the same commands to
-# run them locally.
+# The site's checks, on every pull request and every push to main that changes what they read: site/, one of their
+# scripts, or this workflow. The site has no build step: the checks read the files as committed. Each job first proves
+# its checks on trees of its own that break them, which its test builds, so a check that passes on everything fails its
+# job; then it runs them on the checkout. README.md gives the same commands to run them locally. A change that touches
+# none of these paths runs no job here: the secret scan (secrets.yml) and the references check (references.yml) read
+# every change.
 #
 # Every action is pinned to a full commit SHA, with the release it corresponds to in a comment, so a moved tag cannot
-# change what CI runs; a new action follows the same rule.
+# change what CI runs; a new action follows the same rule. Every job names its runner image, ubuntu-26.04, rather than
+# ubuntu-latest, so a new image arrives as a change of its own: refresh it by hand, with Playwright's version.
+#
+# No check is required by the branch's ruleset. A required check whose workflow a paths filter skips stays expected
+# forever and blocks the pull request, so a check made required leaves this workflow, or loses its filter.
 name: Checks
 
+# The same paths for a pull request and for a push.
 on:
   pull_request:
+    paths:
+      - site/**
+      - .github/scripts/check-site*.py
+      - .github/scripts/check-consent*.py
+      - .github/scripts/check-samples*.py
+      - .github/scripts/check-schema-coverage*.py
+      - .github/scripts/check-api-coverage*.py
+      - .github/workflows/checks.yml
   push:
     branches: [main]
+    paths:
+      - site/**
+      - .github/scripts/check-site*.py
+      - .github/scripts/check-consent*.py
+      - .github/scripts/check-samples*.py
+      - .github/scripts/check-schema-coverage*.py
+      - .github/scripts/check-api-coverage*.py
+      - .github/workflows/checks.yml
   workflow_dispatch:
 
 permissions: {}
@@ -24,7 +47,8 @@ concurrency:
 jobs:
   site:
     name: Parity, shared blocks, links, and media
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
     permissions:
       contents: read # to check out the site
     steps:
@@ -41,13 +65,48 @@ jobs:
 
   consent:
     name: Consent and analytics in a browser
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    # The test grows with the site: each broken copy is every page, read again in the browser.
+    timeout-minutes: 30
     permissions:
       contents: read # to check out the site
     steps:
+      # The whole history, so the next step can read what the change touches. The repository is small.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
+      # The consent check's test reads its two scripts, this workflow's Playwright, and site/, whose consent script,
+      # stylesheet, and pages outside docs/ its broken copies change. A change to the pages under site/docs/ and to
+      # sitemap.xml alone reaches none of them, so it skips the test, which takes minutes, and the check below still
+      # reads every page. Any other change runs it: a pull request's is read from its merge commit against the base it
+      # merges into, a push's against the commit before it. A dispatch, or a commit before it that cannot be read, runs
+      # it as well.
+      - name: Find whether the change reaches the consent check's test
+        id: reach
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          case "$EVENT" in
+            pull_request) base=HEAD^1 ;;
+            push) base=$BEFORE ;;
+            *) base= ;;
+          esac
+          run_test=true
+          if [ -n "$base" ] && git rev-parse --quiet --verify "$base^{commit}" > /dev/null; then
+            changed=$(git diff --name-only "$base" HEAD)
+            inputs=$(grep -E '^(site/|\.github/scripts/check-consent(-test)?\.py$|\.github/workflows/checks\.yml$)' \
+              <<< "$changed" || true)
+            outside_docs=$(grep -Ev '^site/(docs/|sitemap\.xml$)' <<< "$inputs" || true)
+            if [ -n "$changed" ] && [ -z "$outside_docs" ]; then
+              run_test=false
+              echo "The consent check's test is skipped: this change touches no file it reads outside the pages" \
+                "under site/docs/ and sitemap.xml. The check still reads every page." >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+          echo "test=$run_test" >> "$GITHUB_OUTPUT"
       # Playwright for Python and its Chromium, in a virtual environment of the job's own, since the runner's Python is
       # managed by the system. Dependabot cannot see this pin: refresh the version by hand.
       - name: Install Playwright
@@ -60,6 +119,7 @@ jobs:
           "$RUNNER_TEMP/venv/bin/python" -m playwright install --with-deps chromium
           echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
       - name: The consent check fails on trees that break it
+        if: ${{ steps.reach.outputs.test == 'true' }}
         run: python3 .github/scripts/check-consent-test.py -v
       # After a failing test too, so a run names everything it found.
       - name: Check the consent and the analytics
@@ -68,7 +128,8 @@ jobs:
 
   samples:
     name: Task file samples
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
     permissions:
       contents: read # to check out the site
     steps:
@@ -97,7 +158,8 @@ jobs:
 
   schema-coverage:
     name: Task schema fields and harnesses in the reference
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
     permissions:
       contents: read # to check out the site
     steps:
@@ -114,7 +176,8 @@ jobs:
 
   api-coverage:
     name: Local API operations in the reference
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
     permissions:
       contents: read # to check out the site
     steps:
@@ -138,40 +201,3 @@ jobs:
       - name: Check that the reference names every operation of the local API
         if: ${{ !cancelled() }}
         run: python3 .github/scripts/check-api-coverage.py site
-
-  secrets:
-    name: Secret scan
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read # to check out the site
-    steps:
-      # No credential persisted, so .git, which the scan of the tree reads too, holds none.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      # The gitleaks CLI, as harmflow/harmflow-app's secret scans install it: a release binary, checked against its
-      # SHA-256 before it runs. The CLI is MIT and needs no key; gitleaks/gitleaks-action needs a license key for a
-      # repository an organization owns. Dependabot cannot see this pin: refresh the version and the checksum by hand,
-      # from the release's gitleaks_<version>_checksums.txt.
-      - name: Install gitleaks
-        env:
-          VERSION: 8.30.1
-          SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
-        run: |
-          set -euo pipefail
-          archive=gitleaks_${VERSION}_linux_x64.tar.gz
-          dir=$RUNNER_TEMP/gitleaks
-          mkdir -p "$dir"
-          curl --fail --silent --show-error --location --retry 3 --retry-all-errors --retry-delay 2 \
-            --output "$dir/$archive" "https://github.com/gitleaks/gitleaks/releases/download/v$VERSION/$archive"
-          echo "$SHA256  $dir/$archive" | sha256sum --check
-          tar -xzf "$dir/$archive" -C "$dir"
-          echo "$dir" >> "$GITHUB_PATH"
-          "$dir/gitleaks" version
-      - name: The scan fails on a tree with a private key
-        run: python3 .github/scripts/scan-secrets-test.py -v
-      # gitleaks's default rules over the files as they are; --redact keeps a finding's value out of the log.
-      # scan-secrets-test.py runs this same command.
-      - name: Scan the tree
-        if: ${{ !cancelled() }}
-        run: gitleaks dir . --redact --no-banner

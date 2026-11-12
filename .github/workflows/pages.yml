@@ -1,11 +1,22 @@
-# Publishes site/ to GitHub Pages. The site has no build step: a pull request packages the files as committed, so a
-# broken package fails before merge, and a push to main deploys them.
+# Publishes site/ to GitHub Pages. The site has no build step: a pull request that changes site/ packages the files as
+# committed, so a broken package fails before merge, and a push to main that changes it deploys them. A change outside
+# site/ leaves the published site as it is; a dispatch deploys main again on demand, after a failed deployment, say.
+#
+# The jobs name their runner image rather than ubuntu-latest; checks.yml says why, and why a check filtered by paths is
+# not required by the branch's ruleset.
 name: Pages
 
+# The same paths for a pull request and for a push.
 on:
   pull_request:
+    paths:
+      - site/**
+      - .github/workflows/pages.yml
   push:
     branches: [main]
+    paths:
+      - site/**
+      - .github/workflows/pages.yml
   workflow_dispatch:
 
 permissions: {}
@@ -18,7 +29,8 @@ concurrency:
 jobs:
   package:
     name: Package the site
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
     permissions:
       contents: read # to check out the site
     steps:
@@ -33,7 +45,8 @@ jobs:
     name: Deploy to GitHub Pages
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: package
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
     permissions:
       pages: write # to deploy the packaged site to GitHub Pages
       id-token: write # to prove to GitHub Pages that the deployment comes from this workflow
