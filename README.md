@@ -14,7 +14,7 @@ The site is published at [`harmflow.com`](https://harmflow.com).
 | Path | What it is |
 |---|---|
 | [`site/`](site/) | The site itself, as GitHub Pages serves it: only this folder is published |
-| [`.github/workflows/pages.yml`](.github/workflows/pages.yml) | Packages `site/` on every pull request and deploys it to GitHub Pages on every push to `main` |
+| [`.github/workflows/pages.yml`](.github/workflows/pages.yml) | Packages `site/` on every pull request that changes it and deploys it to GitHub Pages on every push to `main` that does |
 | [`docs/site.md`](docs/site.md) | What the site will be: static pages with no build step, in English for now, nothing from another host before the visitor accepts analytics |
 | [`CLAUDE.md`](CLAUDE.md) | Guidance for coding agents that work in this repository |
 | [`.github/scripts/`](.github/scripts/) | The site's checks and their tests |
@@ -34,8 +34,20 @@ This server answers a missing page with its own error, not the site's `404.html`
 
 ## Checks
 
-Every pull request and every push to `main` runs the site's checks, which read the files as committed. A check fails
-when:
+Every pull request and every push to `main` runs the checks that read what it changes, which read the files as
+committed:
+
+- **The site's checks** (`checks.yml`), from Languages to Local API coverage below, run on a change to `site/`, to one
+  of their scripts, or to `checks.yml`. Of them, the consent check's tests take minutes, and a change to the pages
+  under `site/docs/` and to `sitemap.xml` alone skips them: their broken copies change only the consent script, the
+  stylesheet, and pages outside `site/docs/`, and the consent check itself still reads every page. Any other change
+  runs them.
+- **The workflows' audit** (`zizmor.yml`) runs on a change to a workflow, to the Dependabot configuration, or to
+  `.github/zizmor.yml`.
+- **The secret scan** (`secrets.yml`), **the references check** (`references.yml`), and **the title check**
+  (`pr-title.yml`) run on every change, whatever it touches.
+
+A workflow run by hand from the Actions tab runs all of its checks. A check fails when:
 
 - **Languages.** A page sits under `/pt-br/` or `/es-es/`: the site is in English for now, and those prefixes are kept
   for its translations. `--languages en-US,pt-BR,es-ES` publishes them again, and then a page with no version at the
@@ -135,8 +147,10 @@ when:
 Every workflow sets `permissions: {}` at its top and grants each job only what it uses, checks out with
 `persist-credentials: false`, pins every action to a full commit SHA with its release in a comment, passes what a
 pull request controls (its title, branch, or body) to a `run:` step through `env:`, and lets a new push cancel only a
-pull request's superseded run, never one on `main`. Dependabot proposes an update of the pinned actions every month,
-in one pull request.
+pull request's superseded run, never one on `main`. Every job names its runner image, `ubuntu-26.04`, rather than
+`ubuntu-latest`, and sets a timeout. Dependabot proposes an update of the pinned actions every month, in one pull
+request. No check is required by the branch's ruleset: a required check whose workflow a paths filter skips would
+block the pull request, so one made required leaves its paths filter.
 
 Each check has its tests, which build a tree that breaks it and expect it to fail. Run them with the standard
 library's Python 3.9 or later, which a Mac has:

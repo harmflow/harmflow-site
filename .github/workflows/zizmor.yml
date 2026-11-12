@@ -1,16 +1,30 @@
 # Runs zizmor (https://docs.zizmor.sh/) over the workflows and the Dependabot configuration, on every pull request and
-# every push to main, and fails on any finding of its regular persona: an action pinned to a tag that can move, a
-# checkout that leaves the token in .git/config, permissions broader than a job uses, a value a pull request controls
-# expanded inside a run: script, and the rest of its audits. .github/zizmor.yml configures it.
+# every push to main that changes one of them or zizmor's configuration, and fails on any finding of its regular
+# persona: an action pinned to a tag that can move, a checkout that leaves the token in .git/config, permissions broader
+# than a job uses, a value a pull request controls expanded inside a run: script, and the rest of its audits.
+# .github/zizmor.yml configures it. A change that touches none of these files cannot add a finding; a dispatch runs it
+# on demand, after an advisory about an action the workflows pin, say.
 #
 # The findings fail the job and show inline on the pull request's files. In the action's default SARIF mode zizmor
 # exits 0 on findings and only uploads them to the Security tab, so a pull request with a finding would pass.
+#
+# The job names its runner image rather than ubuntu-latest; checks.yml says why, and why a check filtered by paths is
+# not required by the branch's ruleset.
 name: Zizmor
 
+# The same paths for a pull request and for a push.
 on:
   pull_request:
+    paths:
+      - .github/workflows/**
+      - .github/dependabot.yml
+      - .github/zizmor.yml
   push:
     branches: [main]
+    paths:
+      - .github/workflows/**
+      - .github/dependabot.yml
+      - .github/zizmor.yml
   workflow_dispatch:
 
 permissions: {}
@@ -24,7 +38,8 @@ concurrency:
 jobs:
   zizmor:
     name: Workflow weaknesses
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
     permissions:
       contents: read # to check out the workflows, and for the online audits to read the actions they use
     steps:

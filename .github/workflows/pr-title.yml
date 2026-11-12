@@ -1,7 +1,9 @@
 # Checks that a pull request's title is a valid subject under the organization's commit convention: pull requests merge
 # with Rebase and merge, and the title is what the convention reads. .github/scripts/check-pr-title.sh holds the rule,
 # and its test runs first, so a rule that passes everything fails the job. It runs again when the title is edited, so
-# fixing it clears the check.
+# fixing it clears the check, and on every push, so each head carries its own result: the title cannot change with a
+# push, but a head without the check would let a failing title merge. The job names its runner image rather than
+# ubuntu-latest; checks.yml says why.
 name: Pull request title
 
 on:
@@ -18,7 +20,8 @@ concurrency:
 jobs:
   title:
     name: Conventional Commits title
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
     permissions:
       contents: read # to check out the scripts
     steps:
