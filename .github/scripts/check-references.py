@@ -15,6 +15,12 @@ The rules come in two tiers.
     repository.
   - e-mail: an e-mail address outside harmflow.com and GitHub's own domains, which Dependabot's and GitHub's commit
     trailers use. A name with a scale before an image's extension, as a high-density image is named, is no address.
+  - account identifier: an identifier of the forms Google's tags and ads use, other than the site's measurement ID,
+    which ALLOWED_IDENTIFIERS holds: a tag ID (G-, GT-, AW-, or DC- and its letters and digits), a Universal Analytics
+    property (UA-, digits, a hyphen, and digits), a Tag Manager container (GTM- and its letters and digits), or an
+    AdSense publisher ID (ca-pub- and digits). The site's analytics property is a HarmFlow account's, and its
+    measurement ID, which every page carries, is the one account-linked identifier the repository holds. A word that
+    only resembles a prefix, as a hyphenated word in prose, is no identifier.
 - The private rules, one regular expression per line, describe the private documentation's record identifiers and the
   owner's own identifiers. Committed, they would publish what they keep private, so they are read at run time and never
   committed: from --patterns FILE, a file outside the clone, or from the PRIVATE_REFERENCE_PATTERNS environment
@@ -76,12 +82,26 @@ ALLOWED_DOMAINS = ("harmflow.com", "github.com")
 # image's name holds its scale, is a file, not an address.
 FILE_EXTENSIONS = ("avif", "css", "gif", "html", "ico", "jpeg", "jpg", "js", "mp4", "pdf", "png", "svg", "webm", "webp")
 
+# An identifier of Google's tags and ads: a tag ID, a Tag Manager container, a Universal Analytics property, or an
+# AdSense publisher ID. Their letters are upper case and they run to six characters or more, so a hyphenated word in
+# prose ("G-rated", "a DC-3") is none; a letter, digit, or hyphen before one, or a letter or digit after it, makes it
+# part of a longer word.
+GOOGLE_IDENTIFIER = re.compile(
+    START + r"((?:GTM|GT|G|AW|DC)-[A-Z0-9]{6,}|UA-[0-9]{4,}-[0-9]+|ca-pub-[0-9]{6,})(?![A-Za-z0-9_])"
+)
+
+# The identifiers the repository may hold: the site's measurement ID, which site/scripts/consent.js carries, and every
+# page with it.
+ALLOWED_IDENTIFIERS = ("G-X0TY5Z9VFR",)
+
 REPOSITORY = "repository"
 E_MAIL = "e-mail"
+ACCOUNT_IDENTIFIER = "account identifier"
 
 DESCRIPTIONS = {
     REPOSITORY: "names a repository of the organization that is not public",
     E_MAIL: "holds an e-mail address outside harmflow.com and GitHub's domains",
+    ACCOUNT_IDENTIFIER: "holds an identifier of Google's tags or ads other than the site's measurement ID",
 }
 
 # How many bytes a file's start is read for a NUL byte, which marks it binary, as git decides it.
@@ -173,6 +193,8 @@ def labels(line, patterns):
         found.append(REPOSITORY)
     if any(not allowed(domain) for domain in e_mail_domains(line)):
         found.append(E_MAIL)
+    if any(match.group(1) not in ALLOWED_IDENTIFIERS for match in GOOGLE_IDENTIFIER.finditer(line)):
+        found.append(ACCOUNT_IDENTIFIER)
     for number, pattern in patterns:
         if pattern.search(line):
             found.append("private pattern %d" % number)
