@@ -19,7 +19,7 @@
   "use strict";
 
   // The site's Google Analytics 4 property, which belongs to a HarmFlow account. The one account-linked identifier
-  // the repository holds, and only here.
+  // the repository holds: the references check (.github/scripts/check-references.py) allows this ID and no other.
   var MEASUREMENT_ID = "G-X0TY5Z9VFR";
 
   var STORAGE_KEY = "harmflow.analytics-consent";

@@ -9,6 +9,7 @@ The References workflow (.github/workflows/references.yml) runs it before the ch
 Usage: check-references-test.py [unittest options]
 """
 
+import importlib.util
 import os
 import shutil
 import subprocess
@@ -32,9 +33,17 @@ SLASHED_NAME = ORGANIZATION + "/" + BARE_NAME
 ADDRESS = "https://github.com/" + ORGANIZATION + "/" + UNKNOWN
 E_MAIL = "jane.doe" + "@" + "example.org"
 
-# The site's measurement ID, the one identifier of Google's tags the check allows, and made-up identifiers of each form
-# it does not, put together here so that this file holds none of them.
-MEASUREMENT_ID = "G-X0TY5Z9VFR"
+
+def load_check():
+    spec = importlib.util.spec_from_file_location("check_references", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+# The site's measurement ID, the one identifier of Google's tags the check allows, read from the check itself; and
+# made-up identifiers of each form it does not, put together here so that this file holds none of them.
+(MEASUREMENT_ID,) = load_check().ALLOWED_IDENTIFIERS
 OTHER_MEASUREMENT_ID = "G" + "-" + "Q1W2E3R4T5"
 TAG_ID = "GT" + "-" + "K7L8M9N0"
 ADS_ID = "AW" + "-" + "123456789"
