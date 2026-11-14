@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>Creating a task from a template · HarmFlow</title>
-  <meta name="description" content="How a new HarmFlow task starts from a built-in template: the three templates, what each one sets up, what you still fill in, and why nothing is saved until you save.">
+  <title>Task templates · HarmFlow</title>
+  <meta name="description" content="How a new HarmFlow task starts from a template in the catalog of HarmFlow's templates and your own: finding one, what a template needs, saving a task as a template, and the file each of your templates is.">
   <link rel="canonical" href="https://harmflow.com/docs/guide/tasks/templates/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="HarmFlow">
-  <meta property="og:title" content="Creating a task from a template · HarmFlow">
-  <meta property="og:description" content="How a new HarmFlow task starts from a built-in template: the three templates, what each one sets up, what you still fill in, and why nothing is saved until you save.">
+  <meta property="og:title" content="Task templates · HarmFlow">
+  <meta property="og:description" content="How a new HarmFlow task starts from a template in the catalog of HarmFlow's templates and your own: finding one, what a template needs, saving a task as a template, and the file each of your templates is.">
   <meta property="og:url" content="https://harmflow.com/docs/guide/tasks/templates/">
   <meta property="og:image" content="https://harmflow.com/og-image.png">
   <meta property="og:image:width" content="1200">
@@ -36,10 +36,11 @@
   </header>
   <main id="content">
     <article class="prose">
-      <h1>Creating a task from a template</h1>
+      <h1>Task templates</h1>
       <p>When you create a task, you start from a template: a ready-made starting point for one kind of automation.
-        HarmFlow comes with three built-in templates. This page says what each one sets up, what you still fill in, and what happens
-        between choosing a template and saving the task.</p>
+        HarmFlow comes with three built-in templates, and you can save any task of yours as a template of your own. This
+        page says how to find a template, what each built-in one sets up, what happens between choosing a template and
+        saving the task, and how your own templates are made and kept.</p>
 
       <h2 id="where">Where you choose a template</h2>
       <p>HarmFlow offers the same templates, in the same order, wherever it offers to create a task:</p>
@@ -49,8 +50,39 @@
         <li>the Overview, while you have no task yet;</li>
         <li>the first-run setup.</li>
       </ul>
-      <p>Each template shows its name and a line on what it is for, in the interface's language. Change the
-        <a href="/docs/guide/install/languages/">language</a> and they change with it, with no restart.</p>
+      <p>The catalog lists HarmFlow's templates first and yours after them. Each template's card shows:</p>
+      <ul>
+        <li>its <strong>name</strong> and a <strong>description</strong> of what it is for;</li>
+        <li>its <strong>type</strong>: General, GitHub, or Script;</li>
+        <li>its <strong>source</strong>: Built-in for HarmFlow's templates, Yours for the ones you saved, which also
+          carry a <strong>Yours</strong> tag.</li>
+      </ul>
+      <p>A built-in template's name and description are in the interface's language. Change the
+        <a href="/docs/guide/install/languages/">language</a> and they change with it, with no restart. Your own
+        templates show their name and description as you wrote them, in every language.</p>
+
+      <h2 id="finding">Finding a template</h2>
+      <p>Above the cards, a search box and two filters narrow the catalog:</p>
+      <ul>
+        <li><strong>The search</strong> looks in each template's name and description and keeps the templates that hold
+          every word you type, whatever their case and accents.</li>
+        <li><strong>Source</strong> keeps the built-in templates or yours; <strong>Any source</strong> keeps both.</li>
+        <li><strong>Type</strong> keeps the templates of one task type; <strong>Any type</strong> keeps them all.</li>
+      </ul>
+      <p>The search and the filters combine. When no template is left, the catalog says that no template matches the
+        search and filters.</p>
+
+      <h2 id="needs">What a template needs</h2>
+      <p>A template can cite an agent or a skill, and run on an AI tool. When this Mac lacks something a template
+        needs, its card says so:</p>
+      <ul>
+        <li><strong>Agent not found</strong> or <strong>Skill not found</strong>, with its name, for each agent or
+          skill the template cites that the AI tool it runs on cannot load on this Mac;</li>
+        <li>the AI tool's name and <strong>is not ready</strong>, when that tool is not ready, such as one that lacks a
+          sign-in.</li>
+      </ul>
+      <p>A script template runs no AI tool, so its card names none of these. A card that names something can still be
+        chosen: the task you create from it is checked when you save it, as any task is.</p>
 
       <h2 id="built-in">The three built-in templates</h2>
       <ul>
@@ -74,7 +106,7 @@
         the editor before you save, and nothing is written.</p>
 
       <h2 id="fill-in">What you still fill in</h2>
-      <p>A template leaves open the values only you can give. The editor leaves those fields empty for you; saving
+      <p>A built-in template leaves open the values only you can give. The editor leaves those fields empty for you; saving
         without one is refused, and the editor lists each value still missing.</p>
       <ul>
         <li><strong>General task:</strong> the <strong>Prompt</strong>, what the task does.</li>
@@ -91,6 +123,40 @@
       <h2 id="read-only">Built-in templates do not change</h2>
       <p>The built-in templates ship with HarmFlow. You cannot change or delete them: what you change in the editor
         belongs to the new task, and the template stays as it was for the next task you create from it.</p>
+
+      <h2 id="save-as-template">Saving a task as a template</h2>
+      <p>A task you want to repeat can become a template of your own. On the task's row in Tasks, choose
+        <strong>Save as template</strong>, then give the template:</p>
+      <ul>
+        <li>a <strong>Template name</strong>, which starts as the task's name;</li>
+        <li><strong>What it is for</strong>, the description its card shows;</li>
+        <li>a <strong>Template ID</strong>, which the dialog proposes from the name until you write one: lowercase
+          letters, digits, and hyphens, never starting with <code>hf-</code>, which only HarmFlow's templates use. An
+          ID another template of yours already has is refused.</li>
+      </ul>
+      <p>The template keeps the task's type and its fields, its prompt included, as you customized it: a task that
+        started from an agent gives a template that holds the prompt as the task has it, not the agent it came from.
+        The template leaves out the task's name, its identifier, whether it is enabled, and where its prompt came from.
+        The task itself stays as it was.</p>
+      <p>The template joins the catalog after HarmFlow's templates, and creates tasks as a built-in one does. A task
+        whose file has an error cannot be saved as a template until the error is fixed.</p>
+
+      <h2 id="template-file">A template of yours is a file</h2>
+      <p>Each template you save is one file in the <code>templates</code> folder of HarmFlow's data folder, beside its
+        <code>tasks</code> folder, named after the template's ID, such as <code>weekly-report.yaml</code>. For where the
+        data folder is, see <a href="/docs/reference/task-file/">The task file</a> in the reference.</p>
+      <p>You can change a template's file in any text editor. HarmFlow notices the change on its own, and the catalog
+        shows it. Remove the file in the Finder, and the template leaves the catalog. A file that is
+        no longer valid is no longer offered for a new task, and your other templates stay in the catalog.</p>
+      <p>The catalog still lists such a file, below the templates, by its file name, under the line <em>These template
+        files have errors and cannot start a task</em>. Each of its errors is shown as HarmFlow words it, with its line
+        and column when HarmFlow gives them. The file cannot be chosen, and the search and filters leave it listed, so
+        you can see what to fix.</p>
+
+      <h2 id="own-copy">A task is its own copy</h2>
+      <p>A task created from a template holds its own copy of the template's values, and keeps no link to the
+        template. Changing or deleting the template changes no task created from it, and a new release of HarmFlow
+        that changes a built-in template changes none either.</p>
     </article>
   </main>
   <footer class="site-footer">
