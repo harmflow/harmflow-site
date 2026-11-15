@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>The sidebar's GitHub gauges · HarmFlow</title>
+  <meta name="description" content="How the sidebar's GitHub gauges show what your GitHub login used of its REST and GraphQL limits this hour, when they are read, and why they can read a dash.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/executions/github-gauges/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="The sidebar's GitHub gauges · HarmFlow">
+  <meta property="og:description" content="How the sidebar's GitHub gauges show what your GitHub login used of its REST and GraphQL limits this hour, when they are read, and why they can read a dash.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/executions/github-gauges/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/lockup.svg" alt="HarmFlow" width="118" height="28"></a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>The sidebar's GitHub gauges</h1>
+      <p>A task that works GitHub issues makes requests to GitHub with the login signed in to the GitHub CLI,
+        <code>gh</code>, on your Mac, and GitHub limits how many requests that login may make in an hour. The sidebar's
+        GitHub gauges show how close the login is to those limits, so you can see it before a task runs into them.</p>
+
+      <h2 id="where">Where the gauges are</h2>
+      <p>With the sidebar expanded, its foot holds two widgets. The <strong>GitHub</strong> widget sits directly above
+        the <strong>System</strong> widget, and has two gauges:</p>
+      <ul>
+        <li><strong>REST</strong>: the limit of GitHub's REST API.</li>
+        <li><strong>GraphQL</strong>: the limit of GitHub's GraphQL API.</li>
+      </ul>
+      <p>With the sidebar collapsed to its icons with ⌘B, neither widget shows.</p>
+
+      <h2 id="reading">What each gauge shows</h2>
+      <p>Each gauge shows what the login used in the current hour against the limit GitHub reports for it, in two
+        ways:</p>
+      <ul>
+        <li>As text, the requests used and the limit, such as <code>1,234 / 5,000</code>.</li>
+        <li>As a bar, filled to the share of the limit used. The bar never fills past full, even when GitHub reports
+          more used than the limit.</li>
+      </ul>
+      <p>Below them, <strong>Resets at</strong> gives the time the hour's count starts again, in hours and minutes,
+        written as times are written in the language the app shows.</p>
+
+      <h2 id="whose-count">Whose count it is</h2>
+      <p>The figure is GitHub's own count for the login, not HarmFlow's. Every request made with that login counts, in
+        HarmFlow or outside it: another tool or a script of yours that uses the same login spends the same limit, and
+        the gauges show it. HarmFlow keeps no count of its own. To read the figure, it asks GitHub for the login's rate
+        limits, a request GitHub counts against no limit, so reading the gauges does not use up what they show.</p>
+
+      <h2 id="when-read">When the gauges are read</h2>
+      <p>The gauges are read as soon as the sidebar expands, and then every 5 seconds while it stays expanded. While
+        the sidebar is collapsed, nothing shows them and they are not read. The GitHub gauges are read apart from the
+        System gauges, so a slow answer from GitHub never holds the System gauges back.</p>
+
+      <h2 id="dash">When the gauges read a dash</h2>
+      <p>Both GitHub gauges read "—", with an empty bar and no reset time, when HarmFlow cannot read the count:</p>
+      <ul>
+        <li><code>gh</code> is not installed, or HarmFlow does not find it.</li>
+        <li><code>gh</code> is not signed in.</li>
+        <li>The request fails, or its answer cannot be read.</li>
+        <li>The daemon, the background process that runs your tasks, is an older version that does not offer the
+          reading.</li>
+      </ul>
+      <p>A reading that fails shows the dash rather than the last figure, since the count changes with every request
+        the login makes. The System gauges keep working all the while. Once <code>gh</code> is installed and signed in,
+        the next reading shows the figures again. How a task reaches GitHub through <code>gh</code> is in
+        <a href="/docs/guide/repository-access/">Granting access to repositories</a>.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
