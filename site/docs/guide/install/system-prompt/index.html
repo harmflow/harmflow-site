@@ -47,9 +47,30 @@
         says what the rest of that section holds.</p>
       <ul>
         <li>It is <strong>empty by default</strong>. While it is empty, sessions receive nothing from it.</li>
-        <li>It takes <strong>at most 20,000 characters</strong>. A longer text is refused: the field shows the error,
-          and the text saved before stays as it was.</li>
+        <li>It takes <strong>at most 20,000 characters</strong>. A longer text still goes in the field whole, but it
+          cannot be saved: Save is unavailable until you trim it, and the text saved before stays as it was.
+          <a href="#counter">The character counter</a> shows where you are.</li>
       </ul>
+
+      <h2 id="counter">The character counter</h2>
+      <p>Under the field, a counter shows how many characters the text holds against the limit, such as
+        <code>1,234 / 20,000</code>. It changes on every change to the text, a paste included, and writes its numbers
+        the way the app's language writes them.</p>
+      <ul>
+        <li><strong>How it counts.</strong> It counts a character as HarmFlow does when it saves the text, one per
+          Unicode code point, so an emoji such as 😀 counts as one. An emoji built from several, such as one with a skin
+          tone, or a flag, counts as each of its parts.</li>
+        <li><strong>Nothing is cut off.</strong> Neither typing nor a paste stops at the limit: a text that goes past it
+          goes in whole, so you can see all of it and choose what to trim.</li>
+        <li><strong>Below the limit</strong>, the counter keeps its normal style.</li>
+        <li><strong>At exactly 20,000 characters</strong>, only the counter changes: it takes the error style and reads
+          <code>20,000 / 20,000 · limit reached</code>. The field is not marked, and you can still save the text.</li>
+        <li><strong>Past the limit</strong>, the counter reads <code>· over the limit</code> after its numbers, the field
+          is marked in red with the message <em>The text is over the 20,000-character limit. Shorten it to save.</em>,
+          and Save is unavailable until the text is 20,000 characters or fewer.</li>
+      </ul>
+      <p>The same holds for a text saved before the counter existed: if it is over the limit, it shows as over, and the
+        field cannot be saved until you trim it.</p>
 
       <h2 id="save">A draft until you save it</h2>
       <p>What you type in the field is a draft until you press <strong>Save</strong>. Until then, no session receives
