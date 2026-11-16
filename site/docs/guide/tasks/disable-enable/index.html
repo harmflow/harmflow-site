@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Disabling and enabling a task · HarmFlow</title>
+  <meta name="description" content="What happens when you disable or enable a HarmFlow task: the firings it skips, the run in progress, a manual run, and a task whose agents or skills are missing.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/tasks/disable-enable/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="Disabling and enabling a task · HarmFlow">
+  <meta property="og:description" content="What happens when you disable or enable a HarmFlow task: the firings it skips, the run in progress, a manual run, and a task whose agents or skills are missing.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/tasks/disable-enable/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/lockup.svg" alt="HarmFlow" width="118" height="28"></a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>Disabling and enabling a task</h1>
+      <p>A disabled task keeps its file, its settings, and its history, but HarmFlow starts nothing for it until you
+        enable it again. This page says what disabling stops, what happens to a run already in progress, how enabling
+        picks the schedule up again, and what becomes of a task that cites an agent or a skill its AI tool does not
+        have.</p>
+
+      <h2 id="how">How to disable or enable a task</h2>
+      <p>On the Tasks screen, each task's row has a switch beside <strong>Run now</strong>. It reads
+        <strong>Enabled</strong> or <strong>Disabled</strong>; click it to change the task's state. A disabled task's
+        row is dimmed, shows no next run, and its <strong>Run now</strong> button is greyed out.</p>
+      <p>A client of the <a href="/docs/reference/local-api/#tasks">local API</a> does the same with
+        <code>POST /tasks/{taskId}/disable</code> and <code>POST /tasks/{taskId}/enable</code>.</p>
+
+      <h2 id="file">The change is written to the task's file</h2>
+      <p>Either way, HarmFlow writes the change to the task's file at once: it sets the task's <code>enabled</code>
+        field and leaves the rest of the file as it was, its comments included. The state lasts across restarts of the
+        app, and a task file you open afterwards shows it.</p>
+
+      <h2 id="disabled">What disabling stops</h2>
+      <p>Disabling stops every new firing of the task:</p>
+      <ul>
+        <li><strong>A firing that comes due while the task is disabled does not start.</strong> HarmFlow records it in
+          <a href="/docs/guide/tasks/firing-record/">the record of the task's firings</a> as skipped, with the reason
+          that the task was disabled.</li>
+        <li><strong>A firing already waiting</strong> in the queue, behind an execution of the task that runs, is
+          cancelled and never starts. Its execution ends as cancelled, with the reason that the task was
+          disabled.</li>
+        <li><strong>A manual run is refused.</strong> The Tasks screen greys out <strong>Run now</strong>, and the local
+          API answers a request to run the task with an error that says it is disabled and must be enabled to
+          run.</li>
+      </ul>
+
+      <h2 id="running">A run already in progress</h2>
+      <p>An execution that is running when you disable the task is not stopped: it finishes normally, with the result
+        it would have had. Disabling only keeps new ones from starting. To stop a run at once, cancel the execution
+        itself.</p>
+
+      <h2 id="enabled">Enabling the task again</h2>
+      <p>Once enabled, the task follows its schedule from where it is now. Its next firing starts on time, at the next
+        occurrence its schedule gives, as a normal firing on schedule. There is no catch-up: none of the firings
+        skipped while the task was disabled runs afterwards.</p>
+      <p>For example, a made-up task <em>Weekly digest</em> fires every Monday at 09:00. You disable it one Friday and
+        enable it again eleven days later, on a Tuesday. The two Monday firings in between were skipped and recorded
+        as such; the task's next firing is the following Monday at 09:00, and nothing runs on the day you enable it.</p>
+
+      <h2 id="missing-items">A task whose agents or skills are missing</h2>
+      <p>A task may cite an agent or a skill that its AI tool does not have on this Mac. Saving such a task only warns,
+        and it is disabled and enabled like any other task:</p>
+      <ul>
+        <li><strong>The change shows no error.</strong> The switch on the task's row, and the local API, do not check
+          the task's agents and skills again, so the missing ones never block the change.</li>
+        <li><strong>It keeps its warnings.</strong> The task keeps one warning for each missing agent or skill, the
+          ones it had before the change. The task list shows them before and after the change: a chip on the task's row
+          counts them, such as <strong>2 warnings</strong>, and pointing at it lists each one, such as
+          <strong>Agent not found</strong> or <strong>Skill not found</strong> with the item's name.</li>
+        <li><strong>It keeps its parameter values.</strong> The values the task gives a missing agent's or skill's
+          parameters stay in its file, unchanged.</li>
+      </ul>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
