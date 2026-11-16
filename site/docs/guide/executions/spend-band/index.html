@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>The Overview's spend band · HarmFlow</title>
-  <meta name="description" content="What the Overview's Spend this month band shows: one column per day, the cost or the tokens, the month's total, and the mark on a day whose figures undercount.">
+  <meta name="description" content="What the Overview's Spend this month band shows: one column per day, the cost or the tokens, the split by harness, the month's total, and the mark on a day whose figures undercount.">
   <link rel="canonical" href="https://harmflow.com/docs/guide/executions/spend-band/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="HarmFlow">
   <meta property="og:title" content="The Overview's spend band · HarmFlow">
-  <meta property="og:description" content="What the Overview's Spend this month band shows: one column per day, the cost or the tokens, the month's total, and the mark on a day whose figures undercount.">
+  <meta property="og:description" content="What the Overview's Spend this month band shows: one column per day, the cost or the tokens, the split by harness, the month's total, and the mark on a day whose figures undercount.">
   <meta property="og:url" content="https://harmflow.com/docs/guide/executions/spend-band/">
   <meta property="og:image" content="https://harmflow.com/og-image.png">
   <meta property="og:image:width" content="1200">
@@ -45,7 +45,7 @@
         On the first day of a month it shows one column. The days still to come have no column: their place in the band
         stays empty until they come. The numbers under the band mark the first day and every fifth one.</p>
       <p>Each column is that day's own total across every task, never a running sum of the days before it. In the
-        token view, a column is one block, every kind of token summed, not a stack of them.</p>
+        token view, a column sums every kind of token: it is never a stack of the kinds of token.</p>
 
       <h2 id="view">Cost or tokens</h2>
       <p>A selector at the top of the band switches it between <strong>Cost</strong> and <strong>Tokens</strong>:</p>
@@ -57,6 +57,28 @@
       <p>HarmFlow keeps your choice, so the band opens in the same view the next time you launch the app. The month's
         total sits in a corner of the band, in the unit the selector shows: in dollars, as "this month, an estimate at
         API list prices", or in tokens, as "tokens this month".</p>
+
+      <h2 id="harness">Split by harness</h2>
+      <p>Beside the <strong>Cost | Tokens</strong> selector, a <strong>Harness</strong> toggle splits each day's column by
+        the harness that ran its attempts, so that you can tell what Claude Code and Codex each spent. The toggle is off
+        by default.</p>
+      <p>With the toggle on, each day's column keeps its height and is split into segments, one for each harness whose
+        attempts ended that day, in the unit the selector shows. A segment's height is that harness's share of the
+        day. On a day of $3.00 in which Claude Code spent $2.00 and Codex $1.00, for example, the column stands as high
+        as before, two thirds of it Claude Code's and one third Codex's. A harness with nothing to show in that unit on
+        a day, such as one whose attempts that day all used a model the price table omits, in the cost view, has no
+        segment that day.</p>
+      <p>The segments keep the same order every day: Claude Code at the foot of the column, then Codex, then any other
+        harness. Each takes its harness's color, the one the app gives Claude Code and Codex elsewhere; a harness the
+        app has no color for is shown in a muted color.</p>
+      <p>A legend under the chart names the harnesses that ran an attempt this month, in the same order. A harness with
+        no attempt this month appears neither in the legend nor in any column.</p>
+      <p>The toggle and the selector are independent: choosing Cost or Tokens never turns the split off, and turning
+        the split on or off never changes the unit. HarmFlow keeps the toggle's state, so the band opens split, or not,
+        the next time you launch the app.</p>
+      <p>The rest of the band stays as it is with the toggle off. Hovering over a day still shows the day as a whole,
+        and the marks on days that undercount and the note under the band still describe the day: none of them names a
+        harness.</p>
 
       <h2 id="days">Which day an attempt counts on</h2>
       <p>Days follow your Mac's local time zone. An attempt counts on the day it ended, so an execution whose attempts
