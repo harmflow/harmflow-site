@@ -50,6 +50,10 @@
       <p>The exported file is the task's own file, as you or HarmFlow wrote it: its comments and the order of its
         keys are kept. It holds what the task is — its type, its work, its schedule, its AI tools, and its
         permissions — and nothing else.</p>
+      <p>The agents and skills the task cites are in the file by their names, such as <code>agents: [release-notes]</code>
+        and <code>skills: [changelog-style]</code>, and only by their names. A prompt you copied from an agent when you
+        chose it is the task's own prompt, so it is in the file like any other prompt, with the name of the agent it came
+        from.</p>
 
       <h2 id="leaves-out">What the file leaves out</h2>
       <p>The file carries no record of any run, even for a task that has already run many times. Nothing a run left
@@ -64,7 +68,9 @@
         <li>no next firing.</li>
       </ul>
       <p>Your own agents and skills stay on your machine, too: the file names the ones the task cites, but does not
-        carry them.</p>
+        carry them. It holds none of their instructions, none of their files, and no path to where your AI tool keeps
+        them. To run the task as it ran for you, install the same agents and skills on the machine that imports it, or
+        accept the warning that machine shows (<a href="#missing-items">Agents and skills the machine lacks</a>).</p>
 
       <h2 id="secrets">Secrets</h2>
       <p>If a password or a token was typed into a task's prompt, its description, or a comment of its file, the export
@@ -85,12 +91,37 @@
           it runs, where, and when. Choose <strong>Import disabled</strong> to import it: it is saved disabled, so check
           its program, then enable it.</li>
         <li><strong>A missing agent or skill.</strong> When the task cites an agent or a skill this machine does not
-          have, the import still succeeds, and HarmFlow shows a warning that names it.</li>
+          have, the import still succeeds, and HarmFlow shows a warning that names it (see
+          <a href="#missing-items">below</a>).</li>
       </ul>
 
       <h2 id="after-import">After an import</h2>
       <p>HarmFlow shows <strong>Task imported.</strong>, the task appears in the task list, and it opens in the task
         editor. From there it is a task like any other: edit it, save it, and run it.</p>
+
+      <h2 id="missing-items">Agents and skills the machine lacks</h2>
+      <p>A task you import may cite an agent or a skill that your AI tool does not have on this machine, for example
+        because it was exported from a machine where someone installed it. That does not stop the task:</p>
+      <ul>
+        <li><strong>The import succeeds.</strong> HarmFlow shows <strong>Task imported.</strong> and then one warning
+          for each missing item, naming it and the AI tool that lacks it, such as <strong>Skill not found</strong>:
+          skill "changelog-style" is missing on this machine for Claude Code, followed by where HarmFlow looked for
+          it. A task with fallback AI tools also warns for each fallback that lacks the item
+          (<a href="/docs/guide/tasks/valid-fallbacks/">Which fallback harnesses are valid</a>).</li>
+        <li><strong>The task is saved as it is.</strong> The names of the missing agents and skills stay in its file,
+          unchanged. The task's row in the task list shows its warnings, and so does the task editor.</li>
+        <li><strong>The task runs.</strong> When it runs, HarmFlow gives the AI tool each missing agent or skill by its
+          name, as the task cites it, and the execution's record keeps the same warning.</li>
+      </ul>
+      <p>The same holds wherever a task comes from, not only an import: saving it from the form or from the
+        <a href="/docs/guide/tasks/yaml-tab/">YAML tab</a>, duplicating it, and placing its file in the
+        <code>tasks</code> folder (<a href="/docs/guide/tasks/task-file/">A task is a file</a>). Each one accepts the
+        task and warns about each missing agent or skill.</p>
+      <p>A missing agent or skill is only a warning, never an error. A file that is not a valid task is still not
+        accepted: an import, a save, or a duplicate refuses it and names what is wrong, and a file placed in the
+        <code>tasks</code> folder is shown with its errors.</p>
+      <p>To clear the warning, install the agent or the skill in your AI tool on this machine, or remove its name from
+        the task.</p>
     </article>
   </main>
   <footer class="site-footer">
