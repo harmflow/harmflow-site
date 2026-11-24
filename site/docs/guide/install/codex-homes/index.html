@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Codex homes as installations · HarmFlow</title>
+  <meta name="description" content="How HarmFlow treats each Codex home on your Mac as an installation of its own: what Settings shows of each, how a task chooses one, what is checked against it, and which processes receive it.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/install/codex-homes/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="Codex homes as installations · HarmFlow">
+  <meta property="og:description" content="How HarmFlow treats each Codex home on your Mac as an installation of its own: what Settings shows of each, how a task chooses one, what is checked against it, and which processes receive it.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/install/codex-homes/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/lockup.svg" alt="HarmFlow" width="118" height="28"></a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>Codex homes as installations</h1>
+      <p>Codex keeps its sign-in, its configuration, and what it knows of its models in a folder of its own, its home.
+        A Mac can hold more than one, for example a personal home and a work home, each signed in to its own account.
+        HarmFlow treats each Codex home it finds as an installation of its own: Settings shows each one apart, a task
+        can name the one it runs on, and each one's home goes only to the processes that run it.</p>
+
+      <h2 id="finding">Which homes HarmFlow finds</h2>
+      <p>HarmFlow looks for Codex homes in two places: the <code>.codex</code> folder in your home folder, and the folder
+        that the <code>CODEX_HOME</code> environment variable names in the daemon's environment, when it names another
+        one. The installation in use is the home <code>CODEX_HOME</code> names, or <code>~/.codex</code> when it names
+        none.</p>
+      <p>An installation is named by its home's path, written from <code>~</code> when the home is in your home folder,
+        such as <code>~/.codex</code>. A task names an installation the same way, so a task file reads the same on
+        another Mac with the same folders.</p>
+
+      <h2 id="settings">What Settings shows</h2>
+      <p>In Settings, the AI tools section has a card for Codex (see <a href="/docs/guide/install/settings/#ai-tools">What
+        AI tools shows</a>). Its <strong>Homes</strong> row lists every Codex home HarmFlow found, each by the name a task
+        uses for it, with whether it is ready, and marks the one in use <strong>In use</strong>. Beside each home, the row
+        shows what that home's own checks read:</p>
+      <ul>
+        <li><strong>Its sign-in</strong>: whether it is signed in.</li>
+        <li><strong>Its plan</strong>, when Codex reports one, and whether an administrator manages its requirements
+          (see <a href="/docs/guide/install/codex-managed-requirements/">Codex's managed requirements</a>).</li>
+        <li><strong>Its models and efforts</strong>: the ones that home's Codex offers.</li>
+        <li><strong>Its skills</strong>: your skills, as Codex lists them for that home. HarmFlow's built-in skills are
+          not among them.</li>
+        <li><strong>Its quota</strong>: the share of each quota window used, from the last reading HarmFlow kept for that
+          installation, taken by the check before an attempt on it or reported by an attempt while it runs. A home no
+          attempt has used yet shows none.</li>
+      </ul>
+      <p>Settings has no field to add a home by hand: the Homes row shows the homes HarmFlow finds, and Detect again
+        looks for them once more. The <strong>Installations</strong> row above it is another thing: it lists the Codex
+        programs found on your Mac, whichever home they run with.</p>
+
+      <h2 id="task">Choosing a home for a task</h2>
+      <p>In the task editor, a profile whose AI tool is Codex has an <strong>Installation</strong> choice beside its
+        model and effort, and so does each Codex candidate in the task's <strong>Fallback chain</strong>. It lists:</p>
+      <ul>
+        <li><strong>In use</strong>, with the name of the installation in use, first. A profile left on it names no
+          installation, and runs on the installation in use when the task runs.</li>
+        <li>Each home HarmFlow found, with whether it is ready.</li>
+      </ul>
+      <p>So a task can prefer one home and fail over to another, for example from a personal home to a work home when
+        the first one's quota runs out (see <a href="/docs/guide/executions/failover/">Failover when a quota runs out</a>). In the task file,
+        the choice is the profile's <code>installation</code> key.</p>
+      <p>A task that names an installation this Mac does not list fails validation, and the error names the missing
+        installation:</p>
+      <p><samp>Codex has no installation "~/.codex-work" on this machine</samp></p>
+      <p>HarmFlow neither saves nor imports such a task, and a task file that names it, because the home was removed
+        since the task was saved, loads as invalid. The editor shows that installation as not on this machine, so you can
+        choose another. When a home is gone by the time a task fires, the check before each attempt finds it missing and
+        names it the same way: the execution fails over to the next candidate of its fallback chain when it has one, and
+        otherwise fails.</p>
+
+      <h2 id="models">Models and efforts</h2>
+      <p>A model or an effort is checked against the installation the profile names, or the one in use when it names
+        none: a model one home offers and another does not is refused on the profile that names the other. The
+        editor's Model and Effort lists follow the installation chosen, so they offer what that home offers.</p>
+
+      <h2 id="environment">Which processes receive a home</h2>
+      <p>Each check of an installation and each attempt on it runs Codex with that installation's home as its
+        <code>CODEX_HOME</code>, in place of any the daemon's environment holds. No other process HarmFlow starts receives
+        it: not Claude Code, not a script task's program, and not the Git, GitHub CLI, and system commands HarmFlow
+        runs.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
