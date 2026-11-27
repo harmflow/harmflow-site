@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>Task templates · HarmFlow</title>
-  <meta name="description" content="How a new HarmFlow task starts from a template in the catalog of HarmFlow's templates and your own: finding one, what a template needs, saving a task as a template, and the file each of your templates is.">
+  <meta name="description" content="How a new HarmFlow task starts from a template in the catalog of HarmFlow's templates and your own: finding one, what a template needs, saving a task as a template, the file each of your templates is, and exporting and importing one.">
   <link rel="canonical" href="https://harmflow.com/docs/guide/tasks/templates/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="HarmFlow">
   <meta property="og:title" content="Task templates · HarmFlow">
-  <meta property="og:description" content="How a new HarmFlow task starts from a template in the catalog of HarmFlow's templates and your own: finding one, what a template needs, saving a task as a template, and the file each of your templates is.">
+  <meta property="og:description" content="How a new HarmFlow task starts from a template in the catalog of HarmFlow's templates and your own: finding one, what a template needs, saving a task as a template, the file each of your templates is, and exporting and importing one.">
   <meta property="og:url" content="https://harmflow.com/docs/guide/tasks/templates/">
   <meta property="og:image" content="https://harmflow.com/og-image.png">
   <meta property="og:image:width" content="1200">
@@ -40,7 +40,7 @@
       <p>When you create a task, you start from a template: a ready-made starting point for one kind of automation.
         HarmFlow comes with three built-in templates, and you can save any task of yours as a template of your own. This
         page says how to find a template, what each built-in one sets up, what happens between choosing a template and
-        saving the task, and how your own templates are made and kept.</p>
+        saving the task, and how your own templates are made, kept, and moved between Macs.</p>
 
       <h2 id="where">Where you choose a template</h2>
       <p>HarmFlow offers the same templates, in the same order, wherever it offers to create a task:</p>
@@ -152,6 +152,47 @@
         files have errors and cannot start a task</em>. Each of its errors is shown as HarmFlow words it, with its line
         and column when HarmFlow gives them. The file cannot be chosen, and the search and filters leave it listed, so
         you can see what to fix.</p>
+
+      <h2 id="export-import">Exporting and importing a template</h2>
+      <p>A template of yours can leave your Mac as a file and come back as a template, on the same Mac or another one:
+        export it to share it or to keep a copy, and import the file where you want the template. Both are in the
+        <strong>Templates</strong> view of the Tasks screen. This is about templates only: to move a task, see
+        <a href="/docs/guide/tasks/export-import/">Exporting and importing a task</a>.</p>
+      <p><strong>Exporting.</strong> Each template of yours has an <strong>Export</strong> button on its row. HarmFlow
+        asks where to save the file, with a name taken from the template's ID, such as
+        <code>standup-digest.yaml</code>, and shows <strong>Template exported.</strong> once it is saved. HarmFlow's
+        built-in templates have no <strong>Export</strong>: every HarmFlow already has them.</p>
+      <p>The exported file is the template alone, as its file holds it. A template keeps no runs, logs, or state of its
+        own, and a task created from it keeps no link to it, so nothing those tasks did is in the file. A password or a
+        token typed into the template is masked, as a task's export masks it; that is a safety net, so read the file
+        before you share it.</p>
+      <p><strong>Importing.</strong> Choose <strong>Import</strong>, beside <strong>New template</strong>. In the
+        <strong>Import a template</strong> window, choose a <code>.yaml</code> file with <strong>Choose file…</strong>
+        or paste its content, then choose <strong>Import</strong>. An import takes two steps:</p>
+      <ul>
+        <li><strong>The first only checks.</strong> HarmFlow checks the template as the import would, saves nothing,
+          and shows what it would be: its name, its ID, its type, and its permission profile, with the other
+          permission settings it sets, or the default profile when it sets none. For a template that runs on an AI
+          tool, it also names each agent and skill the template cites that this Mac lacks.</li>
+        <li><strong>A script template shows what it runs.</strong> A task created from it runs a program with your
+          rights, so the check also shows the program: the command and its arguments, or the interpreter with its
+          arguments and the whole inline script, then the working directory, the environment variables, and the
+          schedule.</li>
+        <li><strong>The second saves.</strong> Nothing is saved until you choose <strong>Save template</strong>.
+          <strong>Cancel</strong>, or closing the window, saves nothing. Change the text or the replace choice after the
+          check, and the button is <strong>Import</strong> again, for a new check.</li>
+      </ul>
+      <p>The check refuses, and nothing is saved:</p>
+      <ul>
+        <li>a file that is not a valid template, with what is wrong with it;</li>
+        <li>a file whose ID starts with <code>hf-</code>, which only HarmFlow's templates use;</li>
+        <li>a file whose ID a template of yours already has, unless you tick <strong>Replace a template of yours with
+          the same identifier</strong> first. Ticked, saving replaces that template.</li>
+      </ul>
+      <p>A template that cites an agent or a skill this Mac lacks is saved all the same. Once it is saved, HarmFlow shows a message
+        such as <strong>Template Standup digest imported.</strong>, then one warning for each missing item, such as
+        <strong>Skill not found: meeting-notes</strong>, and opens the template. Its card in the catalog keeps
+        saying what this Mac lacks (<a href="#needs">What a template needs</a>).</p>
 
       <h2 id="own-copy">A task is its own copy</h2>
       <p>A task created from a template holds its own copy of the template's values, and keeps no link to the
