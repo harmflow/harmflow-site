@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>An execution that ran out of quota · HarmFlow</title>
+  <meta name="description" content="When an execution ends as Out of quota rather than Failed, why it sends no failure notice, and how the Overview, History, and the task's schedule treat it.">
+  <link rel="canonical" href="https://harmflow.com/docs/guide/executions/out-of-quota/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HarmFlow">
+  <meta property="og:title" content="An execution that ran out of quota · HarmFlow">
+  <meta property="og:description" content="When an execution ends as Out of quota rather than Failed, why it sends no failure notice, and how the Overview, History, and the task's schedule treat it.">
+  <meta property="og:url" content="https://harmflow.com/docs/guide/executions/out-of-quota/">
+  <meta property="og:image" content="https://harmflow.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The HarmFlow logo over the line: Automations that run on the agents you already use.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/app-icon-small.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/site.css">
+  <script src="/scripts/consent.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/"><img src="/lockup.svg" alt="HarmFlow" width="118" height="28"></a>
+    <nav class="site-sections" aria-label="Sections">
+      <ul>
+        <li><a href="/docs/guide/">Guide</a></li>
+        <li><a href="/docs/reference/">Reference</a></li>
+        <li><a href="/showroom/">Showroom</a></li>
+      </ul>
+    </nav>
+    <a class="header-cta" target="_blank" href="https://github.com/harmflow/harmflow-app">Follow on GitHub</a>
+  </header>
+  <main id="content">
+    <article class="prose">
+      <h1>An execution that ran out of quota</h1>
+      <p>When the harness running an execution runs out of quota, HarmFlow
+        <a href="/docs/guide/executions/failover/">carries the execution on to the next harness</a> the task names.
+        When no harness is left to take over, the execution ends as <strong>Out of quota</strong>, not as
+        <strong>Failed</strong>. Running out of quota is expected, not something that went wrong: the execution sends
+        no failure notice, is not listed among the executions that need your attention, and waits for the task's next
+        scheduled run.</p>
+      <p>For example, a task named <em>Nightly triage</em> runs on Claude Code, with Codex as its fallback. Claude Code
+        runs out of quota halfway through, and the execution switches to Codex, whose quota then runs out too. No
+        harness is left, so the execution ends <strong>Out of quota</strong>.</p>
+
+      <h2 id="when">When an execution ends Out of quota</h2>
+      <p>An execution ends <strong>Out of quota</strong> when its last attempt ended on quota and no other harness can
+        take over: the task names none, or the execution already made every switch the task allows. An attempt ends on
+        quota in any of these ways:</p>
+      <ul>
+        <li>its harness's plan quota was already exhausted before the attempt, so no session started;</li>
+        <li><a href="/docs/guide/executions/quota-share/">the share of the harness's quota</a> you let HarmFlow spend
+          was already reached before the attempt, so no session started either;</li>
+        <li>the quota ran out during the session;</li>
+        <li>a Claude Code session turned to extra usage, which the task does not allow, so HarmFlow ended it.</li>
+      </ul>
+      <p>The two checks before an attempt run only while the task does not allow extra usage, as a new task does not.
+        Ending on quota leads to <strong>Out of quota</strong> only when the task fails over on quota: its fallback's
+        <strong>Quota exhausted</strong> trigger, which a new task has on. A task with that trigger off stops at the
+        first quota that runs out, and its execution ends <strong>Failed</strong>.</p>
+
+      <h2 id="needs-attention">When it reads Needs attention instead</h2>
+      <p>When the session had already reported a pull request before the quota ran out, the execution ends
+        <strong>Needs attention</strong> instead: a pull request waits for you to take on. A branch the session pushed
+        without opening a pull request is not looked for, so that execution still ends <strong>Out of quota</strong>,
+        and a later execution of the work item can carry that branch on.
+        <a href="/docs/guide/executions/no-pull-request/">An execution where a work item opened no pull request</a>
+        explains the other cases where an execution reads Needs attention or Failed.</p>
+
+      <h2 id="still-failed">Endings that still read Failed</h2>
+      <p>Every other ending with no harness left still ends <strong>Failed</strong>. A last harness that is
+        unavailable is one of them, even when an earlier harness of the same execution ran out of quota.</p>
+      <p>Executions that ended before HarmFlow had the Out of quota status keep the <strong>Failed</strong> status they
+        ended with: nothing changes them.</p>
+
+      <h2 id="notices">Notices</h2>
+      <p>An execution that ends <strong>Out of quota</strong> sends no failure notice: neither
+        <strong>Operational failure</strong> nor <strong>No alternative AI tool</strong> fires for it, though a new task
+        notifies about both.</p>
+      <p>A task may choose to be told: check <strong>Out of quota</strong> under <strong>Notify me about</strong>, in
+        the <a href="/docs/guide/executions/task-notifications/">task's Notifications section</a>. A new task leaves it
+        unchecked. It is not a failure, so its notice goes through only at the <strong>All</strong>
+        <a href="/docs/guide/executions/notification-level/">notification level</a>: <strong>Failures and attention
+        only</strong> holds it back.</p>
+
+      <h2 id="overview">The Overview and History</h2>
+      <p>The <strong>Needs your attention</strong> panel of the Overview does not list an execution that ran out of
+        quota: nothing went wrong in it.</p>
+      <p>The <strong>Out of quota today</strong> card counts the executions that ended <strong>Out of quota</strong>
+        since midnight, apart from <strong>Failed today</strong>: such an execution counts in its own card, never as a
+        failure. The Overview and the Executions screen show the card by default, at the end of the cards you already
+        arranged. To hide or show it on either screen, open <strong>Settings</strong>, then
+        <strong>Appearance</strong>, and use <strong>Metric cards</strong>; a change applies the next time the screen
+        opens.</p>
+      <p>The History screen shows the execution's status as <strong>Out of quota</strong>, and its
+        <strong>Status</strong> filter offers Out of quota, so you can list those executions alone. In the execution's
+        <strong>Events</strong> tab, its ending reads <em>No AI tool had quota left</em>.</p>
+
+      <h2 id="next-run">The next run</h2>
+      <p>An execution that ran out of quota does not run again at once, even for a task that
+        <a href="/docs/guide/tasks/run-again/">runs again</a> after a completed execution: it waits for the task's
+        schedule. The work items it selected and left without a result stay in progress and count no failure toward the
+        task's limit of retries, so a later execution takes them up again.</p>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-about">
+      <p class="footer-title">HarmFlow</p>
+      <p>Schedules, runs, and monitors automations through Claude Code and Codex, on your Mac.</p>
+    </div>
+    <nav class="footer-links" aria-label="Site">
+      <div>
+        <p class="footer-title">Learn</p>
+        <ul>
+          <li><a href="/docs/guide/">Guide</a></li>
+          <li><a href="/docs/reference/">Reference</a></li>
+          <li><a href="/showroom/">Showroom</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">Project</p>
+        <ul>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a target="_blank" href="https://github.com/harmflow">GitHub</a></li>
+          <li><a href="/privacy/#withdraw" data-consent-choice>Analytics choice</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="footer-legal">
+      <p>© 2026 HarmFlow. HarmFlow is a registered trademark. The app is source-available under the
+        <a target="_blank" href="https://github.com/harmflow/harmflow-app/blob/main/LICENSE">PolyForm Noncommercial License 1.0.0</a>.</p>
+      <p>Claude Code is a trademark of Anthropic, PBC. Codex is a trademark of OpenAI. Mac and Mac App Store are
+        trademarks of Apple Inc. HarmFlow is not affiliated with or endorsed by them.</p>
+    </div>
+  </footer>
+</body>
+</html>
