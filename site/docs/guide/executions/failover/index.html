@@ -50,6 +50,9 @@
         from what the first attempt left, below. The
         <a href="/docs/reference/harnesses/#failover">Harnesses reference</a> tells which harnesses the chain holds and
         how many times an execution may switch.</p>
+      <p>When the last harness runs out of quota too and none is left to take over, the execution ends as
+        <strong>Out of quota</strong>, not as Failed:
+        <a href="/docs/guide/executions/out-of-quota/">An execution that ran out of quota</a> explains that ending.</p>
 
       <h2 id="what-it-is-given">What the next harness is given</h2>
       <p>The new session is given a summary of the first attempt — the harness and model it ran on, how it ended, its
