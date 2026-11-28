@@ -192,8 +192,11 @@
           counts as <code>quota_exhausted</code> without starting.</li>
         <li><strong><code>quota_exhausted</code> and <code>harness_unavailable</code></strong> switch to the next
           harness of the chain, when <code>fallback.on</code> lists the class, a next harness exists, and the execution
-          has switched fewer times than <code>fallback.maxSwitches</code>. With no harness left, the execution fails with
-          <code>harness.no_alternative</code>.</li>
+          has switched fewer times than <code>fallback.maxSwitches</code>. With no harness left, the execution emits
+          <code>harness.no_alternative</code>, and its last attempt decides how it ends. When that attempt ran out of
+          quota, the execution reads Out of quota, or Needs attention when the session had already reported a pull
+          request, and the event is a warning. Otherwise, the last harness unavailable included, it reads Failed, and
+          the event is an error.</li>
         <li><strong><code>rate_limited</code> never switches.</strong> The attempt retries on the same harness, up to
           <code>execution.rateLimit.maxRetries</code> times, waiting for the reset the harness reported or else for
           <code>initialWaitSeconds</code>, doubling up to <code>maxWaitSeconds</code>.</li>
